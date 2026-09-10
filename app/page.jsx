@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // <-- Importamos el enrutador
 import LoginScreen from '@/components/internal/LoginScreen';
 import Header from '@/components/internal/Header';
 import SearchView from '@/components/internal/SearchView';
@@ -17,17 +18,29 @@ import { useInternalPackages } from '@/hooks/useInternalPackages';
 import { useCalculadoraData } from '@/hooks/useCalculadoraData';
 import { esRolGestor } from '@/lib/internal/constants';
 
+// ACÁ SUMAMOS LA VISTA NUEVA PARA EL HEADER
+import EnlatadosInternalPage from '@/app/internal/enlatados/page'; 
+
 const TITULOS_VISTA = {
   users: '⚙️ Configuración',
   marketing: '📋 Calendario de Contenidos',
   agentes: '🌟 Calendario @viajafelizcon',
+  enlatados: '✈️ Grupales y Enlatados',
 };
 
 export default function InternalPanel() {
+  const router = useRouter(); // <-- Inicializamos el enrutador
   const { status, currentUser, userData, login, logout, loading: authLoading } = useStaffAuth();
   const ready = status === 'logged-in';
   const rol = userData?.rol;
   const esGestor = esRolGestor(rol);
+
+  // REDIRECCIÓN AUTOMÁTICA DEL PROVEEDOR
+  useEffect(() => {
+    if (ready && rol === 'proveedor') {
+      router.push('/proveedor');
+    }
+  }, [ready, rol, router]);
 
   const {
     franquiciasFiltro,
@@ -81,6 +94,11 @@ export default function InternalPanel() {
     setCurrentView('search');
   };
 
+  // Si el usuario es proveedor, mostramos el Loader mientras el router lo patea a su zona
+  if (ready && rol === 'proveedor') {
+    return <Loader visible text="Redirigiendo al portal de proveedor..." />;
+  }
+
   if (status === 'loading') {
     return <Loader visible text="Iniciando..." />;
   }
@@ -127,6 +145,11 @@ export default function InternalPanel() {
           />
         )}
 
+        {/* ACÁ ENGANCHAMOS LA NUEVA PESTAÑA DEL BACKOFFICE DE ENLATADOS */}
+        {currentView === 'enlatados' && (
+          <EnlatadosInternalPage />
+        )}
+
         {currentView === 'upload' && (
           <UploadView
             editingPackage={editingPackage}
@@ -171,7 +194,7 @@ export default function InternalPanel() {
           <AgentesCalendarView userData={userData} currentUser={currentUser} franquicias={franquicias} etiquetasMarketing={etiquetasMarketing} onActionBusy={handleActionBusy} />
         )}
 
-        {currentView !== 'search' && currentView !== 'upload' && currentView !== 'users' && currentView !== 'marketing' && currentView !== 'agentes' && (
+        {currentView !== 'search' && currentView !== 'enlatados' && currentView !== 'upload' && currentView !== 'users' && currentView !== 'marketing' && currentView !== 'agentes' && (
           <ComingSoonView titulo={TITULOS_VISTA[currentView] || 'Cargar paquete'} />
         )}
       </div>
