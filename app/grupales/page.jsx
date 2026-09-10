@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import ModalGrupal from '@/components/clientes/ModalGrupal';
+import WhatsAppFloatButton from '@/components/shared/WhatsAppFloatButton';
+import { WPP_NUMBER } from '@/lib/constants';
 
 export default function GrupalesB2C() {
   const [paquetes, setPaquetes] = useState([]);
@@ -155,6 +157,12 @@ export default function GrupalesB2C() {
           </div>
         )}
       </div>
+
+      {paqueteSeleccionado && (
+        <ModalGrupal pkg={paqueteSeleccionado} onClose={() => setPaqueteSeleccionado(null)} />
+      )}
+      
+      <WhatsAppFloatButton phoneNumber={WPP_NUMBER} />
     </div>
   );
 }
