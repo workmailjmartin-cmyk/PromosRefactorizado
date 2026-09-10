@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
+import ModalGrupal from '@/components/clientes/ModalGrupal';
 
 export default function GrupalesB2C() {
   const [paquetes, setPaquetes] = useState([]);
@@ -10,6 +11,7 @@ export default function GrupalesB2C() {
   // Estados para los filtros
   const [filtroTransporte, setFiltroTransporte] = useState('Todos'); // 'Todos', 'Aereo', 'Bus'
   const [filtroDestino, setFiltroDestino] = useState('');
+  const [paqueteSeleccionado, setPaqueteSeleccionado] = useState(null);
 
   useEffect(() => {
     const cargarPaquetes = async () => {
@@ -93,7 +95,7 @@ export default function GrupalesB2C() {
             {filtrados.map(pkg => (
               <div 
                 key={pkg.id} 
-                onClick={() => alert('Próximamente: Abre el modal con el calendario y detalle')}
+                onClick={() => setPaqueteSeleccionado(pkg)}
                 className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all border border-gray-100 flex flex-col cursor-pointer transform hover:-translate-y-1"
               >
                 {/* Imagen del paquete (Directo de Cloudinary) */}
@@ -137,6 +139,13 @@ export default function GrupalesB2C() {
           </div>
         )}
       </div>
+      {/* Renderizamos el Modal por encima de todo si hay un paquete seleccionado */}
+      {paqueteSeleccionado && (
+        <ModalGrupal 
+          pkg={paqueteSeleccionado} 
+          onClose={() => setPaqueteSeleccionado(null)} 
+        />
+      )}
     </div>
   );
 }
