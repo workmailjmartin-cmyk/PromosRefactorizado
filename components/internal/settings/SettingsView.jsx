@@ -5,6 +5,7 @@ import UsersTab from './UsersTab';
 import MarketingTab from './MarketingTab';
 import CalculadoraTab from './CalculadoraTab';
 import { esRolGestor } from '@/lib/internal/constants';
+import GrupalesTab from './GrupalesTab'; // Ya lo tenías importado, ¡perfecto!
 
 const TAB_ACTIVO = { background: '#11173d', color: 'white', border: 'none', padding: '8px 15px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' };
 const TAB_INACTIVO = { background: '#f3f4f6', color: '#6b7280', border: 'none', padding: '8px 15px', borderRadius: '6px', cursor: 'pointer' };
@@ -19,6 +20,7 @@ export default function SettingsView({ userData, franquicias, etiquetasMarketing
     usuarios: rol === 'admin', // el editor no ve la pestaña de Usuarios ni Calculadora
     marketing: true,
     calculadora: rol === 'admin',
+    grupales: rol === 'admin', // Sumamos Grupales (Solo el Admin configura rentabilidad)
   };
 
   return (
@@ -41,6 +43,12 @@ export default function SettingsView({ userData, franquicias, etiquetasMarketing
               🧮 Calculadora
             </button>
           )}
+          {/* BOTÓN DE GRUPALES AÑADIDO ACÁ */}
+          {tabsVisibles.grupales && (
+            <button style={tab === 'grupales' ? TAB_ACTIVO : TAB_INACTIVO} onClick={() => setTab('grupales')}>
+              ✈️ Grupales
+            </button>
+          )}
         </div>
       </div>
 
@@ -60,6 +68,9 @@ export default function SettingsView({ userData, franquicias, etiquetasMarketing
         />
       )}
       {tab === 'calculadora' && tabsVisibles.calculadora && <CalculadoraTab ready />}
+      
+      {/* RENDERIZADO DEL PANEL DE GRUPALES AÑADIDO ACÁ */}
+      {tab === 'grupales' && tabsVisibles.grupales && <GrupalesTab />}
     </div>
   );
 }
