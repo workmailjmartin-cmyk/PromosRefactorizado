@@ -12,7 +12,7 @@ export default function ProveedorLayout({ children }) {
     if (!loading) {
       // Si no está logueado o su rol no es proveedor, lo pateamos sin piedad
       if (!user || !userData || userData.rol !== 'proveedor') {
-        router.push('/internal'); // Lo mandamos al login interno
+        router.push('/'); // Lo mandamos al login interno
       } else {
         setIsAuthorized(true);
       }
