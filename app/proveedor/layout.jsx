@@ -4,61 +4,63 @@ import { useRouter } from 'next/navigation';
 import { useStaffAuth } from '@/hooks/useStaffAuth';
 
 export default function ProveedorLayout({ children }) {
-  // Usamos los nombres exactos de tu sistema (status, currentUser, userData y logout)
   const { status, currentUser, userData, logout } = useStaffAuth();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    // Si todavía está procesando el login, no hacemos nada, solo esperamos.
     if (status === 'loading') return;
 
-    // Si no está logueado o tiene otro rol, lo pateamos a la raíz
     if (status === 'logged-out' || (status === 'logged-in' && userData?.rol !== 'proveedor')) {
       router.push('/');
-    } 
-    // Si está logueado y es proveedor, le abrimos la puerta
-    else if (status === 'logged-in' && userData?.rol === 'proveedor') {
+    } else if (status === 'logged-in' && userData?.rol === 'proveedor') {
       setIsAuthorized(true);
     }
   }, [status, userData, router]);
 
-  // Pantalla de carga mientras piensa
   if (status === 'loading' || !isAuthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-xl font-bold text-[#11173d] bg-gray-50">
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#11173d', fontWeight: 'bold', background: '#f3f4f6' }}>
         Cargando portal... ⏳
       </div>
     );
   }
 
-  // Si pasó el control, le mostramos su layout exclusivo
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header exclusivo para el proveedor */}
-      <header className="bg-[#11173d] text-white p-4 px-6 flex justify-between items-center shadow-md">
-        <div className="font-bold text-xl flex items-center gap-2">
-          ✈️ Portal de Mayoristas
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="text-sm font-bold text-[#ef5a1a]">{userData?.franquicia || 'Proveedor'}</div>
-            <div className="text-xs text-gray-400">{currentUser?.email}</div>
+    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
+      {/* HEADER CALCADO DE TU IDENTIDAD VISUAL */}
+      <header className="main-header" style={{ position: 'relative', zIndex: 10 }}>
+        <div className="header-content" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+          
+          <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Logo Feliz Viaje" style={{ height: '40px' }} />
+            <span style={{ color: '#11173d', fontWeight: 800, fontSize: '1.3rem', borderLeft: '2px solid #e5e7eb', paddingLeft: '15px' }}>
+              Portal de Mayoristas
+            </span>
           </div>
-          <button 
-            onClick={() => {
-              logout();
-              router.push('/'); // Lo mandamos afuera tras cerrar sesión
-            }}
-            className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-sm font-bold transition shadow-sm"
-          >
-            Salir
-          </button>
+
+          <div className="user-info">
+            <span id="user-email" style={{ textAlign: 'right' }}>
+              <b style={{ color: '#ef5a1a' }}>{userData?.franquicia || 'Proveedor'}</b>
+              <br />
+              <small style={{ color: '#6b7280' }}>{currentUser?.email}</small>
+            </span>
+            <button className="Btn" id="logout-button" onClick={() => { logout(); router.push('/'); }}>
+              <div className="sign">
+                <svg viewBox="0 0 512 512">
+                  <path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z" />
+                </svg>
+              </div>
+              <div className="text">Salir</div>
+            </button>
+          </div>
+
         </div>
       </header>
 
-      {/* Acá adentro se dibuja tu FormularioEnlatado */}
-      <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
+      {/* CONTENEDOR PRINCIPAL */}
+      <main style={{ flex: 1, padding: '40px 20px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
         {children}
       </main>
     </div>

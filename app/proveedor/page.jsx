@@ -1,38 +1,30 @@
 'use client';
 import { useState } from 'react';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
-import { db } from '@/lib/firebase'; // Tu conexión a Firebase
-import { useStaffAuth } from '@/hooks/useStaffAuth'; // Para saber quién está logueado
+import { db } from '@/lib/firebase';
+import { useStaffAuth } from '@/hooks/useStaffAuth';
 
 export default function ProveedorDashboard() {
   const [mostrandoFormulario, setMostrandoFormulario] = useState(false);
   const { user, userData } = useStaffAuth();
 
   const guardarEnFirebase = async (datos) => {
-    // Escudo por si las dudas
     if (!user || !userData) {
       alert("Error de sesión. Volvé a ingresar.");
       return;
     }
-
     try {
-      // 1. Armamos el paquete sumando los datos del proveedor y la fecha de creación
       const paqueteNuevo = {
-        ...datos, // Todo lo que llenó en el formulario (destino, costos, fotos, etc.)
+        ...datos,
         proveedor_email: user.email,
-        proveedor_nombre: userData.franquicia || user.email, // Usamos el campo franquicia/nombre
+        proveedor_nombre: userData.franquicia || user.email,
         timestamp: Date.now(),
         fecha_creacion: new Date().toLocaleDateString('es-AR'),
-        estado: 'activo' // Podría ser 'pendiente' si querés revisarlos antes
+        estado: 'activo'
       };
-
-      // 2. Lo mandamos a una colección NUEVA de Firebase llamada "enlatados"
       await db.collection('enlatados').add(paqueteNuevo);
-      
       alert("✅ ¡Paquete guardado con éxito en la base de datos!");
       setMostrandoFormulario(false);
-      
-      // Acá a futuro podemos hacer que se recargue la tabla para que lo vea publicado
     } catch (error) {
       console.error("Error guardando en Firebase:", error);
       alert("❌ Hubo un error al guardar el paquete. Intentá de nuevo.");
@@ -41,15 +33,16 @@ export default function ProveedorDashboard() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '2px solid #e5e7eb', paddingBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
-          <h1 className="text-3xl font-bold text-[#11173d]">Mis Paquetes (Enlatados)</h1>
-          <p className="text-gray-500 mt-1">Acá podés gestionar exclusivamente tus viajes cargados.</p>
+          <h1 style={{ color: '#11173d', margin: '0 0 5px 0', fontSize: '2.2rem', fontWeight: 800 }}>Mis Paquetes (Enlatados)</h1>
+          <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1rem' }}>Acá podés gestionar exclusivamente tus viajes cargados.</p>
         </div>
         {!mostrandoFormulario && (
           <button 
             onClick={() => setMostrandoFormulario(true)}
-            className="bg-[#ef5a1a] hover:bg-[#d94e14] text-white px-6 py-2 rounded-lg font-bold shadow-md transition"
+            className="btn btn-primario"
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '1.1rem' }}
           >
             ➕ Cargar Nuevo Paquete
           </button>
@@ -62,9 +55,11 @@ export default function ProveedorDashboard() {
           onSave={guardarEnFirebase} 
         />
       ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-400">
-          Aún no tenés paquetes cargados. ¡Hacé clic en el botón naranja para empezar!
-          {/* En el futuro acá irá la tabla donde el proveedor ve sus paquetes */}
+        <div style={{ backgroundColor: '#ffffff', borderRadius: '12px', padding: '50px 20px', textAlign: 'center', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <p style={{ color: '#9ca3af', fontSize: '1.2rem', margin: 0 }}>
+            Aún no tenés paquetes cargados. <br/>
+            <strong style={{ color: '#11173d' }}>¡Hacé clic en el botón naranja para empezar!</strong>
+          </p>
         </div>
       )}
     </div>
