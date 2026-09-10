@@ -2,10 +2,7 @@
 
 const NAV_ITEMS = [
   { key: 'search', label: '🔥 Promociones' },
-  // "Cargar" (nav-upload) existe en el código original pero el botón siempre
-  // tenía display:none y nada lo mostraba jamás — era HTML muerto. Se accede al
-  // formulario de carga por las sub-pestañas "🔍 Buscar / ➕ Cargar" dentro de la
-  // vista de búsqueda, no desde este menú. No se replica ese botón fantasma acá.
+  { key: 'enlatados', label: '✈️ Grupales y Enlatados' }, 
   { key: 'users', label: '⚙️ Configuración', soloGestor: true },
   { key: 'marketing', label: '📋 Calendario de Contenidos', sub: 'Marketing' },
   { key: 'agentes', label: '🌟 Calendario @viajafelizcon', sub: 'Entorno Digital' },

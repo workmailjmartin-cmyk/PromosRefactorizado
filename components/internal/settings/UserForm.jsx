@@ -16,6 +16,12 @@ export default function UserForm({ franquicias, onGuardar, editTrigger }) {
     setFranquicia(editTrigger.franquicia);
   }, [editTrigger]);
 
+  // Manejador para limpiar el input cuando cambiamos de tipo de rol
+  const handleRolChange = (e) => {
+    setRol(e.target.value);
+    setFranquicia(''); // Reseteamos para que no se mezcle el nombre de una franquicia con un proveedor
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const ok = await onGuardar({ email, rol, franquicia });
@@ -29,32 +35,54 @@ export default function UserForm({ franquicias, onGuardar, editTrigger }) {
     <div className="user-create-card" style={{ marginBottom: '20px' }}>
       <h3 style={{ marginTop: 0, color: '#11173d' }}>Crear Nuevo Usuario</h3>
       <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
+        
         <div className="form-group" style={{ flex: 2 }}>
           <label>Email</label>
           <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </div>
+        
         <div className="form-group">
           <label>Rol</label>
-          <select value={rol} onChange={(e) => setRol(e.target.value)}>
+          <select value={rol} onChange={handleRolChange}>
             <option value="usuario">Usuario</option>
             <option value="editor">Editor</option>
             <option value="admin">Admin</option>
+            <option value="proveedor">Proveedor Externo</option>
           </select>
         </div>
+        
         <div className="form-group" style={{ flex: 2 }}>
-          <label>Franquicia</label>
-          <select required value={franquicia} onChange={(e) => setFranquicia(e.target.value)}>
-            <option value="">Seleccioná de la lista...</option>
-            {franquicias.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
+          {/* LÓGICA CONDICIONAL: Si es proveedor, muestra input de texto. Si no, muestra el select de franquicias */}
+          {rol === 'proveedor' ? (
+            <>
+              <label>Nombre del Proveedor (Mayorista)</label>
+              <input 
+                type="text" 
+                required 
+                value={franquicia} 
+                onChange={(e) => setFranquicia(e.target.value)} 
+                placeholder="Ej: Piamonte, Ola..." 
+              />
+            </>
+          ) : (
+            <>
+              <label>Franquicia</label>
+              <select required value={franquicia} onChange={(e) => setFranquicia(e.target.value)}>
+                <option value="">Seleccioná de la lista...</option>
+                {franquicias.map((f) => (
+                  <option key={f} value={f}>
+                    {f}
+                  </option>
+                ))}
+              </select>
+            </>
+          )}
         </div>
+        
         <button type="submit" className="btn btn-primario" style={{ height: '45px' }}>
           Guardar
         </button>
+      
       </form>
     </div>
   );
