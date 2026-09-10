@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
 import ModalGrupal from '@/components/clientes/ModalGrupal';
-import WhatsAppFloatingButton from '@/components/shared/WhatsAppFloatingButton'; // Asumiendo que tenés este componente, sino borrá esta línea y la 113
 
 export default function GrupalesB2C() {
   const [paquetes, setPaquetes] = useState([]);
@@ -156,13 +155,6 @@ export default function GrupalesB2C() {
           </div>
         )}
       </div>
-
-      {paqueteSeleccionado && (
-        <ModalGrupal pkg={paqueteSeleccionado} onClose={() => setPaqueteSeleccionado(null)} />
-      )}
-      
-      {/* Tu componente del globo de WhatsApp flotante */}
-      <WhatsAppFloatingButton /> 
     </div>
   );
 }
