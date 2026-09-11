@@ -171,25 +171,25 @@ export default function ProveedorDashboard() {
                       </div>
                     </div>
 
-                    {/* Footer con Botones */}
+                    {/* Footer con Botones (Más redondeados) */}
                     <div style={{ background: '#f9fafb', padding: '15px 20px', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
-                      {/* Botón que abre en pestaña nueva */}
                       <a 
                         href={`/proveedor/paquete/${pkg.id}`} 
                         target="_blank" 
                         rel="noopener noreferrer"
                         className="btn"
-                        style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '10px', borderRadius: '6px', fontSize: '0.9em', fontWeight: 'bold' }}
+                        style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold', transition: 'opacity 0.2s' }}
+                        onMouseOver={e=>e.currentTarget.style.opacity='0.9'} onMouseOut={e=>e.currentTarget.style.opacity='1'}
                       >
                         Ver Detalles
                       </a>
                       
-                      {/* Solo pueden editar sus propios paquetes */}
                       {esMio && (
                         <button 
                           className="btn"
-                          style={{ background: '#e5e7eb', color: '#4b5563', padding: '10px', borderRadius: '6px', fontSize: '0.9em', fontWeight: 'bold' }}
+                          style={{ background: '#e5e7eb', color: '#4b5563', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold', transition: 'background 0.2s' }}
                           onClick={() => alert("Función Editar en desarrollo")}
+                          onMouseOver={e=>e.currentTarget.style.background='#d1d5db'} onMouseOut={e=>e.currentTarget.style.background='#e5e7eb'}
                         >
                           ✏️ Editar
                         </button>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useStaffAuth } from '@/hooks/useStaffAuth';
+import Loader from '@/components/shared/Loader';
 
 export default function ProveedorLayout({ children }) {
   const { status, currentUser, userData, logout } = useStaffAuth();
@@ -19,11 +20,7 @@ export default function ProveedorLayout({ children }) {
   }, [status, userData, router]);
 
   if (status === 'loading' || !isAuthorized) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: '#11173d', fontWeight: 'bold', background: '#f3f4f6' }}>
-        Cargando portal... ⏳
-      </div>
-    );
+    return <Loader visible={true} text="Cargando portal..." />;
   }
 
   return (

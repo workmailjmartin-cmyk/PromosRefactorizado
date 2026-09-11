@@ -3,18 +3,27 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import Loader from '@/components/shared/Loader';
+
 
 const MARKUP_AGENCIA = 1.20; 
 
-// Función para los emojis de servicios (basada en tu imagen 4)
 const getServicioIcon = (tipo) => {
   const t = tipo?.toLowerCase();
   if (t === 'aereo') return '✈️';
   if (t === 'hotel') return '🏨';
   if (t === 'traslado') return '🚕';
-  if (t === 'excursion') return '🌲'; // Podés usar el ícono del mapita si preferís
+  if (t === 'excursion') return '🌲';
   if (t === 'seguro') return '🛡️';
   return '➕';
+};
+
+// Función para formatear fecha a DD/MM/AAAA
+const formatoArgentino = (fechaString) => {
+  if (!fechaString) return '';
+  const partes = fechaString.split('-');
+  if (partes.length !== 3) return fechaString;
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
 };
 
 export default function DetallePaqueteMayorista() {
@@ -22,8 +31,6 @@ export default function DetallePaqueteMayorista() {
   const [paquete, setPaquete] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
-  
-  // Lightbox
   const [lightboxAbierto, setLightboxAbierto] = useState(false);
   const [imagenActivaIndex, setImagenActivaIndex] = useState(0);
 
@@ -37,8 +44,9 @@ export default function DetallePaqueteMayorista() {
           const data = { id: docSnap.id, ...docSnap.data() };
           setPaquete(data);
           if (data.tarifario && data.tarifario.length > 0) {
-            const fechasUnicas = [...new Set(data.tarifario.map(t => t.fecha))];
-            setFechaSeleccionada(fechasUnicas[0]);
+            // Ordenar fechas cronológicamente
+            const fechasOrdenadas = [...new Set(data.tarifario.map(t => t.fecha))].sort();
+            setFechaSeleccionada(fechasOrdenadas[0]);
           }
         }
       } catch (error) {
@@ -49,13 +57,18 @@ export default function DetallePaqueteMayorista() {
     cargarPaquete();
   }, [params.id]);
 
-  if (loading) return <div style={{ padding: '50px', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold', color: '#11173d' }}>Cargando viaje... ⏳</div>;
+  if (loading) {
+    return <Loader visible={true} text="Cargando viaje..." />;
+  }
+  
   if (!paquete) return <div style={{ padding: '50px', textAlign: 'center', color: 'red', fontWeight: 'bold' }}>❌ El paquete no existe o fue eliminado.</div>;
 
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
   const preciosDoble = paquete.tarifario?.map(t => parseFloat(t.doble) || 0).filter(p => p > 0) || [];
   const precioDesde = preciosDoble.length > 0 ? Math.round(Math.min(...preciosDoble) * MARKUP_AGENCIA) : 0;
-  const fechasUnicas = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])];
+  
+  // Extraemos las fechas únicas que cargó el proveedor
+  const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
   
   const abrirLightbox = (index) => { setImagenActivaIndex(index); setLightboxAbierto(true); };
@@ -64,34 +77,23 @@ export default function DetallePaqueteMayorista() {
   const antImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev === 0 ? paquete.imagenes.length - 1 : prev - 1)); };
 
   return (
-    // Borde más redondeado general (16px)
     <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px' }}>
       
-      {/* 1. SECCIÓN SUPERIOR: 70% IMÁGENES / 30% INFO */}
+      {/* 1. SECCIÓN SUPERIOR: 70/30 */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
         
-        {/* COLUMNA IZQUIERDA: GALERÍA (70%) */}
+        {/* GALERÍA (70%) */}
         <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {paquete.imagenes && paquete.imagenes.length > 0 ? (
             <>
-              {/* Foto Principal (Bordes bien redondos) */}
-              <div 
-                onClick={() => abrirLightbox(0)}
-                style={{ height: '400px', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer' }}
-              >
+              <div onClick={() => abrirLightbox(0)} style={{ height: '400px', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer' }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={paquete.imagenes[0]} alt="Portada" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e=>e.currentTarget.style.transform='scale(1.03)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'} />
               </div>
-              
-              {/* Miniaturas */}
               {paquete.imagenes.length > 1 && (
                 <div style={{ display: 'flex', gap: '15px' }}>
                   {paquete.imagenes.slice(1).map((img, idx) => (
-                    <div 
-                      key={idx + 1} 
-                      onClick={() => abrirLightbox(idx + 1)}
-                      style={{ flex: 1, height: '110px', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }}
-                    >
+                    <div key={idx + 1} onClick={() => abrirLightbox(idx + 1)} style={{ flex: 1, height: '110px', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img} alt={`Miniatura ${idx+1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='1'} onMouseOut={e=>e.currentTarget.style.opacity='0.85'} />
                     </div>
@@ -104,7 +106,7 @@ export default function DetallePaqueteMayorista() {
           )}
         </div>
 
-        {/* COLUMNA DERECHA: INFO (30%) */}
+        {/* INFO (30%) */}
         <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'inline-block', background: '#ef5a1a', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', alignSelf: 'flex-start', letterSpacing: '0.5px' }}>
             {paquete.transporte === 'aereo' ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.origenPrincipal}
@@ -125,7 +127,6 @@ export default function DetallePaqueteMayorista() {
             </p>
           )}
 
-          {/* Precio (Alineado a la derecha, redondeado) */}
           <div style={{ marginTop: 'auto', background: '#f9fafb', padding: '25px', borderRadius: '16px', textAlign: 'right' }}>
             <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
               <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
@@ -138,24 +139,17 @@ export default function DetallePaqueteMayorista() {
 
       <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
-      {/* 2. SERVICIOS E ITINERARIO (2 COLUMNAS) */}
+      {/* 2. SERVICIOS E ITINERARIO */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '50px', marginBottom: '50px' }}>
         
-        {/* Servicios (Estilo minimalista Imagen 5) */}
+        {/* Servicios */}
         <div style={{ flex: '1 1 300px' }}>
-          <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>
-            Servicios Incluidos
-          </h3>
+          <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Servicios Incluidos</h3>
           {paquete.servicios && paquete.servicios.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
               {paquete.servicios.map((s, idx) => (
-                <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px 0', borderLeft: '3px solid #e5e7eb', paddingLeft: '15px', position: 'relative' }}>
-                  {/* Icono a la izquierda */}
-                  <span style={{ fontSize: '1.5rem', lineHeight: '1', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }}>
-                    {getServicioIcon(s.tipo)}
-                  </span>
-                  
-                  {/* Textos minimalistas */}
+                <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px 0', borderLeft: '3px solid #e5e7eb', paddingLeft: '15px' }}>
+                  <span style={{ fontSize: '1.5rem', lineHeight: '1', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }}>{getServicioIcon(s.tipo)}</span>
                   <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <strong style={{ color: '#11173d', textTransform: 'uppercase', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
                       {s.tipo} {s.in ? ' (IN)' : ''} {s.out ? ' (OUT)' : ''}
@@ -171,11 +165,9 @@ export default function DetallePaqueteMayorista() {
           )}
         </div>
 
-        {/* Itinerario (Estilo de la imagen 3) */}
+        {/* Itinerario */}
         <div style={{ flex: '1 1 300px' }}>
-          <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>
-            Itinerario Resumido
-          </h3>
+          <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Itinerario Resumido</h3>
           {paquete.itinerario && paquete.itinerario.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {paquete.itinerario.map((dia, idx) => (
@@ -194,35 +186,55 @@ export default function DetallePaqueteMayorista() {
 
       <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
-      {/* 3. CALENDARIO Y TARIFARIO */}
+      {/* 3. CALENDARIO ESTILO GOOGLE Y TARIFARIO */}
       <div>
-        <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, marginBottom: '20px' }}>
-          Fechas de Salida y Tarifas
+        <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, marginBottom: '25px' }}>
+          Seleccioná tu fecha de Salida
         </h3>
         
-        {/* Botones de Fechas ultra redondos */}
-        {fechasUnicas.length > 0 ? (
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '30px' }}>
-            {fechasUnicas.map((fecha) => (
-              <button
-                key={fecha}
-                onClick={() => setFechaSeleccionada(fecha)}
-                style={{
-                  padding: '12px 24px', borderRadius: '30px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s', border: 'none', fontSize: '0.9rem',
-                  background: fechaSeleccionada === fecha ? '#11173d' : '#f9fafb',
-                  color: fechaSeleccionada === fecha ? '#fff' : '#6b7280',
-                  boxShadow: fechaSeleccionada === fecha ? '0 4px 10px rgba(17,23,61,0.2)' : '0 2px 5px rgba(0,0,0,0.02)'
-                }}
-              >
-                📅 {fecha}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>No hay fechas cargadas.</p>
-        )}
+        {/* Mini Calendario de Fechas Disponibles */}
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '40px' }}>
+          {fechasUnicasISO.length > 0 ? (
+            fechasUnicasISO.map((fecha) => {
+              const estaSeleccionada = fechaSeleccionada === fecha;
+              const dia = fecha.split('-')[2];
+              const mesNum = fecha.split('-')[1];
+              const mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+              const mesNombre = mesesCortos[parseInt(mesNum, 10) - 1];
 
-        {/* Tabla Minimalista Redondeada */}
+              return (
+                <div
+                  key={fecha}
+                  onClick={() => setFechaSeleccionada(fecha)}
+                  style={{
+                    width: '75px', height: '85px', borderRadius: '12px', cursor: 'pointer',
+                    background: estaSeleccionada ? '#11173d' : '#fff',
+                    border: estaSeleccionada ? '2px solid #11173d' : '2px solid #e5e7eb',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: estaSeleccionada ? '0 6px 12px rgba(17,23,61,0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: estaSeleccionada ? 'translateY(-3px)' : 'translateY(0)'
+                  }}
+                  onMouseOver={e => { if (!estaSeleccionada) e.currentTarget.style.borderColor = '#ef5a1a'; }}
+                  onMouseOut={e => { if (!estaSeleccionada) e.currentTarget.style.borderColor = '#e5e7eb'; }}
+                >
+                  <div style={{ color: estaSeleccionada ? '#fff' : '#ef5a1a', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>
+                    {mesNombre}
+                  </div>
+                  <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1' }}>
+                    {dia}
+                  </div>
+                  {/* Puntito Naranja Inferior */}
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: estaSeleccionada ? '#ef5a1a' : '#d1d5db', marginTop: '6px' }}></div>
+                </div>
+              );
+            })
+          ) : (
+             <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>No hay fechas cargadas.</p>
+          )}
+        </div>
+
+        {/* Tabla Minimalista */}
         {tarifarioFiltrado.length > 0 && (
           <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
@@ -251,14 +263,14 @@ export default function DetallePaqueteMayorista() {
         )}
       </div>
 
-      {/* 4. MODAL GALERÍA (LIGHTBOX) */}
+      {/* 4. MODAL GALERÍA */}
       {lightboxAbierto && paquete.imagenes && (
         <div onClick={cerrarLightbox} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
           <button onClick={cerrarLightbox} style={{ position: 'absolute', top: '30px', right: '40px', background: 'none', border: 'none', color: '#fff', fontSize: '2.5rem', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-          <button onClick={antImagen} style={{ position: 'absolute', left: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='rgba(255,255,255,0.3)'} onMouseOut={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}>‹</button>
+          <button onClick={antImagen} style={{ position: 'absolute', left: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>‹</button>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={paquete.imagenes[imagenActivaIndex]} alt="Zoom" style={{ maxWidth: '85%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} />
-          <button onClick={sigImagen} style={{ position: 'absolute', right: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='rgba(255,255,255,0.3)'} onMouseOut={e=>e.currentTarget.style.background='rgba(255,255,255,0.1)'}>›</button>
+          <img src={paquete.imagenes[imagenActivaIndex]} alt="Zoom" style={{ maxWidth: '85%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px' }} />
+          <button onClick={sigImagen} style={{ position: 'absolute', right: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>›</button>
         </div>
       )}
 
