@@ -10,6 +10,17 @@ const TIPOS_SERVICIO = [
   { value: 'seguro', label: '🛡️ Asistencia / Seguro' },
 ];
 
+const OPCIONES_REGIMEN = [
+  { value: '', label: 'Seleccionar Régimen...' },
+  { value: 'Solo Habitación', label: 'Solo Habitación' },
+  { value: 'Desayuno', label: 'Desayuno' },
+  { value: 'Desayuno Buffet', label: 'Desayuno Buffet' },
+  { value: 'Media Pensión (Sin Bebidas)', label: 'Media Pensión (Sin Bebidas)' },
+  { value: 'Media Pensión (Con Bebidas)', label: 'Media Pensión (Con Bebidas)' },
+  { value: 'Pensión Completa', label: 'Pensión Completa' },
+  { value: 'All Inclusive', label: 'All Inclusive' }
+];
+
 export default function FormularioEnlatado({ onCancel, onSave }) {
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +39,8 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
 
   // 2. Fechas y Tarifas
   const [salidas, setSalidas] = useState([]);
-  const [tempSalida, setTempSalida] = useState({ fecha: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
+  // Separamos nombre y regimen en el estado temporal para que sean dos inputs
+  const [tempSalida, setTempSalida] = useState({ fecha: '', hotelNombre: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
 
   // 3. Itinerario
   const [itinerario, setItinerario] = useState([]);
@@ -41,7 +53,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
   // 5. Fotos
   const [imagenes, setImagenes] = useState([]);
 
-  // ☁️ CLOUDINARY desde Variables de Entorno
+  // Variables de Entorno (Asegurate de tenerlas en tu .env.local)
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
@@ -56,11 +68,22 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
   };
 
   const agregarSalida = () => {
-    if (tempSalida.fecha && tempSalida.hotelRegimen && tempSalida.doble) {
-      setSalidas([...salidas, { id: Date.now(), ...tempSalida }]);
-      setTempSalida({ fecha: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
+    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble) {
+      // Unimos el nombre y el régimen al guardar en la lista de salidas
+      const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
+      
+      setSalidas([...salidas, { 
+        id: Date.now(), 
+        fecha: tempSalida.fecha,
+        hotelRegimen: hotelYRegimenCombinado, 
+        doble: tempSalida.doble, 
+        triple: tempSalida.triple, 
+        cuadruple: tempSalida.cuadruple, 
+        single: tempSalida.single 
+      }]);
+      setTempSalida({ fecha: '', hotelNombre: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
     } else {
-      alert("La Fecha, el Hotel/Régimen y el Costo Base Doble son obligatorios.");
+      alert("La Fecha, el Nombre del Hotel, el Régimen y el Costo Base Doble son obligatorios.");
     }
   };
 
@@ -77,7 +100,6 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
     setServicioSeleccionado('');
   };
 
-  // Función segura para actualizar un servicio sin romper el estado de React
   const actualizarServicio = (id, campo, valor) => {
     setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
   };
@@ -97,12 +119,10 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
     try {
       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: data });
       const fileRes = await res.json();
-      
-      // RED DE SEGURIDAD: Solo lo agregamos si Cloudinary devolvió la URL real
       if (fileRes.secure_url) {
         setImagenes([...imagenes, fileRes.secure_url]);
       } else {
-        alert("Error de Cloudinary: Chequeá que el CLOUD_NAME y UPLOAD_PRESET sean correctos en tu código.");
+        alert("Error de Cloudinary: Chequeá que el CLOUD_NAME y UPLOAD_PRESET sean correctos en tu .env.");
       }
     } catch (err) {
       alert("Error de conexión al subir la imagen.");
@@ -123,7 +143,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
   };
 
   return (
-    <div className="upload-form-container" style={{ background: '#fff', borderRadius: '8px', padding: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+    <div className="upload-form-container" style={{ background: '#fff', borderRadius: '16px', padding: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '15px' }}>
         <h2 className="section-title" style={{ margin: 0, color: '#11173d' }}>
@@ -156,7 +176,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
         <div className="form-group-row">
           <div className="form-group"><label>Días</label><input type="number" required name="dias" onChange={handleInfoChange} /></div>
           <div className="form-group"><label>Noches</label><input type="number" required name="noches" onChange={handleInfoChange} /></div>
-          <div className="form-group"><label>Lugar de Salida</label><input type="text" required name="origenPrincipal" placeholder="Ej: Córdoba" onChange={handleInfoChange} /></div>
+          <div className="form-group"><label>Lugar de Salida (Origen)</label><input type="text" required name="origenPrincipal" placeholder="Ej: Córdoba" onChange={handleInfoChange} /></div>
           <div className="form-group">
             <label>Moneda</label>
             <select name="moneda" value={infoGeneral.moneda} onChange={handleInfoChange}>
@@ -188,15 +208,34 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
           </div>
         )}
 
-       {/* SECCIÓN 2: TARIFARIO MATRICIAL */}
-        <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3><div className="form-group-row" style={{ background: '#fff5f0', padding: '15px', borderRadius: '8px', alignItems: 'flex-end', border: '1px solid #ffedd5' }}>
-          <div className="form-group"><label style={{ color: '#ef5a1a' }}>Fecha Salida</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
-          <div className="form-group" style={{ flex: 1.5 }}><label style={{ color: '#ef5a1a' }}>Hotel y Régimen *</label><input type="text" placeholder="Ej: Orquídeas 4* - Desayuno" value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} /></div>
-          <div className="form-group"><label>Doble *</label><input type="number" placeholder="USD" value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} /></div>
-          <div className="form-group"><label>Triple</label><input type="number" placeholder="USD" value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} /></div>
-          <div className="form-group"><label>Cuádruple</label><input type="number" placeholder="USD" value={tempSalida.cuadruple} onChange={e => setTempSalida({...tempSalida, cuadruple: e.target.value})} /></div>
-          <div className="form-group"><label>Single</label><input type="number" placeholder="USD" value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} /></div>
-          <button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '42px' }}>+ Fila</button>
+        {/* SECCIÓN 2: TARIFARIO MATRICIAL */}
+        <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
+        <div className="form-group-row" style={{ background: '#fff5f0', padding: '15px', borderRadius: '8px', alignItems: 'flex-end', border: '1px solid #ffedd5', flexWrap: 'wrap' }}>
+          
+          <div className="form-group" style={{ minWidth: '150px' }}>
+            <label style={{ color: '#ef5a1a' }}>Fecha Salida *</label>
+            <input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} />
+          </div>
+          
+          <div className="form-group" style={{ flex: 1.5, minWidth: '150px' }}>
+            <label style={{ color: '#ef5a1a' }}>Nombre Hotel *</label>
+            <input type="text" placeholder="Ej: Orquídeas 4*" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} />
+          </div>
+
+          <div className="form-group" style={{ flex: 1.5, minWidth: '180px' }}>
+            <label style={{ color: '#ef5a1a' }}>Régimen *</label>
+            <select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})}>
+              {OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}
+            </select>
+          </div>
+          
+          {/* Inputs Dinámicos que muestran ARS o USD */}
+          <div className="form-group"><label>Doble *</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} /></div>
+          <div className="form-group"><label>Triple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} /></div>
+          <div className="form-group"><label>Cuádruple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.cuadruple} onChange={e => setTempSalida({...tempSalida, cuadruple: e.target.value})} /></div>
+          <div className="form-group"><label>Single</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} /></div>
+          
+          <button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '42px', minWidth: '80px' }}>+ Fila</button>
         </div>
 
         {salidas.length > 0 && (
@@ -228,13 +267,19 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
           </table>
         )}
 
-        {/* SECCIÓN 3: ITINERARIO */}
+        {/* SECCIÓN 3: ITINERARIO (Alineado) */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>3. Itinerario Resumido</h3>
-        <div className="form-group-row" style={{ alignItems: 'flex-start' }}>
-          <div className="form-group" style={{ flex: 1 }}><label>Título del Día (Ej: Día 1 - Salida)</label><input type="text" value={tempDia.titulo} onChange={e => setTempDia({...tempDia, titulo: e.target.value})} /></div>
-          <div className="form-group" style={{ flex: 2 }}><label>Descripción de actividades</label><textarea rows="2" value={tempDia.descripcion} onChange={e => setTempDia({...tempDia, descripcion: e.target.value})}></textarea></div>
-          <div className="form-group" style={{ paddingTop: '24px' }}>
-            <button type="button" className="btn btn-secundario" onClick={agregarDiaItinerario} style={{ background: '#11173d', color: 'white' }}>+ Día</button>
+        <div className="form-group-row" style={{ alignItems: 'center' }}>
+          <div className="form-group" style={{ flex: 1 }}>
+            <label>Título del Día (Ej: Día 1 - Salida)</label>
+            <input type="text" value={tempDia.titulo} onChange={e => setTempDia({...tempDia, titulo: e.target.value})} />
+          </div>
+          <div className="form-group" style={{ flex: 2 }}>
+            <label>Descripción de actividades</label>
+            <textarea rows="2" style={{ resize: 'none' }} value={tempDia.descripcion} onChange={e => setTempDia({...tempDia, descripcion: e.target.value})}></textarea>
+          </div>
+          <div className="form-group">
+            <button type="button" className="btn btn-secundario" onClick={agregarDiaItinerario} style={{ background: '#11173d', color: 'white', height: '42px' }}>+ Día</button>
           </div>
         </div>
         
@@ -257,7 +302,6 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
               <button type="button" onClick={() => setServicios(servicios.filter(x => x.id !== s.id))} style={{ position: 'absolute', right: '15px', top: '15px', color: 'red', fontWeight: 'bold' }}>X</button>
               <h4 style={{ margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '0.9em', color: '#ef5a1a' }}>{s.tipo}</h4>
               
-              {/* Lógica condicional: Si es Traslado, mostramos los checkboxes */}
               {s.tipo === 'traslado' ? (
                 <div className="form-group-row">
                   <div className="form-group" style={{ flex: 1, display: 'flex', gap: '15px', alignItems: 'center' }}>
