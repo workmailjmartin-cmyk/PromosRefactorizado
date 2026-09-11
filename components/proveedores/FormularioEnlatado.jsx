@@ -17,7 +17,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
   const [infoGeneral, setInfoGeneral] = useState({
     destino: '',
     tipo: 'Grupales',
-    transporte: 'bus',
+    transporte: 'bus-mix', // <-- Cambiamos el valor por defecto
     dias: '',
     noches: '',
     origenPrincipal: '',
@@ -132,7 +132,9 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
           <div className="form-group">
             <label>Transporte</label>
             <select name="transporte" value={infoGeneral.transporte} onChange={handleInfoChange}>
-              <option value="bus">🚌 Bus Cama / Mix</option>
+              <option value="bus-mix">🚌 Bus Mix</option>
+              <option value="bus-cama">🚌 Bus Cama</option>
+              <option value="bus-semicama">🚌 Bus Semicama</option>
               <option value="aereo">✈️ Aéreo</option>
             </select>
           </div>
@@ -144,7 +146,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
         </div>
 
         {/* PARADAS / ASCENSOS */}
-        {infoGeneral.transporte === 'bus' && (
+        {infoGeneral.transporte.includes('bus') && (
           <div className="form-group-row" style={{ alignItems: 'flex-end', background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
             <div className="form-group" style={{ flex: 1 }}>
               <label>Paradas / Ascensos Adicionales (Ruta del Bus)</label>
