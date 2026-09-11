@@ -21,6 +21,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
     dias: '',
     noches: '',
     origenPrincipal: '',
+    moneda: 'USD',
   });
   const [paradas, setParadas] = useState([]);
   const [tempParada, setTempParada] = useState('');
@@ -155,7 +156,14 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
         <div className="form-group-row">
           <div className="form-group"><label>Días</label><input type="number" required name="dias" onChange={handleInfoChange} /></div>
           <div className="form-group"><label>Noches</label><input type="number" required name="noches" onChange={handleInfoChange} /></div>
-          <div className="form-group"><label>Lugar de Salida (Origen)</label><input type="text" required name="origenPrincipal" placeholder="Ej: Córdoba" onChange={handleInfoChange} /></div>
+          <div className="form-group"><label>Lugar de Salida</label><input type="text" required name="origenPrincipal" placeholder="Ej: Córdoba" onChange={handleInfoChange} /></div>
+          <div className="form-group">
+            <label>Moneda</label>
+            <select name="moneda" value={infoGeneral.moneda} onChange={handleInfoChange}>
+              <option value="USD">USD - Dólares</option>
+              <option value="ARS">ARS - Pesos</option>
+            </select>
+          </div>
         </div>
 
         {/* PARADAS / ASCENSOS */}
@@ -180,9 +188,8 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
           </div>
         )}
 
-        {/* SECCIÓN 2: TARIFARIO MATRICIAL */}
-        <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto (USD)</h3>
-        <div className="form-group-row" style={{ background: '#fff5f0', padding: '15px', borderRadius: '8px', alignItems: 'flex-end', border: '1px solid #ffedd5' }}>
+       {/* SECCIÓN 2: TARIFARIO MATRICIAL */}
+        <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3><div className="form-group-row" style={{ background: '#fff5f0', padding: '15px', borderRadius: '8px', alignItems: 'flex-end', border: '1px solid #ffedd5' }}>
           <div className="form-group"><label style={{ color: '#ef5a1a' }}>Fecha Salida</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
           <div className="form-group" style={{ flex: 1.5 }}><label style={{ color: '#ef5a1a' }}>Hotel y Régimen *</label><input type="text" placeholder="Ej: Orquídeas 4* - Desayuno" value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} /></div>
           <div className="form-group"><label>Doble *</label><input type="number" placeholder="USD" value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} /></div>

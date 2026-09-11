@@ -163,10 +163,10 @@ export default function ProveedorDashboard() {
                         {pkg.destino}
                       </h3>
                       
-                      <div style={{ marginTop: 'auto' }}>
-                        <div style={{ fontSize: '0.85em', color: '#6b7280' }}>Precio Venta (Ref.)</div>
-                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ef5a1a' }}>
-                          USD ${precioFinal}
+                      <div style={{ marginTop: 'auto', textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '5px' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 'normal' }}>desde</span>
+                          {pkg.moneda || 'USD'} ${precioFinal}
                         </div>
                       </div>
                     </div>
