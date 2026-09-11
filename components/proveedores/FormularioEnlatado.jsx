@@ -27,8 +27,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
 
   // 2. Fechas y Tarifas
   const [salidas, setSalidas] = useState([]);
-  const [tempSalida, setTempSalida] = useState({ fecha: '', doble: '', triple: '', single: '', cuadruple: '' });
-
+  const [tempSalida, setTempSalida] = useState({ fecha: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
   // 3. Itinerario
   const [itinerario, setItinerario] = useState([]);
   const [tempDia, setTempDia] = useState({ titulo: '', descripcion: '' });
@@ -54,11 +53,11 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
   };
 
   const agregarSalida = () => {
-    if (tempSalida.fecha && tempSalida.doble) {
+    if (tempSalida.fecha && tempSalida.hotelRegimen && tempSalida.doble) {
       setSalidas([...salidas, { id: Date.now(), ...tempSalida }]);
-      setTempSalida({ fecha: '', doble: '', triple: '', single: '', cuadruple: '' });
+      setTempSalida({ fecha: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
     } else {
-      alert("La Fecha y el Costo Base Doble son obligatorios.");
+      alert("La Fecha, el Hotel/Régimen y el Costo Base Doble son obligatorios.");
     }
   };
 
@@ -171,10 +170,11 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
         <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto (USD)</h3>
         <div className="form-group-row" style={{ background: '#fff5f0', padding: '15px', borderRadius: '8px', alignItems: 'flex-end', border: '1px solid #ffedd5' }}>
           <div className="form-group"><label style={{ color: '#ef5a1a' }}>Fecha Salida</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
-          <div className="form-group"><label>Base Doble *</label><input type="number" placeholder="USD" value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} /></div>
-          <div className="form-group"><label>Base Triple</label><input type="number" placeholder="USD" value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} /></div>
-          <div className="form-group"><label>Base Cuádruple</label><input type="number" placeholder="USD" value={tempSalida.cuadruple} onChange={e => setTempSalida({...tempSalida, cuadruple: e.target.value})} /></div>
-          <div className="form-group"><label>Base Single</label><input type="number" placeholder="USD" value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} /></div>
+          <div className="form-group" style={{ flex: 1.5 }}><label style={{ color: '#ef5a1a' }}>Hotel y Régimen *</label><input type="text" placeholder="Ej: Orquídeas 4* - Desayuno" value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} /></div>
+          <div className="form-group"><label>Doble *</label><input type="number" placeholder="USD" value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} /></div>
+          <div className="form-group"><label>Triple</label><input type="number" placeholder="USD" value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} /></div>
+          <div className="form-group"><label>Cuádruple</label><input type="number" placeholder="USD" value={tempSalida.cuadruple} onChange={e => setTempSalida({...tempSalida, cuadruple: e.target.value})} /></div>
+          <div className="form-group"><label>Single</label><input type="number" placeholder="USD" value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} /></div>
           <button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '42px' }}>+ Fila</button>
         </div>
 
@@ -183,6 +183,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
             <thead>
               <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #ddd' }}>
                 <th style={{ padding: '10px', textAlign: 'left' }}>Salida</th>
+                <th style={{ padding: '10px', textAlign: 'left' }}>Hotel y Régimen</th>
                 <th style={{ padding: '10px', textAlign: 'left' }}>Doble</th>
                 <th style={{ padding: '10px', textAlign: 'left' }}>Triple</th>
                 <th style={{ padding: '10px', textAlign: 'left' }}>Cuádruple</th>
@@ -194,6 +195,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
               {salidas.map(s => (
                 <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
                   <td style={{ padding: '10px', fontWeight: 'bold' }}>{s.fecha}</td>
+                  <td style={{ padding: '10px' }}>{s.hotelRegimen}</td>
                   <td style={{ padding: '10px' }}>${s.doble}</td>
                   <td style={{ padding: '10px' }}>{s.triple ? `$${s.triple}` : '-'}</td>
                   <td style={{ padding: '10px' }}>{s.cuadruple ? `$${s.cuadruple}` : '-'}</td>

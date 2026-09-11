@@ -28,18 +28,19 @@ export default function ProveedorLayout({ children }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
+      {/* HEADER IDÉNTICO AL PANEL INTERNO */}
       <header className="main-header" style={{ position: 'relative', zIndex: 10 }}>
         <div className="header-content" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           
-          {/* LOGO MÁS GRANDE Y CLICKEABLE */}
+          {/* Logo clickeable que recarga el portal */}
           <div 
             className="logo" 
-            style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}
-            onClick={() => router.push('/proveedor')}
-            title="Volver al inicio"
+            onClick={() => window.location.href = '/proveedor'}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '15px' }}
+            title="Descartar cambios y volver al inicio"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Logo Feliz Viaje" style={{ height: '55px' }} />
+            <img src="/logo.png" alt="Logo Feliz Viaje" id="app-logo" />
             <span style={{ color: '#11173d', fontWeight: 800, fontSize: '1.3rem', borderLeft: '2px solid #e5e7eb', paddingLeft: '15px' }}>
               Portal de Mayoristas
             </span>
@@ -64,7 +65,7 @@ export default function ProveedorLayout({ children }) {
         </div>
       </header>
 
-      <main style={{ flex: 1, padding: '40px 20px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
+      <main style={{ flex: 1, padding: '40px 20px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
         {children}
       </main>
     </div>
