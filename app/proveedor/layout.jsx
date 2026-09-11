@@ -28,13 +28,18 @@ export default function ProveedorLayout({ children }) {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column' }}>
-      {/* HEADER CALCADO DE TU IDENTIDAD VISUAL */}
       <header className="main-header" style={{ position: 'relative', zIndex: 10 }}>
         <div className="header-content" style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
           
-          <div className="logo" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          {/* LOGO MÁS GRANDE Y CLICKEABLE */}
+          <div 
+            className="logo" 
+            style={{ display: 'flex', alignItems: 'center', gap: '15px', cursor: 'pointer' }}
+            onClick={() => router.push('/proveedor')}
+            title="Volver al inicio"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Logo Feliz Viaje" style={{ height: '40px' }} />
+            <img src="/logo.png" alt="Logo Feliz Viaje" style={{ height: '55px' }} />
             <span style={{ color: '#11173d', fontWeight: 800, fontSize: '1.3rem', borderLeft: '2px solid #e5e7eb', paddingLeft: '15px' }}>
               Portal de Mayoristas
             </span>
@@ -59,7 +64,6 @@ export default function ProveedorLayout({ children }) {
         </div>
       </header>
 
-      {/* CONTENEDOR PRINCIPAL */}
       <main style={{ flex: 1, padding: '40px 20px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
         {children}
       </main>
