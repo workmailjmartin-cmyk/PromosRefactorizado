@@ -17,7 +17,7 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
   const [infoGeneral, setInfoGeneral] = useState({
     destino: '',
     tipo: 'Grupales',
-    transporte: 'bus-mix', // <-- Cambiamos el valor por defecto
+    transporte: 'bus-mix',
     dias: '',
     noches: '',
     origenPrincipal: '',
@@ -28,19 +28,21 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
   // 2. Fechas y Tarifas
   const [salidas, setSalidas] = useState([]);
   const [tempSalida, setTempSalida] = useState({ fecha: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
+
   // 3. Itinerario
   const [itinerario, setItinerario] = useState([]);
   const [tempDia, setTempDia] = useState({ titulo: '', descripcion: '' });
 
-  // 4. Servicios (Modular)
+  // 4. Servicios
   const [servicios, setServicios] = useState([]);
   const [servicioSeleccionado, setServicioSeleccionado] = useState('');
 
   // 5. Fotos
   const [imagenes, setImagenes] = useState([]);
 
-  const CLOUD_NAME = 'tu_cloud_name_aqui';
-  const UPLOAD_PRESET = 'fotos_enlatados';
+  // ☁️ CLOUDINARY desde Variables de Entorno
+  const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
   // --- HANDLERS ---
   const handleInfoChange = (e) => setInfoGeneral({ ...infoGeneral, [e.target.name]: e.target.value });
@@ -70,8 +72,13 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
 
   const agregarServicio = () => {
     if (!servicioSeleccionado) return;
-    setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '' }]);
+    setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false }]);
     setServicioSeleccionado('');
+  };
+
+  // Función segura para actualizar un servicio sin romper el estado de React
+  const actualizarServicio = (id, campo, valor) => {
+    setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
   };
 
   const handleSubirFoto = async (e) => {
@@ -85,12 +92,19 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
     const data = new FormData();
     data.append('file', file);
     data.append('upload_preset', UPLOAD_PRESET);
+    
     try {
       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: data });
       const fileRes = await res.json();
-      setImagenes([...imagenes, fileRes.secure_url]);
+      
+      // RED DE SEGURIDAD: Solo lo agregamos si Cloudinary devolvió la URL real
+      if (fileRes.secure_url) {
+        setImagenes([...imagenes, fileRes.secure_url]);
+      } else {
+        alert("Error de Cloudinary: Chequeá que el CLOUD_NAME y UPLOAD_PRESET sean correctos en tu código.");
+      }
     } catch (err) {
-      alert("Error al subir imagen.");
+      alert("Error de conexión al subir la imagen.");
     }
     setLoading(false);
   };
@@ -228,17 +242,36 @@ export default function FormularioEnlatado({ onCancel, onSave }) {
           </div>
         )}
 
-        {/* SECCIÓN 4: SERVICIOS */}
+        {/* SECCIÓN 4: SERVICIOS CON CHECKBOXES IN/OUT */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>4. Servicios Incluidos (Hoteles, Excursiones)</h3>
         <div id="servicios-container">
           {servicios.map(s => (
             <div key={s.id} style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '10px', position: 'relative' }}>
               <button type="button" onClick={() => setServicios(servicios.filter(x => x.id !== s.id))} style={{ position: 'absolute', right: '15px', top: '15px', color: 'red', fontWeight: 'bold' }}>X</button>
               <h4 style={{ margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '0.9em', color: '#ef5a1a' }}>{s.tipo}</h4>
-              <div className="form-group-row">
-                <div className="form-group"><label>{s.tipo === 'hotel' ? 'Nombre del Hotel' : 'Detalle / Proveedor'}</label><input type="text" onChange={(e) => {s.detalle1 = e.target.value; setServicios([...servicios])}} /></div>
-                <div className="form-group"><label>{s.tipo === 'hotel' ? 'Régimen (Ej: Desayuno)' : 'Notas adicionales'}</label><input type="text" onChange={(e) => {s.detalle2 = e.target.value; setServicios([...servicios])}} /></div>
-              </div>
+              
+              {/* Lógica condicional: Si es Traslado, mostramos los checkboxes */}
+              {s.tipo === 'traslado' ? (
+                <div className="form-group-row">
+                  <div className="form-group" style={{ flex: 1, display: 'flex', gap: '15px', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontWeight: 'bold', color: '#11173d' }}>
+                      <input type="checkbox" checked={s.in || false} onChange={(e) => actualizarServicio(s.id, 'in', e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                      IN
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontWeight: 'bold', color: '#11173d' }}>
+                      <input type="checkbox" checked={s.out || false} onChange={(e) => actualizarServicio(s.id, 'out', e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                      OUT
+                    </label>
+                  </div>
+                  <div className="form-group" style={{ flex: 2 }}><label>Detalle / Proveedor</label><input type="text" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
+                  <div className="form-group" style={{ flex: 2 }}><label>Notas adicionales</label><input type="text" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
+                </div>
+              ) : (
+                <div className="form-group-row">
+                  <div className="form-group"><label>{s.tipo === 'hotel' ? 'Nombre del Hotel' : 'Detalle / Proveedor'}</label><input type="text" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
+                  <div className="form-group"><label>{s.tipo === 'hotel' ? 'Régimen (Ej: Desayuno)' : 'Notas adicionales'}</label><input type="text" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
+                </div>
+              )}
             </div>
           ))}
         </div>
