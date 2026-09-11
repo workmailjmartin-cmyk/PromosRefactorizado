@@ -181,7 +181,7 @@ export default function ProveedorDashboard() {
                         className="btn"
                         style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '10px', borderRadius: '6px', fontSize: '0.9em', fontWeight: 'bold' }}
                       >
-                        👁️ Ver Detalles
+                        Ver Detalles
                       </a>
                       
                       {/* Solo pueden editar sus propios paquetes */}
