@@ -320,55 +320,72 @@ export default function DetallePaqueteMayorista() {
           )}
         </div>
 
-        {/* TABLA TARIFARIO COMPLEJA */}
+        {/* TABLA TARIFARIO COMPLEJA Y FIJA */}
         {tarifarioFiltrado.length > 0 && (
           <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ background: '#11173d', color: '#fff' }}>
-                  <th rowSpan="2" style={{ padding: '15px', textAlign: 'left' }}>Hotel y Régimen</th>
-                  <th colSpan="3" style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Base Doble</th>
-                  <th colSpan="3" style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Base Triple</th>
-                  <th colSpan="3" style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Base Cuádruple</th>
-                  <th style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Single</th>
+                  <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '18%' }}>Alojamiento</th>
+                  <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '12%' }}>Régimen</th>
+                  <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Doble</th>
+                  <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Triple</th>
+                  <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Cuádruple</th>
+                  <th style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '7%' }}>Single</th>
                 </tr>
-                <tr style={{ background: '#f3f4f6', color: '#4b5563', fontSize: '0.8rem' }}>
-                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                  <th style={{ padding: '8px' }}>Menor</th>
-                  <th style={{ padding: '8px' }}>Child</th>
-                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                  <th style={{ padding: '8px' }}>Menor</th>
-                  <th style={{ padding: '8px' }}>Child</th>
-                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                  <th style={{ padding: '8px' }}>Menor</th>
-                  <th style={{ padding: '8px' }}>Child</th>
-                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                <tr style={{ background: '#f3f4f6', color: '#4b5563', fontSize: '0.75rem' }}>
+                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                  <th style={{ padding: '8px 2px' }}>Menor</th>
+                  <th style={{ padding: '8px 2px' }}>Child</th>
+                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                  <th style={{ padding: '8px 2px' }}>Menor</th>
+                  <th style={{ padding: '8px 2px' }}>Child</th>
+                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                  <th style={{ padding: '8px 2px' }}>Menor</th>
+                  <th style={{ padding: '8px 2px' }}>Child</th>
+                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
                 </tr>
               </thead>
               <tbody style={{ textAlign: 'center' }}>
                 {tarifarioFiltrado.map((fila, idx) => {
-                  // Lógica de compatibilidad para paquetes viejos
                   const doble = typeof fila.doble === 'object' ? fila.doble : { mayor: fila.doble };
                   const triple = typeof fila.triple === 'object' ? fila.triple : { mayor: fila.triple };
                   const cuadruple = typeof fila.cuadruple === 'object' ? fila.cuadruple : { mayor: fila.cuadruple };
                   const single = typeof fila.single === 'object' ? fila.single : { mayor: fila.single };
 
+                  // Lógica de compatibilidad para separar Hotel y Régimen en paquetes viejos
+                  const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
+                  const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
+                  const estrellas = fila.hotelEstrellas ? '⭐'.repeat(parseInt(fila.hotelEstrellas)) : '';
+
                   return (
                     <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
-                      <td style={{ padding: '15px', fontWeight: 'bold', color: '#11173d', textAlign: 'left' }}>{fila.hotelRegimen}</td>
-                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${aplicarMarkup(doble.mayor)}` : '-'}</td>
-                      <td style={{ padding: '15px', color: '#6b7280' }}>{doble.menor ? `$${aplicarMarkup(doble.menor)}` : '-'}</td>
-                      <td style={{ padding: '15px', color: '#6b7280' }}>{doble.child ? `$${aplicarMarkup(doble.child)}` : '-'}</td>
                       
-                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${aplicarMarkup(triple.mayor)}` : '-'}</td>
-                      <td style={{ padding: '15px', color: '#6b7280' }}>{triple.menor ? `$${aplicarMarkup(triple.menor)}` : '-'}</td>
-                      <td style={{ padding: '15px', color: '#6b7280' }}>{triple.child ? `$${aplicarMarkup(triple.child)}` : '-'}</td>
+                      <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'top' }}>
+                        <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
+                        {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
+                        {fila.hotelUbicacion && (
+                          <a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>
+                        )}
+                      </td>
                       
-                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${aplicarMarkup(cuadruple.mayor)}` : '-'}</td>
-                      <td style={{ padding: '15px', color: '#6b7280' }}>{cuadruple.menor ? `$${aplicarMarkup(cuadruple.menor)}` : '-'}</td>
-                      <td style={{ padding: '15px', color: '#6b7280' }}>{cuadruple.child ? `$${aplicarMarkup(cuadruple.child)}` : '-'}</td>
+                      <td style={{ padding: '15px 10px', textAlign: 'left', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'top' }}>
+                        {tipoRegimen}
+                      </td>
                       
-                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${aplicarMarkup(single.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${aplicarMarkup(doble.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.menor ? `$${aplicarMarkup(doble.menor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.child ? `$${aplicarMarkup(doble.child)}` : '-'}</td>
+                      
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${aplicarMarkup(triple.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.menor ? `$${aplicarMarkup(triple.menor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.child ? `$${aplicarMarkup(triple.child)}` : '-'}</td>
+                      
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${aplicarMarkup(cuadruple.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.menor ? `$${aplicarMarkup(cuadruple.menor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.child ? `$${aplicarMarkup(cuadruple.child)}` : '-'}</td>
+                      
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${aplicarMarkup(single.mayor)}` : '-'}</td>
                     </tr>
                   )
                 })}

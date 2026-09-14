@@ -32,7 +32,7 @@ const OPCIONES_EQUIPAJE = [
 
 // Estructura limpia para resetear el form de tarifas
 const tarifaVacia = {
-  fecha: '', hotelNombre: '', hotelRegimen: '',
+  fecha: '', hotelNombre: '', hotelEstrellas: '3', hotelUbicacion: '', hotelRegimen: '',
   doble: { mayor: '', menor: '', child: '' },
   triple: { mayor: '', menor: '', child: '' },
   cuadruple: { mayor: '', menor: '', child: '' },
@@ -119,10 +119,23 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
   const agregarSalida = () => {
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor) {
+      // Mantenemos hotelRegimen viejo por compatibilidad, pero guardamos todo por separado
       const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
-      setSalidas([...salidas, { id: Date.now(), fecha: tempSalida.fecha, hotelRegimen: hotelYRegimenCombinado, doble: tempSalida.doble, triple: tempSalida.triple, cuadruple: tempSalida.cuadruple, single: tempSalida.single }]);
+      setSalidas([...salidas, { 
+        id: Date.now(), 
+        fecha: tempSalida.fecha, 
+        hotelRegimen: hotelYRegimenCombinado, 
+        hotelNombre: tempSalida.hotelNombre,
+        hotelEstrellas: tempSalida.hotelEstrellas,
+        hotelUbicacion: tempSalida.hotelUbicacion,
+        regimen: tempSalida.hotelRegimen,
+        doble: tempSalida.doble, 
+        triple: tempSalida.triple, 
+        cuadruple: tempSalida.cuadruple, 
+        single: tempSalida.single 
+      }]);
       setTempSalida(tarifaVacia);
-    } else { alert("La Fecha, Hotel, Régimen y Precio Doble (Mayor) son obligatorios."); }
+    } else { alert("La Fecha, Hotel, Régimen y Precio Doble (Adulto) son obligatorios."); }
   };
 
   // OTROS
@@ -240,10 +253,12 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         
         <div style={{ background: '#fff5f0', padding: '20px', borderRadius: '12px', border: '1px solid #ffedd5', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-            <div className="form-group" style={{ flex: '1 1 150px', margin: 0 }}><label style={{ color: '#ef5a1a' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
-            <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label style={{ color: '#ef5a1a' }}>Nombre Hotel *</label><input type="text" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} /></div>
-            <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label style={{ color: '#ef5a1a' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '15px' }}>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Nombre Hotel *</label><input type="text" placeholder="Ej: Hilton Copacabana" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} /></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Estrellas</label><select value={tempSalida.hotelEstrellas || '3'} onChange={e => setTempSalida({...tempSalida, hotelEstrellas: e.target.value})}><option value="1">1 ⭐</option><option value="2">2 ⭐</option><option value="3">3 ⭐</option><option value="4">4 ⭐</option><option value="5">5 ⭐</option></select></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Ubicación (Maps)</label><input type="url" placeholder="https://maps.app.goo.gl/..." value={tempSalida.hotelUbicacion || ''} onChange={e => setTempSalida({...tempSalida, hotelUbicacion: e.target.value})} /></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
@@ -291,15 +306,16 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         {/* TABLA RESUMEN EN EL FORMULARIO */}
         {salidas.length > 0 && (
           <div style={{ overflowX: 'auto', marginTop: '15px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85em', border: '1px solid #ddd' }}>
+            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.85em', border: '1px solid #ddd' }}>
               <thead>
                 <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #ddd', textAlign: 'center' }}>
-                  <th rowSpan="2" style={{ padding: '8px', textAlign: 'left' }}>Salida y Hotel</th>
-                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd' }}>Doble</th>
-                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd' }}>Triple</th>
-                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd' }}>Cuádruple</th>
-                  <th style={{ borderLeft: '1px solid #ddd' }}>Single</th>
-                  <th rowSpan="2"></th>
+                  <th rowSpan="2" style={{ padding: '8px', textAlign: 'left', width: '22%' }}>Salida y Alojamiento</th>
+                  <th rowSpan="2" style={{ padding: '8px', textAlign: 'left', width: '12%' }}>Régimen</th>
+                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd', width: '18%' }}>Doble</th>
+                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd', width: '18%' }}>Triple</th>
+                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd', width: '18%' }}>Cuádruple</th>
+                  <th style={{ borderLeft: '1px solid #ddd', width: '6%' }}>Sgl</th>
+                  <th rowSpan="2" style={{ width: '6%' }}></th>
                 </tr>
                 <tr style={{ background: '#f9fafb', fontSize: '0.8em', color: '#6b7280' }}>
                   <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th><th>Me</th><th>Ch</th>
@@ -309,16 +325,21 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                 </tr>
               </thead>
               <tbody style={{ textAlign: 'center' }}>
-                {salidas.map(s => (
-                  <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '8px', textAlign: 'left' }}><b>{s.fecha}</b><br/>{s.hotelRegimen}</td>
-                    <td style={{ borderLeft: '1px solid #ddd', fontWeight: 'bold' }}>{s.doble.mayor ? `$${s.doble.mayor}` : '-'}</td><td>{s.doble.menor || '-'}</td><td>{s.doble.child || '-'}</td>
-                    <td style={{ borderLeft: '1px solid #ddd' }}>{s.triple.mayor ? `$${s.triple.mayor}` : '-'}</td><td>{s.triple.menor || '-'}</td><td>{s.triple.child || '-'}</td>
-                    <td style={{ borderLeft: '1px solid #ddd' }}>{s.cuadruple.mayor ? `$${s.cuadruple.mayor}` : '-'}</td><td>{s.cuadruple.menor || '-'}</td><td>{s.cuadruple.child || '-'}</td>
-                    <td style={{ borderLeft: '1px solid #ddd' }}>{s.single.mayor ? `$${s.single.mayor}` : '-'}</td>
-                    <td style={{ padding: '8px' }}><button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer' }}>X</button></td>
-                  </tr>
-                ))}
+                {salidas.map(s => {
+                  const nombre = s.hotelNombre || (s.hotelRegimen ? s.hotelRegimen.split(' - ')[0] : 'Hotel');
+                  const regimen = s.regimen || (s.hotelRegimen ? s.hotelRegimen.split(' - ')[1] : '');
+                  return (
+                    <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word' }}><b>{s.fecha}</b><br/>{nombre}</td>
+                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word' }}>{regimen}</td>
+                      <td style={{ borderLeft: '1px solid #ddd', fontWeight: 'bold' }}>{s.doble.mayor ? `$${s.doble.mayor}` : '-'}</td><td>{s.doble.menor || '-'}</td><td>{s.doble.child || '-'}</td>
+                      <td style={{ borderLeft: '1px solid #ddd' }}>{s.triple.mayor ? `$${s.triple.mayor}` : '-'}</td><td>{s.triple.menor || '-'}</td><td>{s.triple.child || '-'}</td>
+                      <td style={{ borderLeft: '1px solid #ddd' }}>{s.cuadruple.mayor ? `$${s.cuadruple.mayor}` : '-'}</td><td>{s.cuadruple.menor || '-'}</td><td>{s.cuadruple.child || '-'}</td>
+                      <td style={{ borderLeft: '1px solid #ddd' }}>{s.single.mayor ? `$${s.single.mayor}` : '-'}</td>
+                      <td style={{ padding: '8px' }}><button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer' }}>X</button></td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
