@@ -230,8 +230,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             </div>
             
             {vuelos.length === 0 ? (
-              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en "Agregar Tramo" para sumar los vuelos.</p>
-            ) : (
+              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en 'Agregar Tramo' para sumar los vuelos.</p>            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {vuelos.map((v, idx) => (
                   <div key={v.id} style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e0f2fe', position: 'relative' }}>
