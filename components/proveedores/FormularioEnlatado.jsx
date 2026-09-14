@@ -30,26 +30,8 @@ const OPCIONES_EQUIPAJE = [
   { value: 'Mano + Carry On + Bodega', label: '🎒 + 🧳 + 💼 Completo' }
 ];
 
-const AlertaElegante = ({ mensaje, tipo, onClose }) => {
-  if (!mensaje) return null;
-  const isError = tipo === 'error';
-  return (
-    <div style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 9999, background: isError ? '#fee2e2' : '#dcfce7', borderLeft: `5px solid ${isError ? '#ef4444' : '#22c55e'}`, padding: '15px 25px', borderRadius: '8px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '15px', animation: 'slideIn 0.3s ease-out' }}>
-      <span style={{ fontSize: '1.2rem' }}>{isError ? '❌' : '✅'}</span>
-      <span style={{ color: isError ? '#991b1b' : '#166534', fontWeight: 'bold' }}>{mensaje}</span>
-      <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#6b7280' }}>×</button>
-    </div>
-  );
-};
-
 export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = null }) {
   const [loading, setLoading] = useState(false);
-  const [notificacion, setNotificacion] = useState({ mensaje: '', tipo: '' });
-  const mostrarNotificacion = (msj, tipo = 'error') => {
-    setNotificacion({ mensaje: msj, tipo });
-    setTimeout(() => setNotificacion({ mensaje: '', tipo: '' }), 4000);
-  };
-
   const [infoGeneral, setInfoGeneral] = useState({ destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD' });
   const [paradas, setParadas] = useState([]);
   const [tempParada, setTempParada] = useState('');
@@ -105,15 +87,15 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
       setSalidas([...salidas, { id: Date.now(), fecha: tempSalida.fecha, hotelRegimen: hotelYRegimenCombinado, doble: tempSalida.doble, triple: tempSalida.triple, cuadruple: tempSalida.cuadruple, single: tempSalida.single }]);
       setTempSalida({ fecha: '', hotelNombre: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
-    } else { mostrarNotificacion("La Fecha, Hotel, Régimen y Precio Doble son obligatorios."); }
+    } else { alert("La Fecha, Hotel, Régimen y Precio Doble son obligatorios."); }
   };
 
   const agregarDiaItinerario = () => { if (tempDia.titulo) { setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); setTempDia({ titulo: '', descripcion: '' }); } };
-  const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, opcional: false, fechaHora: '' }]); setServicioSeleccionado(''); } };
+  const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, opcional: false, fechaHora: '', tarifa: '' }]); setServicioSeleccionado(''); } };
   const actualizarServicio = (id, campo, valor) => setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
 
   const handleSubirFoto = async (e) => {
-    if (imagenes.length >= 4) return mostrarNotificacion("Máximo 4 imágenes permitidas.");
+    if (imagenes.length >= 4) return alert("Máximo 4 imágenes permitidas.");
     const file = e.target.files[0]; if (!file) return;
     setLoading(true);
     const data = new FormData(); data.append('file', file); data.append('upload_preset', UPLOAD_PRESET);
@@ -121,16 +103,15 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: data });
       const fileRes = await res.json();
       if (fileRes.secure_url) setImagenes([...imagenes, fileRes.secure_url]);
-      else mostrarNotificacion("Error de Cloudinary. Verificá credenciales.");
-    } catch (err) { mostrarNotificacion("Error al subir la imagen."); }
+    } catch (err) { alert("Error al subir la imagen."); }
     setLoading(false);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (salidas.length === 0) return mostrarNotificacion("Tenés que agregar al menos una tarifa.");
-    if (imagenes.length === 0) return mostrarNotificacion("Subí al menos 1 imagen de portada.");
-    if (esAereo && vuelos.length === 0) return mostrarNotificacion("Al ser un paquete aéreo, debés cargar la información de vuelos.");
+    if (salidas.length === 0) return alert("Tenés que agregar al menos una tarifa.");
+    if (imagenes.length === 0) return alert("Subí al menos 1 imagen de portada.");
+    if (esAereo && vuelos.length === 0) return alert("Al ser un paquete aéreo, debés cargar la información de vuelos.");
     
     const paqueteFinal = {
       ...infoGeneral, origenPrincipal: infoGeneral.origenAeropuerto || infoGeneral.origenProvincia,
@@ -142,8 +123,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
   return (
     <div className="upload-form-container" style={{ background: '#fff', borderRadius: '16px', padding: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', position: 'relative' }}>
-      <AlertaElegante mensaje={notificacion.mensaje} tipo={notificacion.tipo} onClose={() => setNotificacion({mensaje:'', tipo:''})} />
-
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '2px solid #eee', paddingBottom: '15px' }}>
         <h2 className="section-title" style={{ margin: 0, color: '#11173d' }}>{paqueteAEditar ? '✏️ Editar Paquete' : 'Cargar Paquete Mayorista'}</h2>
         <button type="button" onClick={onCancel} className="btn" style={{ background: '#f3f4f6', color: '#6b7280', fontWeight: 'bold' }}>⬅ Volver</button>
@@ -193,7 +172,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               <button type="button" onClick={agregarVuelo} className="btn" style={{ background: '#0284c7', color: '#fff', fontSize: '0.9rem', padding: '8px 15px' }}>+ Agregar Tramo</button>
             </div>
             {vuelos.length === 0 ? (
-              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón <b>Agregar Tramo</b> para sumar los vuelos.</p>
+              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón Agregar Tramo para sumar los vuelos.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {vuelos.map((v, idx) => (
@@ -212,7 +191,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                       <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada</label><input type="date" value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada</label><input type="time" value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
                     </div>
-                    <div className="form-group" style={{ margin: 0, marginTop: '15px' }}><label>Observaciones del Vuelo</label><input type="text" placeholder="Ej: Vuelo directo. No incluye refrigerio." value={v.obs} onChange={e => actualizarVuelo(v.id, 'obs', e.target.value)} /></div>
+                    <div className="form-group" style={{ margin: 0, marginTop: '15px' }}><label>Observaciones del Vuelo</label><input type="text" placeholder="Ej: Vuelo directo." value={v.obs} onChange={e => actualizarVuelo(v.id, 'obs', e.target.value)} /></div>
                   </div>
                 ))}
               </div>
@@ -220,20 +199,15 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 2: TARIFARIO (Alineación Mejorada) */}
+        {/* SECCIÓN 2: TARIFARIO */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
         <div style={{ background: '#fff5f0', padding: '20px', borderRadius: '12px', border: '1px solid #ffedd5' }}>
-          
           <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            
-            {/* BLOQUE IZQUIERDO (Fechas y Hoteles) */}
             <div style={{ flex: '1.5', display: 'flex', gap: '10px', minWidth: '300px' }}>
               <div className="form-group" style={{ flex: 1 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} style={{ padding: '8px' }} /></div>
               <div className="form-group" style={{ flex: 2 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Nombre Hotel *</label><input type="text" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} style={{ padding: '8px' }} /></div>
               <div className="form-group" style={{ flex: 2 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} style={{ padding: '8px' }}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
             </div>
-
-            {/* BLOQUE DERECHO (Precios y Botón) */}
             <div style={{ flex: '1', display: 'flex', gap: '8px', minWidth: '350px' }}>
               <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#11173d', fontWeight: 'bold' }}>Doble *</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
               <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Triple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
@@ -241,7 +215,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Single</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
               <div style={{ paddingBottom: '3px' }}><button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '40px', padding: '0 15px', borderRadius: '6px' }}>+ Fila</button></div>
             </div>
-            
           </div>
         </div>
 
@@ -266,20 +239,26 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 4 (Actualizada con Opcionales y Fecha en Excursión) */}
+        {/* SECCIÓN 4 (Opcionales con Tarifa) */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>4. Otros Servicios ({esAereo ? 'Traslados, Hoteles extras, Excursiones' : 'Hoteles, Excursiones'})</h3>
         <div id="servicios-container">
           {servicios.map(s => (
             <div key={s.id} style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '12px', marginBottom: '15px', position: 'relative', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
               <button type="button" onClick={() => setServicios(servicios.filter(x => x.id !== s.id))} style={{ position: 'absolute', right: '15px', top: '15px', color: '#ef4444', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px', borderBottom: '1px dashed #e5e7eb', paddingBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px', borderBottom: '1px dashed #e5e7eb', paddingBottom: '10px', flexWrap: 'wrap' }}>
                 <h4 style={{ margin: 0, textTransform: 'uppercase', fontSize: '1rem', color: '#ef5a1a', fontWeight: '900' }}>{s.tipo}</h4>
-                {/* CHECKBOX OPCIONAL */}
                 <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#0369a1', fontWeight: 'bold', fontSize: '0.9rem', background: '#e0f2fe', padding: '4px 10px', borderRadius: '15px' }}>
                   <input type="checkbox" checked={s.opcional || false} onChange={(e) => actualizarServicio(s.id, 'opcional', e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#0284c7' }} />
                   Marcar como Opcional (Adicional)
                 </label>
+                {/* CAMPO DE TARIFA (Solo si es Opcional) */}
+                {s.opcional && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d' }}>Tarifa {infoGeneral.moneda}:</label>
+                    <input type="number" placeholder="Ej: 50" value={s.tarifa || ''} onChange={(e) => actualizarServicio(s.id, 'tarifa', e.target.value)} style={{ width: '100px', padding: '4px 8px', borderRadius: '4px', border: '1px solid #ccc' }} />
+                  </div>
+                )}
               </div>
               
               {s.tipo === 'traslado' ? (
@@ -289,11 +268,10 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                   <div className="form-group" style={{ flex: 2 }}><label>Notas</label><input type="text" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
                 </div>
               ) : s.tipo === 'excursion' ? (
-                // BLOQUE EXCURSIÓN REFINADO
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
                   <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Nombre de la Excursión</label><input type="text" placeholder="Ej: Pan de Azúcar" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
                   <div className="form-group" style={{ flex: '1 1 150px', margin: 0 }}><label>Fecha y Hora (Opcional)</label><input type="datetime-local" value={s.fechaHora || ''} onChange={(e) => actualizarServicio(s.id, 'fechaHora', e.target.value)} /></div>
-                  <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Notas / Observaciones</label><input type="text" placeholder="Ej: No incluye entrada al parque" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
+                  <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Notas / Observaciones</label><input type="text" placeholder="Ej: No incluye entrada" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
                 </div>
               ) : (
                 <div className="form-group-row">

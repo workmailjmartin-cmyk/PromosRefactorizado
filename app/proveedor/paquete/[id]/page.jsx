@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import Loader from '@/components/shared/Loader'; 
 import { useStaffAuth } from '@/hooks/useStaffAuth';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
-import { useAlert } from '@/contexts/AlertContext'; // <-- Usamos TU sistema de alertas
+import { useAlert } from '@/contexts/AlertContext';
 
 const MARKUP_AGENCIA = 1.20; 
 
@@ -23,7 +23,7 @@ const getServicioIcon = (tipo) => {
 export default function DetallePaqueteMayorista() {
   const params = useParams();
   const { currentUser, userData } = useStaffAuth();
-  const { showAlert } = useAlert(); // <-- Tu hook de notificaciones
+  const { showAlert } = useAlert(); 
   
   const [paquete, setPaquete] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,28 +46,18 @@ export default function DetallePaqueteMayorista() {
           setFechaSeleccionada(fechasOrdenadas[0]);
         }
       }
-    } catch (error) {
-      console.error("Error al cargar:", error);
-    }
+    } catch (error) { console.error("Error al cargar:", error); }
     setLoading(false);
   };
 
-  useEffect(() => {
-    cargarPaquete();
-  }, [params.id]);
+  useEffect(() => { cargarPaquete(); }, [params.id]);
 
   const guardarEdicion = async (datosActualizados) => {
     try {
       const docRef = doc(db, 'enlatados', datosActualizados.id);
-      await updateDoc(docRef, {
-        ...datosActualizados,
-        fecha_actualizacion: new Date().toLocaleDateString('es-AR')
-      });
-      
-      // Llamamos a tu alerta
+      await updateDoc(docRef, { ...datosActualizados, fecha_actualizacion: new Date().toLocaleDateString('es-AR') });
       if (showAlert) showAlert('¡Paquete Actualizado!', 'success');
       else alert('¡Paquete Actualizado!');
-
       setModoEdicion(false);
       cargarPaquete(); 
     } catch (error) {
@@ -84,13 +74,7 @@ export default function DetallePaqueteMayorista() {
   const puedeEditar = esPropietario || esGestor;
 
   if (modoEdicion) {
-    return (
-      <FormularioEnlatado 
-        paqueteAEditar={paquete}
-        onCancel={() => setModoEdicion(false)}
-        onSave={guardarEdicion}
-      />
-    );
+    return <FormularioEnlatado paqueteAEditar={paquete} onCancel={() => setModoEdicion(false)} onSave={guardarEdicion} />;
   }
 
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
@@ -102,7 +86,7 @@ export default function DetallePaqueteMayorista() {
   
   const serviciosIncluidos = (paquete.servicios || []).filter(s => !s.opcional);
   const serviciosOpcionales = (paquete.servicios || []).filter(s => s.opcional);
-  const vuelos = paquete.vuelos || []; // <-- Recatamos los vuelos del paquete
+  const vuelos = paquete.vuelos || []; 
   
   const abrirLightbox = (index) => { setImagenActivaIndex(index); setLightboxAbierto(true); };
   const cerrarLightbox = () => setLightboxAbierto(false);
@@ -112,17 +96,10 @@ export default function DetallePaqueteMayorista() {
   return (
     <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
       
-      {puedeEditar && (
-        <button 
-          onClick={() => setModoEdicion(true)}
-          style={{ position: 'absolute', top: '20px', right: '20px', background: '#ef5a1a', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(239, 90, 26, 0.3)', zIndex: 10 }}
-        >
-          ✏️ Editar este Paquete
-        </button>
-      )}
-
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px', marginTop: '15px' }}>
+      {/* 1. SECCIÓN SUPERIOR: 70/30 */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
         
+        {/* GALERÍA (70%) */}
         <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {paquete.imagenes && paquete.imagenes.length > 0 ? (
             <>
@@ -146,12 +123,24 @@ export default function DetallePaqueteMayorista() {
           )}
         </div>
 
+        {/* INFO (30%) */}
         <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', alignSelf: 'flex-start', letterSpacing: '0.5px' }}>
-            {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.origenPrincipal}
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '0.5px' }}>
+              {/* ETIQUETA: Aéreo ahora muestra Provincia, no Aeropuerto largo */}
+              {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
+            </div>
+            
+            {/* BOTÓN MAGICO DE EDICIÓN: Ahora está prolijo arriba del título, sin pisar la etiqueta azul */}
+            {puedeEditar && (
+              <button onClick={() => setModoEdicion(true)} style={{ background: '#ef5a1a', color: '#fff', padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.2)' }}>
+                ✏️ Editar
+              </button>
+            )}
           </div>
           
-          <h1 style={{ margin: '0 0 15px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
+          <h1 style={{ margin: '0 0 10px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
             {paquete.destino}
           </h1>
           
@@ -161,18 +150,40 @@ export default function DetallePaqueteMayorista() {
           </p>
           
           {paquete.paradas_ascenso && paquete.paradas_ascenso.length > 0 && (
-            <p style={{ margin: '0 0 20px 0', fontSize: '0.9rem', color: '#6b7280' }}>
+            <p style={{ margin: '0 0 15px 0', fontSize: '0.85rem', color: '#6b7280' }}>
               <b style={{color: '#11173d'}}>Paradas de ascenso:</b> {paquete.paradas_ascenso.join(' - ')}
             </p>
           )}
 
-          <div style={{ marginTop: 'auto', background: '#f9fafb', padding: '25px', borderRadius: '16px', textAlign: 'right' }}>
+          {/* Bloque Precio */}
+          <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', textAlign: 'right', marginBottom: '20px' }}>
             <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
               <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
               {paquete.moneda || 'USD'} ${precioDesde}
             </div>
-            <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio neto para Agencia ({Math.round(MARKUP_AGENCIA * 100 - 100)}% de markup aplicado)</span>
+            <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio neto para Agencia ({Math.round(MARKUP_AGENCIA * 100 - 100)}% de markup)</span>
           </div>
+
+          {/* LISTA DE SERVICIOS MINIMALISTA (Mudada acá arriba) */}
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '15px' }}>
+            <h4 style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1rem', fontWeight: '900' }}>Servicios Incluidos</h4>
+            {serviciosIncluidos.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {serviciosIncluidos.map((s, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '1.2rem', width: '25px', textAlign: 'center' }}>{getServicioIcon(s.tipo)}</span>
+                    <div style={{ flex: 1, borderLeft: '2px solid #e5e7eb', paddingLeft: '10px' }}>
+                      <div style={{ color: '#11173d', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: '1' }}>{s.tipo}</div>
+                      <div style={{ color: '#6b7280', fontSize: '0.8rem', marginTop: '2px' }}>{s.detalle1}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.8rem', margin: 0 }}>No hay servicios detallados.</p>
+            )}
+          </div>
+
         </div>
       </div>
 
@@ -180,10 +191,9 @@ export default function DetallePaqueteMayorista() {
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '50px', marginBottom: '50px' }}>
         
-        {/* BLOQUE IZQUIERDO: Vuelos y Servicios */}
+        {/* BLOQUE IZQUIERDO: Vuelos y Opcionales */}
         <div style={{ flex: '1 1 300px' }}>
           
-          {/* NUEVO: SECCIÓN DE VUELOS (Solo aparece si el paquete tiene vuelos cargados) */}
           {vuelos.length > 0 && (
             <div style={{ marginBottom: '40px' }}>
               <h3 style={{ color: '#0369a1', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -222,46 +232,31 @@ export default function DetallePaqueteMayorista() {
             </div>
           )}
 
-          <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Servicios Incluidos</h3>
-          {serviciosIncluidos.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-              {serviciosIncluidos.map((s, idx) => (
-                <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px 0', borderLeft: '3px solid #e5e7eb', paddingLeft: '15px' }}>
-                  <span style={{ fontSize: '1.5rem', lineHeight: '1', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }}>{getServicioIcon(s.tipo)}</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <strong style={{ color: '#11173d', textTransform: 'uppercase', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
-                      {s.tipo} {s.in ? ' (IN)' : ''} {s.out ? ' (OUT)' : ''}
-                    </strong>
-                    <span style={{ color: '#4b5563', fontSize: '0.95rem', marginTop: '2px', fontWeight: '500' }}>
-                      {s.detalle1} {s.fechaHora ? ` (${new Date(s.fechaHora).toLocaleString('es-AR', {dateStyle:'short', timeStyle:'short'})})` : ''}
-                    </span>
-                    {s.detalle2 && <span style={{ color: '#9ca3af', fontSize: '0.85rem', marginTop: '2px' }}>{s.detalle2}</span>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.9rem' }}>No hay servicios incluidos detallados.</p>
-          )}
-
+          {/* Opcionales con Precio */}
           {serviciosOpcionales.length > 0 && (
-            <>
-              <h3 style={{ color: '#0369a1', fontSize: '1.1rem', fontWeight: 900, marginBottom: '15px', marginTop: '30px' }}>Opcionales Recomendados</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+            <div>
+              <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {serviciosOpcionales.map((s, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '15px', padding: '12px', background: '#f0f9ff', borderRadius: '8px', marginBottom: '10px' }}>
-                    <span style={{ fontSize: '1.2rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
-                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <strong style={{ color: '#0369a1', fontSize: '0.85rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
-                      <span style={{ color: '#11173d', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                  <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', alignItems: 'center' }}>
+                    <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
+                    <div style={{ flex: 1 }}>
+                      <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
+                      <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
                         {s.detalle1} {s.fechaHora ? ` - ${new Date(s.fechaHora).toLocaleString('es-AR', {dateStyle:'short', timeStyle:'short'})}` : ''}
-                      </span>
-                      {s.detalle2 && <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>{s.detalle2}</span>}
+                      </div>
+                      {s.detalle2 && <div style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{s.detalle2}</div>}
                     </div>
+                    {/* Tarifa del opcional */}
+                    {s.tarifa && (
+                      <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
+                        + {paquete.moneda || 'USD'} ${s.tarifa}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            </>
+            </div>
           )}
         </div>
 
