@@ -77,8 +77,12 @@ export default function DetallePaqueteMayorista() {
     return <FormularioEnlatado paqueteAEditar={paquete} onCancel={() => setModoEdicion(false)} onSave={guardarEdicion} />;
   }
 
+  // LÓGICA DE PRECIO PARA PAQUETES VIEJOS Y NUEVOS
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
-  const preciosDoble = paquete.tarifario?.map(t => parseFloat(t.doble) || 0).filter(p => p > 0) || [];
+  const preciosDoble = paquete.tarifario?.map(t => {
+    if (typeof t.doble === 'object') return parseFloat(t.doble.mayor) || 0;
+    return parseFloat(t.doble) || 0;
+  }).filter(p => p > 0) || [];
   const precioDesde = preciosDoble.length > 0 ? Math.round(Math.min(...preciosDoble) * MARKUP_AGENCIA) : 0;
   
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
@@ -96,7 +100,6 @@ export default function DetallePaqueteMayorista() {
   return (
     <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
       
-      {/* 1. SECCIÓN SUPERIOR: 70/30 */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
         
         {/* GALERÍA (70%) */}
@@ -123,16 +126,13 @@ export default function DetallePaqueteMayorista() {
           )}
         </div>
 
-        {/* INFO (30%) */}
+        {/* INFO Y PRECIO (30%) */}
         <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '0.5px' }}>
-              {/* ETIQUETA: Aéreo ahora muestra Provincia, no Aeropuerto largo */}
               {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
             </div>
-            
-            {/* BOTÓN MAGICO DE EDICIÓN: Ahora está prolijo arriba del título, sin pisar la etiqueta azul */}
             {puedeEditar && (
               <button onClick={() => setModoEdicion(true)} style={{ background: '#ef5a1a', color: '#fff', padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.2)' }}>
                 ✏️ Editar
@@ -155,17 +155,8 @@ export default function DetallePaqueteMayorista() {
             </p>
           )}
 
-          {/* Bloque Precio */}
-          <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', textAlign: 'right', marginBottom: '20px' }}>
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
-              <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
-              {paquete.moneda || 'USD'} ${precioDesde}
-            </div>
-            <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio neto para Agencia ({Math.round(MARKUP_AGENCIA * 100 - 100)}% de markup)</span>
-          </div>
-
-          {/* LISTA DE SERVICIOS MINIMALISTA (Mudada acá arriba) */}
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '15px' }}>
+          {/* LISTA DE SERVICIOS ARRIBA DEL PRECIO */}
+          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '15px', marginBottom: '20px', flex: 1 }}>
             <h4 style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1rem', fontWeight: '900' }}>Servicios Incluidos</h4>
             {serviciosIncluidos.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -182,6 +173,15 @@ export default function DetallePaqueteMayorista() {
             ) : (
               <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.8rem', margin: 0 }}>No hay servicios detallados.</p>
             )}
+          </div>
+
+          {/* BLOQUE PRECIO ABAJO */}
+          <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', textAlign: 'right' }}>
+            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
+              <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
+              {paquete.moneda || 'USD'} ${precioDesde}
+            </div>
+            <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio neto para Agencia ({Math.round(MARKUP_AGENCIA * 100 - 100)}% de markup)</span>
           </div>
 
         </div>
@@ -209,7 +209,6 @@ export default function DetallePaqueteMayorista() {
                         <strong style={{ color: '#0369a1' }}>Tramo {idx + 1}: {v.aerolinea}</strong>
                         <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 'bold', background: '#e0f2fe', padding: '2px 8px', borderRadius: '12px' }}>{v.equipaje}</span>
                       </div>
-                      
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaSalida}</div>
@@ -223,7 +222,6 @@ export default function DetallePaqueteMayorista() {
                           <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
                         </div>
                       </div>
-                      
                       {v.obs && <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#4b5563', fontStyle: 'italic' }}>* {v.obs}</div>}
                     </div>
                   );
@@ -232,7 +230,6 @@ export default function DetallePaqueteMayorista() {
             </div>
           )}
 
-          {/* Opcionales con Precio */}
           {serviciosOpcionales.length > 0 && (
             <div>
               <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
@@ -243,11 +240,10 @@ export default function DetallePaqueteMayorista() {
                     <div style={{ flex: 1 }}>
                       <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
                       <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
-                        {s.detalle1} {s.fechaHora ? ` - ${new Date(s.fechaHora).toLocaleString('es-AR', {dateStyle:'short', timeStyle:'short'})}` : ''}
+                        {s.detalle1} {s.fechaHora ? ` - ${new Date(s.fechaHora).toLocaleDateString('es-AR')}` : ''}
                       </div>
                       {s.detalle2 && <div style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{s.detalle2}</div>}
                     </div>
-                    {/* Tarifa del opcional */}
                     {s.tarifa && (
                       <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
                         + {paquete.moneda || 'USD'} ${s.tarifa}
@@ -312,15 +308,9 @@ export default function DetallePaqueteMayorista() {
                     transform: estaSeleccionada ? 'translateY(-3px)' : 'translateY(0)'
                   }}
                 >
-                  <div style={{ color: estaSeleccionada ? '#fff' : '#ef5a1a', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>
-                    {mesNombre}
-                  </div>
-                  <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1', marginBottom: '4px' }}>
-                    {dia}
-                  </div>
-                  <div style={{ color: estaSeleccionada ? '#9ca3af' : '#6b7280', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>
-                    {anio}
-                  </div>
+                  <div style={{ color: estaSeleccionada ? '#fff' : '#ef5a1a', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>{mesNombre}</div>
+                  <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1', marginBottom: '4px' }}>{dia}</div>
+                  <div style={{ color: estaSeleccionada ? '#9ca3af' : '#6b7280', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>{anio}</div>
                   <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: estaSeleccionada ? '#ef5a1a' : 'transparent', marginTop: '4px' }}></div>
                 </div>
               );
@@ -330,28 +320,58 @@ export default function DetallePaqueteMayorista() {
           )}
         </div>
 
+        {/* TABLA TARIFARIO COMPLEJA */}
         {tarifarioFiltrado.length > 0 && (
           <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
               <thead>
-                <tr style={{ background: '#f9fafb', color: '#11173d', borderBottom: '1px solid #e5e7eb' }}>
-                  <th style={{ padding: '18px 20px', textAlign: 'left', fontWeight: 800 }}>Hotel y Régimen</th>
-                  <th style={{ padding: '18px 20px', textAlign: 'center', fontWeight: 800 }}>Base Doble</th>
-                  <th style={{ padding: '18px 20px', textAlign: 'center', fontWeight: 800 }}>Base Triple</th>
-                  <th style={{ padding: '18px 20px', textAlign: 'center', fontWeight: 800 }}>Base Cuádruple</th>
-                  <th style={{ padding: '18px 20px', textAlign: 'center', fontWeight: 800 }}>Base Single</th>
+                <tr style={{ background: '#11173d', color: '#fff' }}>
+                  <th rowSpan="2" style={{ padding: '15px', textAlign: 'left' }}>Hotel y Régimen</th>
+                  <th colSpan="3" style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Base Doble</th>
+                  <th colSpan="3" style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Base Triple</th>
+                  <th colSpan="3" style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Base Cuádruple</th>
+                  <th style={{ padding: '10px', textAlign: 'center', borderLeft: '1px solid #374151' }}>Single</th>
+                </tr>
+                <tr style={{ background: '#f3f4f6', color: '#4b5563', fontSize: '0.8rem' }}>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                  <th style={{ padding: '8px' }}>Menor</th>
+                  <th style={{ padding: '8px' }}>Child</th>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                  <th style={{ padding: '8px' }}>Menor</th>
+                  <th style={{ padding: '8px' }}>Child</th>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                  <th style={{ padding: '8px' }}>Menor</th>
+                  <th style={{ padding: '8px' }}>Child</th>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
                 </tr>
               </thead>
-              <tbody>
-                {tarifarioFiltrado.map((fila, idx) => (
-                  <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
-                    <td style={{ padding: '18px 20px', fontWeight: 'bold', color: '#4b5563' }}>{fila.hotelRegimen}</td>
-                    <td style={{ padding: '18px 20px', textAlign: 'center', fontWeight: '900', color: '#ef5a1a', fontSize: '1.1rem' }}>${aplicarMarkup(fila.doble)}</td>
-                    <td style={{ padding: '18px 20px', textAlign: 'center', color: '#6b7280' }}>{fila.triple ? `$${aplicarMarkup(fila.triple)}` : '-'}</td>
-                    <td style={{ padding: '18px 20px', textAlign: 'center', color: '#6b7280' }}>{fila.cuadruple ? `$${aplicarMarkup(fila.cuadruple)}` : '-'}</td>
-                    <td style={{ padding: '18px 20px', textAlign: 'center', color: '#6b7280' }}>{fila.single ? `$${aplicarMarkup(fila.single)}` : '-'}</td>
-                  </tr>
-                ))}
+              <tbody style={{ textAlign: 'center' }}>
+                {tarifarioFiltrado.map((fila, idx) => {
+                  // Lógica de compatibilidad para paquetes viejos
+                  const doble = typeof fila.doble === 'object' ? fila.doble : { mayor: fila.doble };
+                  const triple = typeof fila.triple === 'object' ? fila.triple : { mayor: fila.triple };
+                  const cuadruple = typeof fila.cuadruple === 'object' ? fila.cuadruple : { mayor: fila.cuadruple };
+                  const single = typeof fila.single === 'object' ? fila.single : { mayor: fila.single };
+
+                  return (
+                    <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
+                      <td style={{ padding: '15px', fontWeight: 'bold', color: '#11173d', textAlign: 'left' }}>{fila.hotelRegimen}</td>
+                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${aplicarMarkup(doble.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px', color: '#6b7280' }}>{doble.menor ? `$${aplicarMarkup(doble.menor)}` : '-'}</td>
+                      <td style={{ padding: '15px', color: '#6b7280' }}>{doble.child ? `$${aplicarMarkup(doble.child)}` : '-'}</td>
+                      
+                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${aplicarMarkup(triple.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px', color: '#6b7280' }}>{triple.menor ? `$${aplicarMarkup(triple.menor)}` : '-'}</td>
+                      <td style={{ padding: '15px', color: '#6b7280' }}>{triple.child ? `$${aplicarMarkup(triple.child)}` : '-'}</td>
+                      
+                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${aplicarMarkup(cuadruple.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px', color: '#6b7280' }}>{cuadruple.menor ? `$${aplicarMarkup(cuadruple.menor)}` : '-'}</td>
+                      <td style={{ padding: '15px', color: '#6b7280' }}>{cuadruple.child ? `$${aplicarMarkup(cuadruple.child)}` : '-'}</td>
+                      
+                      <td style={{ padding: '15px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${aplicarMarkup(single.mayor)}` : '-'}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -361,9 +381,7 @@ export default function DetallePaqueteMayorista() {
       {paquete.observaciones && (
         <div style={{ marginTop: '40px', padding: '20px', background: '#fff5f0', borderRadius: '12px', borderLeft: '4px solid #ef5a1a' }}>
           <h3 style={{ color: '#ef5a1a', fontSize: '1.1rem', margin: '0 0 10px 0', fontWeight: '900' }}>⚠️ Observaciones Importantes</h3>
-          <p style={{ margin: 0, color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
-            {paquete.observaciones}
-          </p>
+          <p style={{ margin: 0, color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{paquete.observaciones}</p>
         </div>
       )}
 

@@ -30,14 +30,26 @@ const OPCIONES_EQUIPAJE = [
   { value: 'Mano + Carry On + Bodega', label: '🎒 + 🧳 + 💼 Completo' }
 ];
 
+// Estructura limpia para resetear el form de tarifas
+const tarifaVacia = {
+  fecha: '', hotelNombre: '', hotelRegimen: '',
+  doble: { mayor: '', menor: '', child: '' },
+  triple: { mayor: '', menor: '', child: '' },
+  cuadruple: { mayor: '', menor: '', child: '' },
+  single: { mayor: '' }
+};
+
 export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = null }) {
   const [loading, setLoading] = useState(false);
+  
   const [infoGeneral, setInfoGeneral] = useState({ destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD' });
   const [paradas, setParadas] = useState([]);
   const [tempParada, setTempParada] = useState('');
   const [vuelos, setVuelos] = useState([]);
+  
   const [salidas, setSalidas] = useState([]);
-  const [tempSalida, setTempSalida] = useState({ fecha: '', hotelNombre: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
+  const [tempSalida, setTempSalida] = useState(tarifaVacia);
+  
   const [itinerario, setItinerario] = useState([]);
   const [tempDia, setTempDia] = useState({ titulo: '', descripcion: '' });
   const [servicios, setServicios] = useState([]);
@@ -57,7 +69,19 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       });
       setParadas(paqueteAEditar.paradas_ascenso || []);
       setVuelos(paqueteAEditar.vuelos || []);
-      setSalidas(paqueteAEditar.tarifario || []);
+      
+      // Adaptador para paquetes viejos (si doble era un string, lo convierte a objeto)
+      const salidasAdaptadas = (paqueteAEditar.tarifario || []).map(t => {
+        return {
+          ...t,
+          doble: typeof t.doble === 'object' ? t.doble : { mayor: t.doble || '', menor: '', child: '' },
+          triple: typeof t.triple === 'object' ? t.triple : { mayor: t.triple || '', menor: '', child: '' },
+          cuadruple: typeof t.cuadruple === 'object' ? t.cuadruple : { mayor: t.cuadruple || '', menor: '', child: '' },
+          single: typeof t.single === 'object' ? t.single : { mayor: t.single || '' }
+        };
+      });
+      setSalidas(salidasAdaptadas);
+      
       setItinerario(paqueteAEditar.itinerario || []);
       setServicios(paqueteAEditar.servicios || []);
       setImagenes(paqueteAEditar.imagenes || []);
@@ -74,22 +98,34 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     else setInfoGeneral(prev => ({ ...prev, [name]: value }));
   };
 
+  // VUELOS
   const agregarVuelo = () => {
     const origenInicial = vuelos.length === 0 ? infoGeneral.origenAeropuerto : '';
     setVuelos([...vuelos, { id: Date.now(), aerolinea: '', origen: origenInicial, fechaSalida: '', horaSalida: '', destino: '', fechaLlegada: '', horaLlegada: '', equipaje: '', obs: '' }]);
   };
   const actualizarVuelo = (id, campo, valor) => setVuelos(vuelos.map(v => v.id === id ? { ...v, [campo]: valor } : v));
   const eliminarVuelo = (id) => setVuelos(vuelos.filter(v => v.id !== id));
+  
+  // PARADAS
   const agregarParada = () => { if (tempParada && !paradas.includes(tempParada)) { setParadas([...paradas, tempParada]); setTempParada(''); } };
   
-  const agregarSalida = () => {
-    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble) {
-      const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
-      setSalidas([...salidas, { id: Date.now(), fecha: tempSalida.fecha, hotelRegimen: hotelYRegimenCombinado, doble: tempSalida.doble, triple: tempSalida.triple, cuadruple: tempSalida.cuadruple, single: tempSalida.single }]);
-      setTempSalida({ fecha: '', hotelNombre: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
-    } else { alert("La Fecha, Hotel, Régimen y Precio Doble son obligatorios."); }
+  // TARIFARIO NUEVO (Complejo)
+  const handleTarifaChange = (base, campo, valor) => {
+    setTempSalida(prev => ({
+      ...prev,
+      [base]: { ...prev[base], [campo]: valor }
+    }));
   };
 
+  const agregarSalida = () => {
+    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor) {
+      const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
+      setSalidas([...salidas, { id: Date.now(), fecha: tempSalida.fecha, hotelRegimen: hotelYRegimenCombinado, doble: tempSalida.doble, triple: tempSalida.triple, cuadruple: tempSalida.cuadruple, single: tempSalida.single }]);
+      setTempSalida(tarifaVacia);
+    } else { alert("La Fecha, Hotel, Régimen y Precio Doble (Mayor) son obligatorios."); }
+  };
+
+  // OTROS
   const agregarDiaItinerario = () => { if (tempDia.titulo) { setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); setTempDia({ titulo: '', descripcion: '' }); } };
   const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, opcional: false, fechaHora: '', tarifa: '' }]); setServicioSeleccionado(''); } };
   const actualizarServicio = (id, campo, valor) => setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
@@ -114,7 +150,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     if (esAereo && vuelos.length === 0) return alert("Al ser un paquete aéreo, debés cargar la información de vuelos.");
     
     const paqueteFinal = {
-      ...infoGeneral, origenPrincipal: infoGeneral.origenAeropuerto || infoGeneral.origenProvincia,
+      ...infoGeneral, origenPrincipal: infoGeneral.origenProvincia || infoGeneral.origenAeropuerto,
       paradas_ascenso: paradas, vuelos, tarifario: salidas, itinerario, servicios, imagenes, observaciones
     };
     if (paqueteAEditar?.id) paqueteFinal.id = paqueteAEditar.id;
@@ -172,7 +208,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               <button type="button" onClick={agregarVuelo} className="btn" style={{ background: '#0284c7', color: '#fff', fontSize: '0.9rem', padding: '8px 15px' }}>+ Agregar Tramo</button>
             </div>
             {vuelos.length === 0 ? (
-              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón Agregar Tramo para sumar los vuelos.</p>
+              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón Agregar Tramo para sumar vuelos.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {vuelos.map((v, idx) => (
@@ -199,30 +235,93 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 2: TARIFARIO */}
+        {/* SECCIÓN 2: TARIFARIO (NUEVO DISEÑO CON CATEGORÍAS) */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
-        <div style={{ background: '#fff5f0', padding: '20px', borderRadius: '12px', border: '1px solid #ffedd5' }}>
-          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-            <div style={{ flex: '1.5', display: 'flex', gap: '10px', minWidth: '300px' }}>
-              <div className="form-group" style={{ flex: 1 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} style={{ padding: '8px' }} /></div>
-              <div className="form-group" style={{ flex: 2 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Nombre Hotel *</label><input type="text" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} style={{ padding: '8px' }} /></div>
-              <div className="form-group" style={{ flex: 2 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} style={{ padding: '8px' }}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
+        
+        <div style={{ background: '#fff5f0', padding: '20px', borderRadius: '12px', border: '1px solid #ffedd5', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            <div className="form-group" style={{ flex: '1 1 150px', margin: 0 }}><label style={{ color: '#ef5a1a' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
+            <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label style={{ color: '#ef5a1a' }}>Nombre Hotel *</label><input type="text" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} /></div>
+            <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label style={{ color: '#ef5a1a' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
+            {/* CAJA DOBLE */}
+            <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Doble *</h4>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Adulto*</label><input type="number" style={{ padding: '6px' }} value={tempSalida.doble.mayor} onChange={e => handleTarifaChange('doble', 'mayor', e.target.value)} /></div>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Menor</label><input type="number" style={{ padding: '6px' }} value={tempSalida.doble.menor} onChange={e => handleTarifaChange('doble', 'menor', e.target.value)} /></div>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Child(0-1)</label><input type="number" style={{ padding: '6px' }} value={tempSalida.doble.child} onChange={e => handleTarifaChange('doble', 'child', e.target.value)} /></div>
+              </div>
             </div>
-            <div style={{ flex: '1', display: 'flex', gap: '8px', minWidth: '350px' }}>
-              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#11173d', fontWeight: 'bold' }}>Doble *</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
-              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Triple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
-              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Cuádruple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.cuadruple} onChange={e => setTempSalida({...tempSalida, cuadruple: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
-              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Single</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
-              <div style={{ paddingBottom: '3px' }}><button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '40px', padding: '0 15px', borderRadius: '6px' }}>+ Fila</button></div>
+            
+            {/* CAJA TRIPLE */}
+            <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Triple</h4>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Adulto</label><input type="number" style={{ padding: '6px' }} value={tempSalida.triple.mayor} onChange={e => handleTarifaChange('triple', 'mayor', e.target.value)} /></div>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Menor</label><input type="number" style={{ padding: '6px' }} value={tempSalida.triple.menor} onChange={e => handleTarifaChange('triple', 'menor', e.target.value)} /></div>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Child(0-1)</label><input type="number" style={{ padding: '6px' }} value={tempSalida.triple.child} onChange={e => handleTarifaChange('triple', 'child', e.target.value)} /></div>
+              </div>
+            </div>
+
+            {/* CAJA CUÁDRUPLE */}
+            <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+              <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Cuádruple</h4>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Adulto</label><input type="number" style={{ padding: '6px' }} value={tempSalida.cuadruple.mayor} onChange={e => handleTarifaChange('cuadruple', 'mayor', e.target.value)} /></div>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Menor</label><input type="number" style={{ padding: '6px' }} value={tempSalida.cuadruple.menor} onChange={e => handleTarifaChange('cuadruple', 'menor', e.target.value)} /></div>
+                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Child(0-1)</label><input type="number" style={{ padding: '6px' }} value={tempSalida.cuadruple.child} onChange={e => handleTarifaChange('cuadruple', 'child', e.target.value)} /></div>
+              </div>
+            </div>
+
+            {/* CAJA SINGLE Y BOTON */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb', flex: 1 }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Single</h4>
+                <div><label style={{ fontSize: '0.75rem' }}>Adulto</label><input type="number" style={{ padding: '6px', width: '50%' }} value={tempSalida.single.mayor} onChange={e => handleTarifaChange('single', 'mayor', e.target.value)} /></div>
+              </div>
+              <button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '45px', borderRadius: '8px' }}>➕ Guardar Fila</button>
             </div>
           </div>
         </div>
 
+        {/* TABLA RESUMEN EN EL FORMULARIO */}
         {salidas.length > 0 && (
-          <table style={{ width: '100%', marginTop: '15px', borderCollapse: 'collapse', fontSize: '0.9em', border: '1px solid #ddd' }}>
-            <thead><tr style={{ background: '#f3f4f6', borderBottom: '2px solid #ddd' }}><th>Salida</th><th>Hotel/Régimen</th><th>Doble</th><th>Triple</th><th>Cuádruple</th><th>Single</th><th></th></tr></thead>
-            <tbody>{salidas.map(s => (<tr key={s.id} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '10px', fontWeight: 'bold' }}>{s.fecha}</td><td style={{ padding: '10px' }}>{s.hotelRegimen}</td><td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold' }}>${s.doble}</td><td style={{ padding: '10px', textAlign: 'center' }}>{s.triple ? `$${s.triple}` : '-'}</td><td style={{ padding: '10px', textAlign: 'center' }}>{s.cuadruple ? `$${s.cuadruple}` : '-'}</td><td style={{ padding: '10px', textAlign: 'center' }}>{s.single ? `$${s.single}` : '-'}</td><td style={{ padding: '10px', textAlign: 'right' }}><button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer' }}>X</button></td></tr>))}</tbody>
-          </table>
+          <div style={{ overflowX: 'auto', marginTop: '15px' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85em', border: '1px solid #ddd' }}>
+              <thead>
+                <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #ddd', textAlign: 'center' }}>
+                  <th rowSpan="2" style={{ padding: '8px', textAlign: 'left' }}>Salida y Hotel</th>
+                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd' }}>Doble</th>
+                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd' }}>Triple</th>
+                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd' }}>Cuádruple</th>
+                  <th style={{ borderLeft: '1px solid #ddd' }}>Single</th>
+                  <th rowSpan="2"></th>
+                </tr>
+                <tr style={{ background: '#f9fafb', fontSize: '0.8em', color: '#6b7280' }}>
+                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th><th>Me</th><th>Ch</th>
+                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th><th>Me</th><th>Ch</th>
+                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th><th>Me</th><th>Ch</th>
+                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th>
+                </tr>
+              </thead>
+              <tbody style={{ textAlign: 'center' }}>
+                {salidas.map(s => (
+                  <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '8px', textAlign: 'left' }}><b>{s.fecha}</b><br/>{s.hotelRegimen}</td>
+                    <td style={{ borderLeft: '1px solid #ddd', fontWeight: 'bold' }}>{s.doble.mayor ? `$${s.doble.mayor}` : '-'}</td><td>{s.doble.menor || '-'}</td><td>{s.doble.child || '-'}</td>
+                    <td style={{ borderLeft: '1px solid #ddd' }}>{s.triple.mayor ? `$${s.triple.mayor}` : '-'}</td><td>{s.triple.menor || '-'}</td><td>{s.triple.child || '-'}</td>
+                    <td style={{ borderLeft: '1px solid #ddd' }}>{s.cuadruple.mayor ? `$${s.cuadruple.mayor}` : '-'}</td><td>{s.cuadruple.menor || '-'}</td><td>{s.cuadruple.child || '-'}</td>
+                    <td style={{ borderLeft: '1px solid #ddd' }}>{s.single.mayor ? `$${s.single.mayor}` : '-'}</td>
+                    <td style={{ padding: '8px' }}><button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer' }}>X</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* SECCIÓN 3 */}
@@ -239,7 +338,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 4 (Opcionales con Tarifa) */}
+        {/* SECCIÓN 4 */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>4. Otros Servicios ({esAereo ? 'Traslados, Hoteles extras, Excursiones' : 'Hoteles, Excursiones'})</h3>
         <div id="servicios-container">
           {servicios.map(s => (
@@ -252,7 +351,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                   <input type="checkbox" checked={s.opcional || false} onChange={(e) => actualizarServicio(s.id, 'opcional', e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#0284c7' }} />
                   Marcar como Opcional (Adicional)
                 </label>
-                {/* CAMPO DE TARIFA (Solo si es Opcional) */}
                 {s.opcional && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: 'auto' }}>
                     <label style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d' }}>Tarifa {infoGeneral.moneda}:</label>

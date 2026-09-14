@@ -100,7 +100,15 @@ export default function ProveedorDashboard() {
 
   const obtenerPrecioDesde = (tarifario) => {
     if (!tarifario || tarifario.length === 0) return 0;
-    const precios = tarifario.map(t => parseFloat(t.doble) || 0).filter(p => p > 0);
+    
+    // Acá inyectamos la lógica para leer el objeto nuevo (o el string viejo) de la Base Doble
+    const precios = tarifario.map(t => {
+      if (typeof t.doble === 'object') {
+        return parseFloat(t.doble.mayor) || 0;
+      }
+      return parseFloat(t.doble) || 0;
+    }).filter(p => p > 0);
+
     if (precios.length === 0) return 0;
     return Math.round(Math.min(...precios) * MARKUP_AGENCIA);
   };
@@ -178,7 +186,8 @@ export default function ProveedorDashboard() {
 
                     <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ fontSize: '0.8em', color: '#6b7280', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>
-                        {pkg.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Desde {pkg.origenPrincipal}
+                        {/* Acá inyectamos el cambio de Aéreo con Provincia */}
+                        {pkg.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Desde {pkg.transporte.includes('aereo') ? pkg.origenProvincia || pkg.origenPrincipal : pkg.origenPrincipal}
                       </div>
                       <h3 style={{ margin: '0 0 15px 0', fontSize: '1.3rem', color: '#11173d', lineHeight: '1.2' }}>{pkg.destino}</h3>
                       
