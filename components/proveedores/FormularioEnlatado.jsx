@@ -50,30 +50,17 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     setTimeout(() => setNotificacion({ mensaje: '', tipo: '' }), 4000);
   };
 
-  // 1. Info General
-  const [infoGeneral, setInfoGeneral] = useState({
-    destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD'
-  });
-  
-  // 1.5 Sub-rutas
+  const [infoGeneral, setInfoGeneral] = useState({ destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD' });
   const [paradas, setParadas] = useState([]);
   const [tempParada, setTempParada] = useState('');
   const [vuelos, setVuelos] = useState([]);
-
-  // 2. Tarifas
   const [salidas, setSalidas] = useState([]);
   const [tempSalida, setTempSalida] = useState({ fecha: '', hotelNombre: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
-
-  // 3. Itinerario
   const [itinerario, setItinerario] = useState([]);
   const [tempDia, setTempDia] = useState({ titulo: '', descripcion: '' });
-
-  // 4. Servicios y Fotos
   const [servicios, setServicios] = useState([]);
   const [servicioSeleccionado, setServicioSeleccionado] = useState('');
   const [imagenes, setImagenes] = useState([]);
-  
-  // 6. Observaciones Generales
   const [observaciones, setObservaciones] = useState('');
 
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
@@ -101,23 +88,16 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
   const handleInfoChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'origenProvincia') {
-      setInfoGeneral(prev => ({ ...prev, origenProvincia: value, origenAeropuerto: '' }));
-    } else {
-      setInfoGeneral(prev => ({ ...prev, [name]: value }));
-    }
+    if (name === 'origenProvincia') setInfoGeneral(prev => ({ ...prev, origenProvincia: value, origenAeropuerto: '' }));
+    else setInfoGeneral(prev => ({ ...prev, [name]: value }));
   };
 
-  // --- Handlers de Vuelos ---
   const agregarVuelo = () => {
-    // Si es el primer vuelo, le precargamos el aeropuerto de salida que eligieron arriba
     const origenInicial = vuelos.length === 0 ? infoGeneral.origenAeropuerto : '';
     setVuelos([...vuelos, { id: Date.now(), aerolinea: '', origen: origenInicial, fechaSalida: '', horaSalida: '', destino: '', fechaLlegada: '', horaLlegada: '', equipaje: '', obs: '' }]);
   };
   const actualizarVuelo = (id, campo, valor) => setVuelos(vuelos.map(v => v.id === id ? { ...v, [campo]: valor } : v));
   const eliminarVuelo = (id) => setVuelos(vuelos.filter(v => v.id !== id));
-
-  // --- Otros Handlers ---
   const agregarParada = () => { if (tempParada && !paradas.includes(tempParada)) { setParadas([...paradas, tempParada]); setTempParada(''); } };
   
   const agregarSalida = () => {
@@ -125,13 +105,11 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
       setSalidas([...salidas, { id: Date.now(), fecha: tempSalida.fecha, hotelRegimen: hotelYRegimenCombinado, doble: tempSalida.doble, triple: tempSalida.triple, cuadruple: tempSalida.cuadruple, single: tempSalida.single }]);
       setTempSalida({ fecha: '', hotelNombre: '', hotelRegimen: '', doble: '', triple: '', single: '', cuadruple: '' });
-    } else {
-      mostrarNotificacion("La Fecha, Hotel, Régimen y Precio Doble son obligatorios.");
-    }
+    } else { mostrarNotificacion("La Fecha, Hotel, Régimen y Precio Doble son obligatorios."); }
   };
 
   const agregarDiaItinerario = () => { if (tempDia.titulo) { setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); setTempDia({ titulo: '', descripcion: '' }); } };
-  const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false }]); setServicioSeleccionado(''); } };
+  const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, opcional: false, fechaHora: '' }]); setServicioSeleccionado(''); } };
   const actualizarServicio = (id, campo, valor) => setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
 
   const handleSubirFoto = async (e) => {
@@ -183,36 +161,19 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         <div className="form-group-row" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
           <div className="form-group" style={{ flex: '1 1 80px' }}><label>Días</label><input type="number" required name="dias" value={infoGeneral.dias} onChange={handleInfoChange} /></div>
           <div className="form-group" style={{ flex: '1 1 80px' }}><label>Noches</label><input type="number" required name="noches" value={infoGeneral.noches} onChange={handleInfoChange} /></div>
-          
-          <div className="form-group" style={{ flex: '2 1 200px' }}>
-            <label>Provincia Salida *</label>
-            <select required name="origenProvincia" value={infoGeneral.origenProvincia} onChange={handleInfoChange}>
-              {PROVINCIAS.map(p => (
-                <option key={p.value} value={p.value} disabled={p.value === ''}>{p.label}</option>
-              ))}
-            </select>
-          </div>
-          
+          <div className="form-group" style={{ flex: '2 1 200px' }}><label>Provincia Salida *</label><select required name="origenProvincia" value={infoGeneral.origenProvincia} onChange={handleInfoChange}>{PROVINCIAS.map(p => (<option key={p.value} value={p.value} disabled={p.value === ''}>{p.label}</option>))}</select></div>
           <div className="form-group" style={{ flex: '2 1 200px' }}>
             <label>{esAereo ? 'Aeropuerto de Salida *' : 'Ciudad / Terminal *'}</label>
             {esAereo ? (
               <select required name="origenAeropuerto" value={infoGeneral.origenAeropuerto} onChange={handleInfoChange} disabled={!infoGeneral.origenProvincia}>
                 <option value="">Seleccionar Aeropuerto...</option>
-                {(AEROPUERTOS_POR_PROVINCIA[infoGeneral.origenProvincia] || []).map(a => (
-                  <option key={a.sigla} value={`${a.sigla} - ${a.nombre}`}>
-                    {a.sigla} - {a.nombre}
-                  </option>
-                ))}
+                {(AEROPUERTOS_POR_PROVINCIA[infoGeneral.origenProvincia] || []).map(a => (<option key={a.sigla} value={`${a.sigla} - ${a.nombre}`}>{a.sigla} - {a.nombre}</option>))}
               </select>
-            ) : (
-              <input type="text" required name="origenAeropuerto" placeholder="Ej: Terminal Cba" value={infoGeneral.origenAeropuerto} onChange={handleInfoChange} />
-            )}
+            ) : (<input type="text" required name="origenAeropuerto" placeholder="Ej: Terminal Cba" value={infoGeneral.origenAeropuerto} onChange={handleInfoChange} />)}
           </div>
-
           <div className="form-group" style={{ flex: '1 1 120px' }}><label>Moneda</label><select name="moneda" value={infoGeneral.moneda} onChange={handleInfoChange}><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
         </div>
 
-        {/* SUB-RUTAS (BUS VS AÉREO) */}
         {esBus && (
           <div className="form-group-row" style={{ alignItems: 'flex-end', background: '#f9fafb', padding: '15px', borderRadius: '8px' }}>
             <div className="form-group" style={{ flex: 1 }}><label>Paradas / Ascensos Adicionales</label><input type="text" placeholder="Ej: Leones, Rosario..." value={tempParada} onChange={(e) => setTempParada(e.target.value)} /></div>
@@ -231,31 +192,26 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               <h3 style={{ margin: 0, color: '#0369a1', fontSize: '1.2rem' }}>✈️ Información de Vuelos</h3>
               <button type="button" onClick={agregarVuelo} className="btn" style={{ background: '#0284c7', color: '#fff', fontSize: '0.9rem', padding: '8px 15px' }}>+ Agregar Tramo</button>
             </div>
-            
             {vuelos.length === 0 ? (
-              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón Agregar Tramo para sumar los vuelos.</p>
+              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón <b>Agregar Tramo</b> para sumar los vuelos.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {vuelos.map((v, idx) => (
                   <div key={v.id} style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e0f2fe', position: 'relative' }}>
                     <button type="button" onClick={() => eliminarVuelo(v.id)} style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}>✕</button>
                     <b style={{ display: 'block', marginBottom: '10px', color: '#0369a1' }}>Tramo {idx + 1}</b>
-                    
-                    {/* ALINEACIÓN PERFECTA: Arriba Aerolínea/Salida, Abajo Equipaje/Llegada */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Aerolínea</label><input type="text" value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida</label><input type="text" value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Fecha Salida</label><input type="date" value={v.fechaSalida} onChange={e => actualizarVuelo(v.id, 'fechaSalida', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Salida</label><input type="time" value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
                     </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px', borderTop: '1px dashed #bae6fd', paddingTop: '15px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido</label><select value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}>{OPCIONES_EQUIPAJE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Llegada</label><input type="text" value={v.destino} onChange={e => actualizarVuelo(v.id, 'destino', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada</label><input type="date" value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada</label><input type="time" value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
                     </div>
-
                     <div className="form-group" style={{ margin: 0, marginTop: '15px' }}><label>Observaciones del Vuelo</label><input type="text" placeholder="Ej: Vuelo directo. No incluye refrigerio." value={v.obs} onChange={e => actualizarVuelo(v.id, 'obs', e.target.value)} /></div>
                   </div>
                 ))}
@@ -264,23 +220,35 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 2: TARIFARIO */}
+        {/* SECCIÓN 2: TARIFARIO (Alineación Mejorada) */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
-        <div className="form-group-row" style={{ background: '#fff5f0', padding: '15px', borderRadius: '8px', alignItems: 'flex-end', border: '1px solid #ffedd5', flexWrap: 'wrap' }}>
-          <div className="form-group" style={{ minWidth: '150px' }}><label style={{ color: '#ef5a1a' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
-          <div className="form-group" style={{ flex: 1.5, minWidth: '150px' }}><label style={{ color: '#ef5a1a' }}>Nombre Hotel *</label><input type="text" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} /></div>
-          <div className="form-group" style={{ flex: 1.5, minWidth: '180px' }}><label style={{ color: '#ef5a1a' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
-          <div className="form-group"><label>Doble *</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} /></div>
-          <div className="form-group"><label>Triple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} /></div>
-          <div className="form-group"><label>Cuádruple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.cuadruple} onChange={e => setTempSalida({...tempSalida, cuadruple: e.target.value})} /></div>
-          <div className="form-group"><label>Single</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} /></div>
-          <button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '42px', minWidth: '80px' }}>+ Fila</button>
+        <div style={{ background: '#fff5f0', padding: '20px', borderRadius: '12px', border: '1px solid #ffedd5' }}>
+          
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            
+            {/* BLOQUE IZQUIERDO (Fechas y Hoteles) */}
+            <div style={{ flex: '1.5', display: 'flex', gap: '10px', minWidth: '300px' }}>
+              <div className="form-group" style={{ flex: 1 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} style={{ padding: '8px' }} /></div>
+              <div className="form-group" style={{ flex: 2 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Nombre Hotel *</label><input type="text" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} style={{ padding: '8px' }} /></div>
+              <div className="form-group" style={{ flex: 2 }}><label style={{ color: '#ef5a1a', fontSize: '0.85rem' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} style={{ padding: '8px' }}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
+            </div>
+
+            {/* BLOQUE DERECHO (Precios y Botón) */}
+            <div style={{ flex: '1', display: 'flex', gap: '8px', minWidth: '350px' }}>
+              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#11173d', fontWeight: 'bold' }}>Doble *</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.doble} onChange={e => setTempSalida({...tempSalida, doble: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
+              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Triple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.triple} onChange={e => setTempSalida({...tempSalida, triple: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
+              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Cuádruple</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.cuadruple} onChange={e => setTempSalida({...tempSalida, cuadruple: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
+              <div className="form-group" style={{ flex: 1, margin: 0 }}><label style={{ fontSize: '0.8rem', color: '#4b5563' }}>Single</label><input type="number" placeholder={infoGeneral.moneda} value={tempSalida.single} onChange={e => setTempSalida({...tempSalida, single: e.target.value})} style={{ padding: '8px', textAlign: 'center' }} /></div>
+              <div style={{ paddingBottom: '3px' }}><button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '40px', padding: '0 15px', borderRadius: '6px' }}>+ Fila</button></div>
+            </div>
+            
+          </div>
         </div>
 
         {salidas.length > 0 && (
           <table style={{ width: '100%', marginTop: '15px', borderCollapse: 'collapse', fontSize: '0.9em', border: '1px solid #ddd' }}>
             <thead><tr style={{ background: '#f3f4f6', borderBottom: '2px solid #ddd' }}><th>Salida</th><th>Hotel/Régimen</th><th>Doble</th><th>Triple</th><th>Cuádruple</th><th>Single</th><th></th></tr></thead>
-            <tbody>{salidas.map(s => (<tr key={s.id} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '10px', fontWeight: 'bold' }}>{s.fecha}</td><td style={{ padding: '10px' }}>{s.hotelRegimen}</td><td style={{ padding: '10px' }}>${s.doble}</td><td style={{ padding: '10px' }}>{s.triple ? `$${s.triple}` : '-'}</td><td style={{ padding: '10px' }}>{s.cuadruple ? `$${s.cuadruple}` : '-'}</td><td style={{ padding: '10px' }}>{s.single ? `$${s.single}` : '-'}</td><td style={{ padding: '10px', textAlign: 'right' }}><button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold' }}>X</button></td></tr>))}</tbody>
+            <tbody>{salidas.map(s => (<tr key={s.id} style={{ borderBottom: '1px solid #eee' }}><td style={{ padding: '10px', fontWeight: 'bold' }}>{s.fecha}</td><td style={{ padding: '10px' }}>{s.hotelRegimen}</td><td style={{ padding: '10px', textAlign: 'center', fontWeight: 'bold' }}>${s.doble}</td><td style={{ padding: '10px', textAlign: 'center' }}>{s.triple ? `$${s.triple}` : '-'}</td><td style={{ padding: '10px', textAlign: 'center' }}>{s.cuadruple ? `$${s.cuadruple}` : '-'}</td><td style={{ padding: '10px', textAlign: 'center' }}>{s.single ? `$${s.single}` : '-'}</td><td style={{ padding: '10px', textAlign: 'right' }}><button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer' }}>X</button></td></tr>))}</tbody>
           </table>
         )}
 
@@ -298,19 +266,34 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 4 */}
+        {/* SECCIÓN 4 (Actualizada con Opcionales y Fecha en Excursión) */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>4. Otros Servicios ({esAereo ? 'Traslados, Hoteles extras, Excursiones' : 'Hoteles, Excursiones'})</h3>
         <div id="servicios-container">
           {servicios.map(s => (
-            <div key={s.id} style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px', marginBottom: '10px', position: 'relative' }}>
-              <button type="button" onClick={() => setServicios(servicios.filter(x => x.id !== s.id))} style={{ position: 'absolute', right: '15px', top: '15px', color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer' }}>X</button>
-              <h4 style={{ margin: '0 0 10px 0', textTransform: 'uppercase', fontSize: '0.9em', color: '#ef5a1a' }}>{s.tipo}</h4>
+            <div key={s.id} style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '12px', marginBottom: '15px', position: 'relative', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+              <button type="button" onClick={() => setServicios(servicios.filter(x => x.id !== s.id))} style={{ position: 'absolute', right: '15px', top: '15px', color: '#ef4444', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '15px', borderBottom: '1px dashed #e5e7eb', paddingBottom: '10px' }}>
+                <h4 style={{ margin: 0, textTransform: 'uppercase', fontSize: '1rem', color: '#ef5a1a', fontWeight: '900' }}>{s.tipo}</h4>
+                {/* CHECKBOX OPCIONAL */}
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', color: '#0369a1', fontWeight: 'bold', fontSize: '0.9rem', background: '#e0f2fe', padding: '4px 10px', borderRadius: '15px' }}>
+                  <input type="checkbox" checked={s.opcional || false} onChange={(e) => actualizarServicio(s.id, 'opcional', e.target.checked)} style={{ width: '16px', height: '16px', accentColor: '#0284c7' }} />
+                  Marcar como Opcional (Adicional)
+                </label>
+              </div>
               
               {s.tipo === 'traslado' ? (
                 <div className="form-group-row">
                   <div className="form-group" style={{ flex: 1, display: 'flex', gap: '15px', alignItems: 'center' }}><label><input type="checkbox" checked={s.in || false} onChange={(e) => actualizarServicio(s.id, 'in', e.target.checked)} /> IN</label><label><input type="checkbox" checked={s.out || false} onChange={(e) => actualizarServicio(s.id, 'out', e.target.checked)} /> OUT</label></div>
                   <div className="form-group" style={{ flex: 2 }}><label>Detalle</label><input type="text" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
                   <div className="form-group" style={{ flex: 2 }}><label>Notas</label><input type="text" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
+                </div>
+              ) : s.tipo === 'excursion' ? (
+                // BLOQUE EXCURSIÓN REFINADO
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+                  <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Nombre de la Excursión</label><input type="text" placeholder="Ej: Pan de Azúcar" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
+                  <div className="form-group" style={{ flex: '1 1 150px', margin: 0 }}><label>Fecha y Hora (Opcional)</label><input type="datetime-local" value={s.fechaHora || ''} onChange={(e) => actualizarServicio(s.id, 'fechaHora', e.target.value)} /></div>
+                  <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Notas / Observaciones</label><input type="text" placeholder="Ej: No incluye entrada al parque" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
                 </div>
               ) : (
                 <div className="form-group-row">
@@ -342,17 +325,11 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         </div>
 
-        {/* SECCIÓN 6: OBSERVACIONES GENERALES */}
+        {/* SECCIÓN 6 */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>6. Observaciones Generales</h3>
         <div style={{ padding: '15px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #eee' }}>
-          <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: '#6b7280' }}>Información adicional, requisitos migratorios, tasas no incluidas, etc.</label>
-          <textarea 
-            rows="4" 
-            style={{ width: '100%', padding: '15px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical' }} 
-            placeholder="Ej: Se requiere vacuna contra la fiebre amarilla. El hotel cobra tasa ecoturística al check-in..."
-            value={observaciones} 
-            onChange={(e) => setObservaciones(e.target.value)}
-          ></textarea>
+          <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: '#6b7280' }}>Información adicional, requisitos migratorios, tasas, etc.</label>
+          <textarea rows="4" style={{ width: '100%', padding: '15px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical' }} value={observaciones} onChange={(e) => setObservaciones(e.target.value)}></textarea>
         </div>
 
         <div style={{ textAlign: 'right', marginTop: '40px', borderTop: '2px solid #eee', paddingTop: '20px' }}>

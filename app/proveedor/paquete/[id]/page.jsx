@@ -3,8 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import Loader from '@/components/shared/Loader';
-
+import Loader from '@/components/Loader';
 
 const MARKUP_AGENCIA = 1.20; 
 
@@ -16,14 +15,6 @@ const getServicioIcon = (tipo) => {
   if (t === 'excursion') return '🌲';
   if (t === 'seguro') return '🛡️';
   return '➕';
-};
-
-// Función para formatear fecha a DD/MM/AAAA
-const formatoArgentino = (fechaString) => {
-  if (!fechaString) return '';
-  const partes = fechaString.split('-');
-  if (partes.length !== 3) return fechaString;
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
 };
 
 export default function DetallePaqueteMayorista() {
@@ -44,7 +35,6 @@ export default function DetallePaqueteMayorista() {
           const data = { id: docSnap.id, ...docSnap.data() };
           setPaquete(data);
           if (data.tarifario && data.tarifario.length > 0) {
-            // Ordenar fechas cronológicamente
             const fechasOrdenadas = [...new Set(data.tarifario.map(t => t.fecha))].sort();
             setFechaSeleccionada(fechasOrdenadas[0]);
           }
@@ -57,19 +47,19 @@ export default function DetallePaqueteMayorista() {
     cargarPaquete();
   }, [params.id]);
 
-  if (loading) {
-    return <Loader visible={true} text="Cargando viaje..." />;
-  }
-  
+  if (loading) return <Loader visible={true} text="Cargando viaje..." />;
   if (!paquete) return <div style={{ padding: '50px', textAlign: 'center', color: 'red', fontWeight: 'bold' }}>❌ El paquete no existe o fue eliminado.</div>;
 
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
   const preciosDoble = paquete.tarifario?.map(t => parseFloat(t.doble) || 0).filter(p => p > 0) || [];
   const precioDesde = preciosDoble.length > 0 ? Math.round(Math.min(...preciosDoble) * MARKUP_AGENCIA) : 0;
   
-  // Extraemos las fechas únicas que cargó el proveedor
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
+  
+  // Separamos servicios incluidos de opcionales
+  const serviciosIncluidos = (paquete.servicios || []).filter(s => !s.opcional);
+  const serviciosOpcionales = (paquete.servicios || []).filter(s => s.opcional);
   
   const abrirLightbox = (index) => { setImagenActivaIndex(index); setLightboxAbierto(true); };
   const cerrarLightbox = () => setLightboxAbierto(false);
@@ -142,26 +132,49 @@ export default function DetallePaqueteMayorista() {
       {/* 2. SERVICIOS E ITINERARIO */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '50px', marginBottom: '50px' }}>
         
-        {/* Servicios */}
+        {/* Servicios (Dos bloques: Incluidos y Opcionales) */}
         <div style={{ flex: '1 1 300px' }}>
           <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Servicios Incluidos</h3>
-          {paquete.servicios && paquete.servicios.length > 0 ? (
+          {serviciosIncluidos.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-              {paquete.servicios.map((s, idx) => (
+              {serviciosIncluidos.map((s, idx) => (
                 <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px 0', borderLeft: '3px solid #e5e7eb', paddingLeft: '15px' }}>
                   <span style={{ fontSize: '1.5rem', lineHeight: '1', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }}>{getServicioIcon(s.tipo)}</span>
                   <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <strong style={{ color: '#11173d', textTransform: 'uppercase', fontSize: '0.9rem', letterSpacing: '0.5px' }}>
                       {s.tipo} {s.in ? ' (IN)' : ''} {s.out ? ' (OUT)' : ''}
                     </strong>
-                    <span style={{ color: '#4b5563', fontSize: '0.95rem', marginTop: '2px', fontWeight: '500' }}>{s.detalle1}</span>
+                    <span style={{ color: '#4b5563', fontSize: '0.95rem', marginTop: '2px', fontWeight: '500' }}>
+                      {s.detalle1} {s.fechaHora ? ` (${new Date(s.fechaHora).toLocaleString('es-AR', {dateStyle:'short', timeStyle:'short'})})` : ''}
+                    </span>
                     {s.detalle2 && <span style={{ color: '#9ca3af', fontSize: '0.85rem', marginTop: '2px' }}>{s.detalle2}</span>}
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.9rem' }}>No hay servicios detallados.</p>
+            <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.9rem' }}>No hay servicios incluidos detallados.</p>
+          )}
+
+          {/* Adicionales Opcionales */}
+          {serviciosOpcionales.length > 0 && (
+            <>
+              <h3 style={{ color: '#0369a1', fontSize: '1.1rem', fontWeight: 900, marginBottom: '15px', marginTop: '30px' }}>Opcionales Recomendados</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {serviciosOpcionales.map((s, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '15px', padding: '12px', background: '#f0f9ff', borderRadius: '8px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '1.2rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <strong style={{ color: '#0369a1', fontSize: '0.85rem' }}>{s.tipo}</strong>
+                      <span style={{ color: '#11173d', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                        {s.detalle1} {s.fechaHora ? ` - ${new Date(s.fechaHora).toLocaleString('es-AR', {dateStyle:'short', timeStyle:'short'})}` : ''}
+                      </span>
+                      {s.detalle2 && <span style={{ color: '#6b7280', fontSize: '0.8rem' }}>{s.detalle2}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
 
@@ -186,19 +199,22 @@ export default function DetallePaqueteMayorista() {
 
       <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
-      {/* 3. CALENDARIO ESTILO GOOGLE Y TARIFARIO */}
+      {/* 3. CALENDARIO Y TARIFARIO */}
       <div>
         <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, marginBottom: '25px' }}>
           Seleccioná tu fecha de Salida
         </h3>
         
-        {/* Mini Calendario de Fechas Disponibles */}
+        {/* Mini Calendario de Fechas Disponibles (AHORA CON AÑO) */}
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '40px' }}>
           {fechasUnicasISO.length > 0 ? (
             fechasUnicasISO.map((fecha) => {
               const estaSeleccionada = fechaSeleccionada === fecha;
-              const dia = fecha.split('-')[2];
-              const mesNum = fecha.split('-')[1];
+              const partes = fecha.split('-');
+              const anio = partes[0];
+              const mesNum = partes[1];
+              const dia = partes[2];
+              
               const mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
               const mesNombre = mesesCortos[parseInt(mesNum, 10) - 1];
 
@@ -207,7 +223,7 @@ export default function DetallePaqueteMayorista() {
                   key={fecha}
                   onClick={() => setFechaSeleccionada(fecha)}
                   style={{
-                    width: '75px', height: '85px', borderRadius: '12px', cursor: 'pointer',
+                    width: '85px', padding: '10px 0', borderRadius: '12px', cursor: 'pointer',
                     background: estaSeleccionada ? '#11173d' : '#fff',
                     border: estaSeleccionada ? '2px solid #11173d' : '2px solid #e5e7eb',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -215,17 +231,18 @@ export default function DetallePaqueteMayorista() {
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     transform: estaSeleccionada ? 'translateY(-3px)' : 'translateY(0)'
                   }}
-                  onMouseOver={e => { if (!estaSeleccionada) e.currentTarget.style.borderColor = '#ef5a1a'; }}
-                  onMouseOut={e => { if (!estaSeleccionada) e.currentTarget.style.borderColor = '#e5e7eb'; }}
                 >
                   <div style={{ color: estaSeleccionada ? '#fff' : '#ef5a1a', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>
                     {mesNombre}
                   </div>
-                  <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1' }}>
+                  <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1', marginBottom: '4px' }}>
                     {dia}
                   </div>
-                  {/* Puntito Naranja Inferior */}
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: estaSeleccionada ? '#ef5a1a' : '#d1d5db', marginTop: '6px' }}></div>
+                  {/* El AÑO sumado bien lindo abajo del día */}
+                  <div style={{ color: estaSeleccionada ? '#9ca3af' : '#6b7280', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>
+                    {anio}
+                  </div>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: estaSeleccionada ? '#ef5a1a' : 'transparent', marginTop: '4px' }}></div>
                 </div>
               );
             })
