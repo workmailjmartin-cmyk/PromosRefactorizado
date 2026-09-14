@@ -119,10 +119,10 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
   const agregarSalida = () => {
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor) {
-      // Mantenemos hotelRegimen viejo por compatibilidad, pero guardamos todo por separado
       const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
-      setSalidas([...salidas, { 
-        id: Date.now(), 
+      
+      const nuevaSalida = { 
+        id: tempSalida.id || Date.now(), // Mantiene el ID si estamos editando
         fecha: tempSalida.fecha, 
         hotelRegimen: hotelYRegimenCombinado, 
         hotelNombre: tempSalida.hotelNombre,
@@ -133,9 +133,36 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         triple: tempSalida.triple, 
         cuadruple: tempSalida.cuadruple, 
         single: tempSalida.single 
-      }]);
-      setTempSalida(tarifaVacia);
+      };
+
+      // Agregamos la nueva fila y ORDENAMOS todo por fecha
+      const nuevasSalidas = [...salidas.filter(s => s.id !== nuevaSalida.id), nuevaSalida];
+      nuevasSalidas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+      
+      setSalidas(nuevasSalidas);
+      setTempSalida(tarifaVacia); // Limpiamos las cajas
     } else { alert("La Fecha, Hotel, Régimen y Precio Doble (Adulto) son obligatorios."); }
+  };
+
+  // Función nueva para subir los datos de la fila a las cajas de edición
+  const editarSalida = (id) => {
+    const salidaAEditar = salidas.find(s => s.id === id);
+    if (salidaAEditar) {
+      setTempSalida({
+        id: salidaAEditar.id,
+        fecha: salidaAEditar.fecha,
+        hotelNombre: salidaAEditar.hotelNombre || salidaAEditar.hotelRegimen?.split(' - ')[0] || '',
+        hotelEstrellas: salidaAEditar.hotelEstrellas || '3',
+        hotelUbicacion: salidaAEditar.hotelUbicacion || '',
+        hotelRegimen: salidaAEditar.regimen || salidaAEditar.hotelRegimen?.split(' - ')[1] || '',
+        doble: salidaAEditar.doble,
+        triple: salidaAEditar.triple,
+        cuadruple: salidaAEditar.cuadruple,
+        single: salidaAEditar.single
+      });
+      // La sacamos momentáneamente de la tabla hasta que vuelva a poner "Guardar Fila"
+      setSalidas(salidas.filter(s => s.id !== id));
+    }
   };
 
   // OTROS
@@ -330,13 +357,23 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                   const regimen = s.regimen || (s.hotelRegimen ? s.hotelRegimen.split(' - ')[1] : '');
                   return (
                     <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word' }}><b>{s.fecha}</b><br/>{nombre}</td>
-                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word' }}>{regimen}</td>
-                      <td style={{ borderLeft: '1px solid #ddd', fontWeight: 'bold' }}>{s.doble.mayor ? `$${s.doble.mayor}` : '-'}</td><td>{s.doble.menor || '-'}</td><td>{s.doble.child || '-'}</td>
-                      <td style={{ borderLeft: '1px solid #ddd' }}>{s.triple.mayor ? `$${s.triple.mayor}` : '-'}</td><td>{s.triple.menor || '-'}</td><td>{s.triple.child || '-'}</td>
-                      <td style={{ borderLeft: '1px solid #ddd' }}>{s.cuadruple.mayor ? `$${s.cuadruple.mayor}` : '-'}</td><td>{s.cuadruple.menor || '-'}</td><td>{s.cuadruple.child || '-'}</td>
-                      <td style={{ borderLeft: '1px solid #ddd' }}>{s.single.mayor ? `$${s.single.mayor}` : '-'}</td>
-                      <td style={{ padding: '8px' }}><button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer' }}>X</button></td>
+                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle' }}><b>{s.fecha}</b><br/>{nombre}</td>
+                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle' }}>{regimen}</td>
+                      
+                      <td style={{ borderLeft: '1px solid #ddd', fontWeight: 'bold', verticalAlign: 'middle' }}>{s.doble.mayor ? `$${s.doble.mayor}` : '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.doble.menor || '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.doble.child || '-'}</td>
+                      
+                      <td style={{ borderLeft: '1px solid #ddd', verticalAlign: 'middle' }}>{s.triple.mayor ? `$${s.triple.mayor}` : '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.triple.menor || '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.triple.child || '-'}</td>
+                      
+                      <td style={{ borderLeft: '1px solid #ddd', verticalAlign: 'middle' }}>{s.cuadruple.mayor ? `$${s.cuadruple.mayor}` : '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.cuadruple.menor || '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.cuadruple.child || '-'}</td>
+                      
+                      <td style={{ borderLeft: '1px solid #ddd', verticalAlign: 'middle' }}>{s.single.mayor ? `$${s.single.mayor}` : '-'}</td>
+                      
+                      <td style={{ padding: '8px', verticalAlign: 'middle' }}>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                          <button type="button" onClick={() => editarSalida(s.id)} style={{ color: '#0369a1', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>✏️</button>
+                          <button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>X</button>
+                        </div>
+                      </td>
                     </tr>
                   )
                 })}
