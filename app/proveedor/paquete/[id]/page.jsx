@@ -1,9 +1,12 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import Loader from '@/components/Loader';
+import Loader from '@/components/shared/Loader'; // <-- Uso tu loader original
+import { useStaffAuth } from '@/hooks/useStaffAuth';
+import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
+import Swal from 'sweetalert2';
 
 const MARKUP_AGENCIA = 1.20; 
 
@@ -19,37 +22,83 @@ const getServicioIcon = (tipo) => {
 
 export default function DetallePaqueteMayorista() {
   const params = useParams();
+  const { currentUser, userData } = useStaffAuth();
+  
   const [paquete, setPaquete] = useState(null);
   const [loading, setLoading] = useState(true);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
+  
+  // Modos de Vista
   const [lightboxAbierto, setLightboxAbierto] = useState(false);
   const [imagenActivaIndex, setImagenActivaIndex] = useState(0);
+  const [modoEdicion, setModoEdicion] = useState(false); // <-- Controla si vemos el folleto o el form
+
+  const cargarPaquete = async () => {
+    if (!params?.id) return;
+    try {
+      const docRef = doc(db, 'enlatados', params.id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = { id: docSnap.id, ...docSnap.data() };
+        setPaquete(data);
+        if (data.tarifario && data.tarifario.length > 0) {
+          const fechasOrdenadas = [...new Set(data.tarifario.map(t => t.fecha))].sort();
+          setFechaSeleccionada(fechasOrdenadas[0]);
+        }
+      }
+    } catch (error) {
+      console.error("Error al cargar:", error);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const cargarPaquete = async () => {
-      if (!params?.id) return;
-      try {
-        const docRef = doc(db, 'enlatados', params.id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = { id: docSnap.id, ...docSnap.data() };
-          setPaquete(data);
-          if (data.tarifario && data.tarifario.length > 0) {
-            const fechasOrdenadas = [...new Set(data.tarifario.map(t => t.fecha))].sort();
-            setFechaSeleccionada(fechasOrdenadas[0]);
-          }
-        }
-      } catch (error) {
-        console.error("Error al cargar:", error);
-      }
-      setLoading(false);
-    };
     cargarPaquete();
   }, [params.id]);
 
-  if (loading) return <Loader visible={true} text="Cargando viaje..." />;
-  if (!paquete) return <div style={{ padding: '50px', textAlign: 'center', color: 'red', fontWeight: 'bold' }}>❌ El paquete no existe o fue eliminado.</div>;
+  // Función para guardar los cambios desde adentro del detalle
+  const guardarEdicion = async (datosActualizados) => {
+    try {
+      const docRef = doc(db, 'enlatados', datosActualizados.id);
+      await updateDoc(docRef, {
+        ...datosActualizados,
+        fecha_actualizacion: new Date().toLocaleDateString('es-AR')
+      });
+      
+      Swal.fire({
+        icon: 'success',
+        title: '¡Paquete Actualizado!',
+        text: 'Los cambios se reflejarán inmediatamente.',
+        confirmButtonColor: '#11173d'
+      });
 
+      setModoEdicion(false);
+      cargarPaquete(); // Refrescamos el folleto con la data nueva
+    } catch (error) {
+      Swal.fire('Error', 'Hubo un problema al actualizar.', 'error');
+    }
+  };
+
+  if (loading) return <Loader visible={true} text="Cargando viaje..." />;
+  if (!paquete) return <div style={{ padding: '50px', textAlign: 'center', color: 'red', fontWeight: 'bold' }}>❌ El paquete no existe.</div>;
+
+  // Lógica de Permisos
+  const esPropietario = paquete.proveedor_email === currentUser?.email;
+  const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
+  const puedeEditar = esPropietario || esGestor;
+
+  // Si tocamos Editar, renderizamos el Formulario directamente acá
+  if (modoEdicion) {
+    return (
+      <FormularioEnlatado 
+        paqueteAEditar={paquete}
+        onCancel={() => setModoEdicion(false)}
+        onSave={guardarEdicion}
+      />
+    );
+  }
+
+  // --- RENDERIZADO DEL FOLLETO (Si no estamos editando) ---
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
   const preciosDoble = paquete.tarifario?.map(t => parseFloat(t.doble) || 0).filter(p => p > 0) || [];
   const precioDesde = preciosDoble.length > 0 ? Math.round(Math.min(...preciosDoble) * MARKUP_AGENCIA) : 0;
@@ -57,7 +106,6 @@ export default function DetallePaqueteMayorista() {
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
   
-  // Separamos servicios incluidos de opcionales
   const serviciosIncluidos = (paquete.servicios || []).filter(s => !s.opcional);
   const serviciosOpcionales = (paquete.servicios || []).filter(s => s.opcional);
   
@@ -67,10 +115,20 @@ export default function DetallePaqueteMayorista() {
   const antImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev === 0 ? paquete.imagenes.length - 1 : prev - 1)); };
 
   return (
-    <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px' }}>
+    <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
       
+      {/* BOTÓN MAGICO DE EDICIÓN (Arriba a la derecha) */}
+      {puedeEditar && (
+        <button 
+          onClick={() => setModoEdicion(true)}
+          style={{ position: 'absolute', top: '20px', right: '20px', background: '#ef5a1a', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(239, 90, 26, 0.3)', zIndex: 10 }}
+        >
+          ✏️ Editar este Paquete
+        </button>
+      )}
+
       {/* 1. SECCIÓN SUPERIOR: 70/30 */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px', marginTop: '15px' }}>
         
         {/* GALERÍA (70%) */}
         <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -98,8 +156,8 @@ export default function DetallePaqueteMayorista() {
 
         {/* INFO (30%) */}
         <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'inline-block', background: '#ef5a1a', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', alignSelf: 'flex-start', letterSpacing: '0.5px' }}>
-            {paquete.transporte === 'aereo' ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.origenPrincipal}
+          <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', alignSelf: 'flex-start', letterSpacing: '0.5px' }}>
+            {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.origenPrincipal}
           </div>
           
           <h1 style={{ margin: '0 0 15px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
@@ -122,7 +180,7 @@ export default function DetallePaqueteMayorista() {
               <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
               {paquete.moneda || 'USD'} ${precioDesde}
             </div>
-            <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio por persona en base doble</span>
+            <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio neto para Agencia ({MARKUP_AGENCIA * 100 - 100}% de markup aplicado)</span>
           </div>
         </div>
       </div>
@@ -165,7 +223,7 @@ export default function DetallePaqueteMayorista() {
                   <div key={idx} style={{ display: 'flex', gap: '15px', padding: '12px', background: '#f0f9ff', borderRadius: '8px', marginBottom: '10px' }}>
                     <span style={{ fontSize: '1.2rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
                     <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <strong style={{ color: '#0369a1', fontSize: '0.85rem' }}>{s.tipo}</strong>
+                      <strong style={{ color: '#0369a1', fontSize: '0.85rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
                       <span style={{ color: '#11173d', fontSize: '0.9rem', fontWeight: 'bold' }}>
                         {s.detalle1} {s.fechaHora ? ` - ${new Date(s.fechaHora).toLocaleString('es-AR', {dateStyle:'short', timeStyle:'short'})}` : ''}
                       </span>
@@ -205,7 +263,6 @@ export default function DetallePaqueteMayorista() {
           Seleccioná tu fecha de Salida
         </h3>
         
-        {/* Mini Calendario de Fechas Disponibles (AHORA CON AÑO) */}
         <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '40px' }}>
           {fechasUnicasISO.length > 0 ? (
             fechasUnicasISO.map((fecha) => {
@@ -238,7 +295,6 @@ export default function DetallePaqueteMayorista() {
                   <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1', marginBottom: '4px' }}>
                     {dia}
                   </div>
-                  {/* El AÑO sumado bien lindo abajo del día */}
                   <div style={{ color: estaSeleccionada ? '#9ca3af' : '#6b7280', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>
                     {anio}
                   </div>
@@ -251,7 +307,6 @@ export default function DetallePaqueteMayorista() {
           )}
         </div>
 
-        {/* Tabla Minimalista */}
         {tarifarioFiltrado.length > 0 && (
           <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
@@ -280,7 +335,17 @@ export default function DetallePaqueteMayorista() {
         )}
       </div>
 
-      {/* 4. MODAL GALERÍA */}
+      {/* 4. OBSERVACIONES GENERALES */}
+      {paquete.observaciones && (
+        <div style={{ marginTop: '40px', padding: '20px', background: '#fff5f0', borderRadius: '12px', borderLeft: '4px solid #ef5a1a' }}>
+          <h3 style={{ color: '#ef5a1a', fontSize: '1.1rem', margin: '0 0 10px 0', fontWeight: '900' }}>⚠️ Observaciones Importantes</h3>
+          <p style={{ margin: 0, color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+            {paquete.observaciones}
+          </p>
+        </div>
+      )}
+
+      {/* MODAL GALERÍA */}
       {lightboxAbierto && paquete.imagenes && (
         <div onClick={cerrarLightbox} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
           <button onClick={cerrarLightbox} style={{ position: 'absolute', top: '30px', right: '40px', background: 'none', border: 'none', color: '#fff', fontSize: '2.5rem', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
