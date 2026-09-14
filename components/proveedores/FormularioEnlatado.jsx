@@ -72,6 +72,9 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const [servicios, setServicios] = useState([]);
   const [servicioSeleccionado, setServicioSeleccionado] = useState('');
   const [imagenes, setImagenes] = useState([]);
+  
+  // 6. Observaciones Generales
+  const [observaciones, setObservaciones] = useState('');
 
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -89,13 +92,13 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       setItinerario(paqueteAEditar.itinerario || []);
       setServicios(paqueteAEditar.servicios || []);
       setImagenes(paqueteAEditar.imagenes || []);
+      setObservaciones(paqueteAEditar.observaciones || '');
     }
   }, [paqueteAEditar]);
 
   const esBus = infoGeneral.transporte.includes('bus');
   const esAereo = infoGeneral.transporte.includes('aereo');
 
-  // Si cambia la provincia, blanqueamos el aeropuerto para que no quede una combinación irreal
   const handleInfoChange = (e) => {
     const { name, value } = e.target;
     if (name === 'origenProvincia') {
@@ -107,7 +110,9 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
   // --- Handlers de Vuelos ---
   const agregarVuelo = () => {
-    setVuelos([...vuelos, { id: Date.now(), aerolinea: '', origen: '', fechaSalida: '', horaSalida: '', destino: '', fechaLlegada: '', horaLlegada: '', equipaje: '', obs: '' }]);
+    // Si es el primer vuelo, le precargamos el aeropuerto de salida que eligieron arriba
+    const origenInicial = vuelos.length === 0 ? infoGeneral.origenAeropuerto : '';
+    setVuelos([...vuelos, { id: Date.now(), aerolinea: '', origen: origenInicial, fechaSalida: '', horaSalida: '', destino: '', fechaLlegada: '', horaLlegada: '', equipaje: '', obs: '' }]);
   };
   const actualizarVuelo = (id, campo, valor) => setVuelos(vuelos.map(v => v.id === id ? { ...v, [campo]: valor } : v));
   const eliminarVuelo = (id) => setVuelos(vuelos.filter(v => v.id !== id));
@@ -151,7 +156,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     
     const paqueteFinal = {
       ...infoGeneral, origenPrincipal: infoGeneral.origenAeropuerto || infoGeneral.origenProvincia,
-      paradas_ascenso: paradas, vuelos, tarifario: salidas, itinerario, servicios, imagenes
+      paradas_ascenso: paradas, vuelos, tarifario: salidas, itinerario, servicios, imagenes, observaciones
     };
     if (paqueteAEditar?.id) paqueteFinal.id = paqueteAEditar.id;
     onSave(paqueteFinal);
@@ -179,7 +184,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           <div className="form-group" style={{ flex: '1 1 80px' }}><label>Días</label><input type="number" required name="dias" value={infoGeneral.dias} onChange={handleInfoChange} /></div>
           <div className="form-group" style={{ flex: '1 1 80px' }}><label>Noches</label><input type="number" required name="noches" value={infoGeneral.noches} onChange={handleInfoChange} /></div>
           
-          {/* Lógica de Provincias centralizada */}
           <div className="form-group" style={{ flex: '2 1 200px' }}>
             <label>Provincia Salida *</label>
             <select required name="origenProvincia" value={infoGeneral.origenProvincia} onChange={handleInfoChange}>
@@ -189,7 +193,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             </select>
           </div>
           
-          {/* Si es aéreo, mostramos tu lista de aeropuertos de la provincia seleccionada */}
           <div className="form-group" style={{ flex: '2 1 200px' }}>
             <label>{esAereo ? 'Aeropuerto de Salida *' : 'Ciudad / Terminal *'}</label>
             {esAereo ? (
@@ -230,13 +233,15 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             </div>
             
             {vuelos.length === 0 ? (
-              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón <b>Agregar Tramo</b> para sumar los vuelos.</p>           ) : (
+              <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón Agregar Tramo para sumar los vuelos.</p>
+            ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {vuelos.map((v, idx) => (
                   <div key={v.id} style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e0f2fe', position: 'relative' }}>
                     <button type="button" onClick={() => eliminarVuelo(v.id)} style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}>✕</button>
                     <b style={{ display: 'block', marginBottom: '10px', color: '#0369a1' }}>Tramo {idx + 1}</b>
                     
+                    {/* ALINEACIÓN PERFECTA: Arriba Aerolínea/Salida, Abajo Equipaje/Llegada */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Aerolínea</label><input type="text" value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida</label><input type="text" value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
@@ -244,14 +249,14 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Salida</label><input type="time" value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px', borderTop: '1px dashed #bae6fd', paddingTop: '10px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px', borderTop: '1px dashed #bae6fd', paddingTop: '15px' }}>
+                      <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido</label><select value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}>{OPCIONES_EQUIPAJE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Llegada</label><input type="text" value={v.destino} onChange={e => actualizarVuelo(v.id, 'destino', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada</label><input type="date" value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada</label><input type="time" value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Equipaje</label><select value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}>{OPCIONES_EQUIPAJE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
                     </div>
 
-                    <div className="form-group" style={{ margin: 0 }}><label>Observaciones del Vuelo</label><input type="text" placeholder="Ej: Vuelo directo. No incluye refrigerio." value={v.obs} onChange={e => actualizarVuelo(v.id, 'obs', e.target.value)} /></div>
+                    <div className="form-group" style={{ margin: 0, marginTop: '15px' }}><label>Observaciones del Vuelo</label><input type="text" placeholder="Ej: Vuelo directo. No incluye refrigerio." value={v.obs} onChange={e => actualizarVuelo(v.id, 'obs', e.target.value)} /></div>
                   </div>
                 ))}
               </div>
@@ -337,7 +342,20 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         </div>
 
-        <div style={{ textAlign: 'right', marginTop: '30px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
+        {/* SECCIÓN 6: OBSERVACIONES GENERALES */}
+        <h3 className="section-title" style={{ marginTop: '30px' }}>6. Observaciones Generales</h3>
+        <div style={{ padding: '15px', background: '#f9fafb', borderRadius: '8px', border: '1px solid #eee' }}>
+          <label style={{ display: 'block', marginBottom: '10px', fontWeight: 'bold', color: '#6b7280' }}>Información adicional, requisitos migratorios, tasas no incluidas, etc.</label>
+          <textarea 
+            rows="4" 
+            style={{ width: '100%', padding: '15px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical' }} 
+            placeholder="Ej: Se requiere vacuna contra la fiebre amarilla. El hotel cobra tasa ecoturística al check-in..."
+            value={observaciones} 
+            onChange={(e) => setObservaciones(e.target.value)}
+          ></textarea>
+        </div>
+
+        <div style={{ textAlign: 'right', marginTop: '40px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
           <button type="submit" disabled={loading} className="btn btn-primario" style={{ padding: '15px 40px', fontSize: '1.1em' }}>
             {loading ? 'Guardando...' : paqueteAEditar ? '💾 Guardar Cambios' : '🚀 Publicar Paquete'}
           </button>
