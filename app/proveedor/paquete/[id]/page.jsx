@@ -77,6 +77,11 @@ export default function DetallePaqueteMayorista() {
     return <FormularioEnlatado paqueteAEditar={paquete} onCancel={() => setModoEdicion(false)} onSave={guardarEdicion} />;
   }
 
+  const formatearPrecio = (valor) => {
+    if (!valor) return '-';
+    return Number(valor).toLocaleString('es-AR');
+  };
+
   // LÓGICA DE PRECIO PARA PAQUETES VIEJOS Y NUEVOS
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
   const preciosDoble = paquete.tarifario?.map(t => {
@@ -373,19 +378,19 @@ export default function DetallePaqueteMayorista() {
                         {tipoRegimen}
                       </td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${aplicarMarkup(doble.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${formatearPrecio(aplicarMarkup(doble.mayor))}` : '-'}</td>
                       <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.menor ? `$${aplicarMarkup(doble.menor)}` : '-'}</td>
                       <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.child ? `$${aplicarMarkup(doble.child)}` : '-'}</td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${aplicarMarkup(triple.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${formatearPrecio(aplicarMarkup(triple.mayor))}` : '-'}</td>
                       <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.menor ? `$${aplicarMarkup(triple.menor)}` : '-'}</td>
                       <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.child ? `$${aplicarMarkup(triple.child)}` : '-'}</td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${aplicarMarkup(cuadruple.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${formatearPrecio(aplicarMarkup(cuadruple.mayor))}` : '-'}</td>
                       <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.menor ? `$${aplicarMarkup(cuadruple.menor)}` : '-'}</td>
                       <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.child ? `$${aplicarMarkup(cuadruple.child)}` : '-'}</td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${aplicarMarkup(single.mayor)}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${formatearPrecio(aplicarMarkup(single.mayor))}` : '-'}</td>
                     </tr>
                   )
                 })}
