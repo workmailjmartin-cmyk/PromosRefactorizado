@@ -4,15 +4,17 @@ import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
 import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useStaffAuth } from '@/hooks/useStaffAuth';
-import Swal from 'sweetalert2'; // <-- Importamos SweetAlert2
+import { useAlert } from '@/contexts/AlertContext'; // <-- Importamos TU sistema de alertas
 
 const MARKUP_AGENCIA = 1.20; 
 
 export default function ProveedorDashboard() {
   const [mostrandoFormulario, setMostrandoFormulario] = useState(false);
-  const [paqueteAEditar, setPaqueteAEditar] = useState(null); // <-- Estado para saber qué paquete estamos editando
+  const [paqueteAEditar, setPaqueteAEditar] = useState(null); 
   
   const { currentUser, userData } = useStaffAuth();
+  const { showAlert } = useAlert(); // <-- Usamos tu función (si se llama distinto en tu Context, avísame)
+  
   const [paquetes, setPaquetes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtroCreador, setFiltroCreador] = useState('todos');
@@ -34,34 +36,27 @@ export default function ProveedorDashboard() {
     cargarPaquetes();
   }, []);
 
-  // Función inteligente: Sirve tanto para crear nuevos como para actualizar existentes
   const guardarEnFirebase = async (datos) => {
     if (!currentUser || !userData) {
-      Swal.fire('Error', 'Problema de sesión. Volvé a ingresar.', 'error');
+      if(showAlert) showAlert('Error de sesión. Volvé a ingresar.', 'error');
+      else alert('Error de sesión. Volvé a ingresar.');
       return;
     }
     
-    // Si el objeto "datos" tiene un ID, significa que estamos editando
     const esEdicion = !!datos.id;
 
     try {
       if (esEdicion) {
-        // ACTUALIZAR PAQUETE EXISTENTE
         const docRef = doc(db, 'enlatados', datos.id);
         await updateDoc(docRef, {
           ...datos,
           fecha_actualizacion: new Date().toLocaleDateString('es-AR')
         });
         
-        Swal.fire({
-          icon: 'success',
-          title: '¡Actualizado!',
-          text: 'Los cambios se guardaron correctamente.',
-          confirmButtonColor: '#11173d'
-        });
+        if(showAlert) showAlert('¡Los cambios se guardaron correctamente!', 'success');
+        else alert('¡Los cambios se guardaron correctamente!');
 
       } else {
-        // CREAR PAQUETE NUEVO
         const paqueteNuevo = {
           ...datos,
           proveedor_email: currentUser.email,
@@ -72,12 +67,8 @@ export default function ProveedorDashboard() {
         };
         await addDoc(collection(db, 'enlatados'), paqueteNuevo);
         
-        Swal.fire({
-          icon: 'success',
-          title: '¡Publicado!',
-          text: 'El paquete ya está disponible en el mercado.',
-          confirmButtonColor: '#11173d'
-        });
+        if(showAlert) showAlert('¡El paquete ya está disponible en el mercado!', 'success');
+        else alert('¡El paquete ya está disponible en el mercado!');
       }
 
       setMostrandoFormulario(false);
@@ -85,7 +76,8 @@ export default function ProveedorDashboard() {
       cargarPaquetes(); 
     } catch (error) {
       console.error("Error guardando en Firebase:", error);
-      Swal.fire('Error', 'Hubo un problema al guardar. Intentá de nuevo.', 'error');
+      if(showAlert) showAlert('Hubo un problema al guardar. Intentá de nuevo.', 'error');
+      else alert('Hubo un problema al guardar. Intentá de nuevo.');
     }
   };
 
@@ -151,7 +143,7 @@ export default function ProveedorDashboard() {
 
       {mostrandoFormulario ? (
         <FormularioEnlatado 
-          paqueteAEditar={paqueteAEditar} // <-- Le pasamos los datos al form si estamos editando
+          paqueteAEditar={paqueteAEditar} 
           onCancel={cancelarEdicion} 
           onSave={guardarEnFirebase} 
         />
@@ -169,7 +161,6 @@ export default function ProveedorDashboard() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
               {paquetesFiltrados.map((pkg) => {
-                // Chequeamos si es el dueño O si es admin/editor
                 const esMio = pkg.proveedor_email === currentUser?.email || (userData?.rol === 'admin' || userData?.rol === 'editor');
                 const precioFinal = obtenerPrecioDesde(pkg.tarifario);
                 const imagenPortada = pkg.imagenes && pkg.imagenes.length > 0 ? pkg.imagenes[0] : '/placeholder.jpg'; 
@@ -213,8 +204,8 @@ export default function ProveedorDashboard() {
                       {esMio && (
                         <button 
                           className="btn"
-                          style={{ background: '#e5e7eb', color: '#4b5563', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold', cursor: 'pointer' }}
-                          onClick={() => abrirParaEditar(pkg)} // <-- ACÁ ABRIMOS LA MAGIA
+                          style={{ background: '#e5e7eb', color: '#4b5563', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold', cursor: 'pointer', border: 'none' }}
+                          onClick={() => abrirParaEditar(pkg)}
                         >
                           ✏️ Editar
                         </button>
