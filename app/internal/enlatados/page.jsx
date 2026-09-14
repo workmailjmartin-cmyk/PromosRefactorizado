@@ -169,13 +169,13 @@ export default function InternalEnlatadosDashboard() {
 
                   <div style={{ background: '#f9fafb', padding: '15px 20px', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
                     <a 
-                      href={`/proveedor/paquete/${pkg.id}`} 
+                      href={`/internal/enlatados/${pkg.id}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="btn"
                       style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold' }}
                     >
-                      👁️ Ver Folleto
+                      Ver Paquete
                     </a>
                     
                     {esGestor && (
