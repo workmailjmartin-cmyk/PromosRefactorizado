@@ -122,7 +122,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
       
       const nuevaSalida = { 
-        id: tempSalida.id || Date.now(), // Mantiene el ID si estamos editando
+        id: tempSalida.id || Date.now(), 
         fecha: tempSalida.fecha, 
         hotelRegimen: hotelYRegimenCombinado, 
         hotelNombre: tempSalida.hotelNombre,
@@ -135,18 +135,32 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         single: tempSalida.single 
       };
 
-      // Agregamos la nueva fila y ORDENAMOS todo por fecha
       const nuevasSalidas = [...salidas.filter(s => s.id !== nuevaSalida.id), nuevaSalida];
       nuevasSalidas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
       
       setSalidas(nuevasSalidas);
-      setTempSalida(tarifaVacia); // Limpiamos las cajas
+      setTempSalida(tarifaVacia);
     } else { alert("La Fecha, Hotel, Régimen y Precio Doble (Adulto) son obligatorios."); }
   };
 
-  // Función nueva para subir los datos de la fila a las cajas de edición
   const editarSalida = (id) => {
-    const salidaAEditar = salidas.find(s => s.id === id);
+    if (!window.confirm('¿Querés editar esta fila de tarifa?')) return;
+
+    let salidasActuales = [...salidas];
+
+    // Autoguardado: Si había otra fila editándose a la vez, la guardamos antes de subir la nueva
+    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.doble?.mayor) {
+      const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
+      const salidaPrevia = { 
+        ...tempSalida, 
+        id: tempSalida.id || Date.now(),
+        hotelRegimen: hotelYRegimenCombinado, 
+        regimen: tempSalida.hotelRegimen 
+      };
+      salidasActuales = [...salidasActuales.filter(s => s.id !== salidaPrevia.id), salidaPrevia];
+    }
+
+    const salidaAEditar = salidasActuales.find(s => s.id === id);
     if (salidaAEditar) {
       setTempSalida({
         id: salidaAEditar.id,
@@ -160,10 +174,19 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         cuadruple: salidaAEditar.cuadruple,
         single: salidaAEditar.single
       });
-      // La sacamos momentáneamente de la tabla hasta que vuelva a poner "Guardar Fila"
-      setSalidas(salidas.filter(s => s.id !== id));
+
+      const nuevasSalidas = salidasActuales.filter(s => s.id !== id);
+      nuevasSalidas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+      setSalidas(nuevasSalidas);
     }
   };
+
+  const eliminarSalida = (id) => {
+    if (window.confirm('¿Estás seguro de que querés eliminar esta tarifa?')) {
+      setSalidas(salidas.filter(x => x.id !== id));
+    }
+  };
+
 
   // OTROS
   const agregarDiaItinerario = () => { if (tempDia.titulo) { setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); setTempDia({ titulo: '', descripcion: '' }); } };
@@ -371,7 +394,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                       <td style={{ padding: '8px', verticalAlign: 'middle' }}>
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
                           <button type="button" onClick={() => editarSalida(s.id)} style={{ color: '#0369a1', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>✏️</button>
-                          <button type="button" onClick={() => setSalidas(salidas.filter(x => x.id !== s.id))} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>X</button>
+                          <button type="button" onClick={() => eliminarSalida(s.id)} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>X</button>
                         </div>
                       </td>
                     </tr>
