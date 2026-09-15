@@ -272,39 +272,37 @@ export default function InternalEnlatadosDashboard() {
                     </div>
                   </div>
 
-                  <div style={{ padding: '20px 20px 10px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  {/* CUERPO BLANCO DE LA TARJETA */}
+                  <div style={{ padding: '20px 20px 12px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ fontSize: '0.8em', color: '#6b7280', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>
                       {pkg.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Desde {pkg.transporte.includes('aereo') ? pkg.origenProvincia || pkg.origenPrincipal : pkg.origenPrincipal}
                     </div>
-                    <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: '#11173d', lineHeight: '1.2' }}>{pkg.destino}</h3>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '15px' }}>Proveedor: {pkg.proveedor_nombre}</div>
                     
+                    <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: '#11173d', lineHeight: '1.2' }}>{pkg.destino}</h3>
+                    
+                    {/* El proveedor fue eliminado de acá para limpiar la vista */}
+                    
+                    {/* Precio pegado al borde inferior */}
                     <div style={{ marginTop: 'auto', textAlign: 'right' }}>
-                      <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '5px' }}>
+                      <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '5px' }}>
                         <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 'normal' }}>desde</span>
                         {pkg.moneda || 'USD'} ${formatearPrecio(pkg.precioFinalCalculado)}
                       </div>
                     </div>
                   </div>
 
-                  <div style={{ background: '#f9fafb', padding: '15px 20px', borderTop: '1px solid #eee', display: 'flex', gap: '10px' }}>
+                  {/* PIE GRIS DE LA TARJETA (Solo el botón de Ver Paquete) */}
+                  <div style={{ background: '#f9fafb', padding: '15px 20px', borderTop: '1px solid #eee', display: 'flex' }}>
                     <a 
                       href={`/internal/enlatados/${pkg.id}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold' }}
+                      style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}
                     >
-                      Ver Paquete
+                       Ver Paquete
                     </a>
                     
-                    {esGestor && (
-                      <button 
-                        style={{ background: '#e5e7eb', color: '#4b5563', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold', cursor: 'pointer', border: 'none' }}
-                        onClick={() => abrirParaEditar(pkg)}
-                      >
-                        ✏️ Editar
-                      </button>
-                    )}
+                    {/* El botón de editar fue eliminado de acá. Se edita desde adentro. */}
                   </div>
                 </div>
               );
