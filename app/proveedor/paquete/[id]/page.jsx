@@ -8,8 +8,6 @@ import { useStaffAuth } from '@/hooks/useStaffAuth';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
 import { useAlert } from '@/contexts/AlertContext';
 
-const MARKUP_AGENCIA = 1.20; 
-
 const getServicioIcon = (tipo) => {
   const t = tipo?.toLowerCase();
   if (t === 'aereo') return '✈️';
@@ -32,62 +30,11 @@ export default function DetallePaqueteMayorista() {
   const [lightboxAbierto, setLightboxAbierto] = useState(false);
   const [imagenActivaIndex, setImagenActivaIndex] = useState(0);
   const [modoEdicion, setModoEdicion] = useState(false);
-
   const [descAbierta, setDescAbierta] = useState(true);
-  
-  // EL INTERRUPTOR MÁGICO PARA MOSTRAR AL CLIENTE
-  const [vistaCliente, setVistaCliente] = useState(false);
-  const [tooltipActivo, setTooltipActivo] = useState(null);
 
-  // Mover formatearPrecio arriba para que PrecioClickable lo encuentre
   const formatearPrecio = (valor) => {
     if (!valor) return '-';
     return Number(valor).toLocaleString('es-AR');
-  };
-
-  // --- MINI COMPONENTE PARA EL PRECIO CON CARTELITO ---
-  const PrecioClickable = ({ valor, idUnico, destacado = false }) => {
-    if (!valor) return '-';
-    const costo = parseFloat(valor);
-    const venta = Math.round(costo * MARKUP_AGENCIA);
-    const ganancia = venta - costo;
-    const isOpen = tooltipActivo === idUnico;
-
-    return (
-      <>
-        {isOpen && !vistaCliente && (
-          <div 
-            onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
-            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' }}
-          />
-        )}
-        <div 
-          style={{ position: 'relative', display: 'inline-block', cursor: !vistaCliente ? 'pointer' : 'default', zIndex: isOpen ? 50 : 1 }} 
-          onClick={(e) => { 
-            if (!vistaCliente) {
-              e.stopPropagation();
-              setTooltipActivo(isOpen ? null : idUnico);
-            }
-          }}
-        >
-          <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit' }}>
-            ${formatearPrecio(venta)}
-          </span>
-          
-          {isOpen && !vistaCliente && (
-            <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', zIndex: 50, width: '150px', textAlign: 'left', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '8px', cursor: 'default' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #374151', paddingBottom: '5px', marginBottom: '5px' }}>
-                <span style={{color: '#9ca3af'}}>Costo:</span> <b>${formatearPrecio(costo)}</b>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{color: '#4ade80'}}>Ganancia:</span> <b>${formatearPrecio(ganancia)}</b>
-              </div>
-              <div style={{ position: 'absolute', bottom: '-5px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #11173d' }}></div>
-            </div>
-          )}
-        </div>
-      </>
-    );
   };
 
   const cargarPaquete = async () => {
@@ -126,6 +73,7 @@ export default function DetallePaqueteMayorista() {
   if (loading) return <Loader visible={true} text="Cargando viaje..." />;
   if (!paquete) return <div style={{ padding: '50px', textAlign: 'center', color: 'red', fontWeight: 'bold' }}>❌ El paquete no existe.</div>;
 
+  // Los proveedores solo editan sus propios paquetes (o un admin de prueba)
   const esPropietario = paquete.proveedor_email === currentUser?.email;
   const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
   const puedeEditar = esPropietario || esGestor;
@@ -134,16 +82,13 @@ export default function DetallePaqueteMayorista() {
     return <FormularioEnlatado paqueteAEditar={paquete} onCancel={() => setModoEdicion(false)} onSave={guardarEdicion} />;
   }
 
-  const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
-  
-  // ARREGLO DEL BUG: Cálculos unificados para que coincidan las variables
+  // Precios estrictamente Netos (sin markup)
   const preciosDoble = paquete.tarifario?.map(t => {
     if (typeof t.doble === 'object') return parseFloat(t.doble.mayor) || 0;
     return parseFloat(t.doble) || 0;
   }).filter(p => p > 0) || [];
   
-  const costoRealBase = preciosDoble.length > 0 ? Math.min(...preciosDoble) : 0;
-  const precioDesde = Math.round(costoRealBase * MARKUP_AGENCIA); // <-- Esta es la variable correcta
+  const precioDesdeNeto = preciosDoble.length > 0 ? Math.min(...preciosDoble) : 0;
   
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
@@ -158,22 +103,13 @@ export default function DetallePaqueteMayorista() {
   const antImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev === 0 ? paquete.imagenes.length - 1 : prev - 1)); };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
-      
-      {/* SWITCH DE VISTA CLIENTE / STAFF */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
-        <button 
-          onClick={() => { setVistaCliente(!vistaCliente); setTooltipActivo(null); }}
-          style={{ background: vistaCliente ? '#10b981' : '#11173d', color: '#fff', padding: '8px 20px', borderRadius: '25px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
-        >
-          {vistaCliente ? '👀 MODO CLIENTE (Oculto)' : '🏢 MODO STAFF (Interno)'}
-        </button>
-      </div>
+    <div style={{ padding: '20px' }}> {/* <-- Se quitó el maxWidth 1400px que aplastaba la vista */}
 
       <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
         
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
           
+          {/* GALERÍA */}
           <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {paquete.imagenes && paquete.imagenes.length > 0 ? (
               <>
@@ -203,22 +139,18 @@ export default function DetallePaqueteMayorista() {
               <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '0.5px' }}>
                 {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
               </div>
-              {puedeEditar && !vistaCliente && (
+              
+              {/* BOTÓN EDITAR */}
+              {puedeEditar && (
                 <button onClick={() => setModoEdicion(true)} style={{ background: '#ef5a1a', color: '#fff', padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.2)' }}>
                   ✏️ Editar
                 </button>
               )}
             </div>
             
-            <h1 style={{ margin: '0 0 10px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
+            <h1 style={{ margin: '0 0 15px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
               {paquete.destino}
             </h1>
-
-            {!vistaCliente && (
-              <div style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '15px' }}>
-                Proveedor: <b style={{ color: '#11173d' }}>{paquete.proveedor_nombre}</b>
-              </div>
-            )}
             
             <p style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1.1rem', fontWeight: 'bold' }}>
               <span style={{ color: '#ef5a1a', marginRight: '5px' }}>🌙</span>
@@ -246,16 +178,16 @@ export default function DetallePaqueteMayorista() {
                   ))}
                 </div>
               ) : (
-                <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.8rem', margin: 0 }}>No hay servicios detallados.</p>
+                <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.8rem', margin: 0 }}>Consultá los servicios incluidos.</p>
               )}
             </div>
 
             <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', textAlign: 'right' }}>
               <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
                 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
-                {paquete.moneda || 'USD'} ${formatearPrecio(precioDesde)}
+                {paquete.moneda || 'USD'} ${formatearPrecio(precioDesdeNeto)}
               </div>
-              {!vistaCliente && <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>*Precio Neto Agencia (Markup incluido)</span>}
+              <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>*Tarifa Neta Proveedor</span>
               
               <button 
                 onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
@@ -343,7 +275,7 @@ export default function DetallePaqueteMayorista() {
                       </div>
                       {s.tarifa && (
                         <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
-                          + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
+                          + {paquete.moneda || 'USD'} ${formatearPrecio(s.tarifa)}
                         </div>
                       )}
                     </div>
@@ -459,19 +391,19 @@ export default function DetallePaqueteMayorista() {
                           </td>
                           <td style={{ padding: '15px 10px', textAlign: 'left', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>{tipoRegimen}</td>
                           
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={doble.mayor} idUnico={`d-may-${idx}`} destacado={true} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.menor} idUnico={`d-men-${idx}`} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.child} idUnico={`d-chi-${idx}`} /></td>
+                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${formatearPrecio(doble.mayor)}` : '-'}</td>
+                          <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.menor ? `$${formatearPrecio(doble.menor)}` : '-'}</td>
+                          <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.child ? `$${formatearPrecio(doble.child)}` : '-'}</td>
                           
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={triple.mayor} idUnico={`t-may-${idx}`} destacado={true} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.menor} idUnico={`t-men-${idx}`} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.child} idUnico={`t-chi-${idx}`} /></td>
+                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${formatearPrecio(triple.mayor)}` : '-'}</td>
+                          <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.menor ? `$${formatearPrecio(triple.menor)}` : '-'}</td>
+                          <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.child ? `$${formatearPrecio(triple.child)}` : '-'}</td>
                           
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={cuadruple.mayor} idUnico={`c-may-${idx}`} destacado={true} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.menor} idUnico={`c-men-${idx}`} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.child} idUnico={`c-chi-${idx}`} /></td>
+                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${formatearPrecio(cuadruple.mayor)}` : '-'}</td>
+                          <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.menor ? `$${formatearPrecio(cuadruple.menor)}` : '-'}</td>
+                          <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.child ? `$${formatearPrecio(cuadruple.child)}` : '-'}</td>
                           
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={single.mayor} idUnico={`s-may-${idx}`} destacado={true} /></td>
+                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${formatearPrecio(single.mayor)}` : '-'}</td>
                         </tr>
                       )
                     })}
