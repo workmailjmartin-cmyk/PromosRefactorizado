@@ -1,86 +1,140 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAlert } from '@/contexts/AlertContext';
 
 export default function GrupalesTab() {
   const [config, setConfig] = useState({
     marcaGlobal: 10,
     comisionGlobal: 15,
   });
+  
+  const [loading, setLoading] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  
+  const { showAlert } = useAlert(); // <-- Traemos tu sistema de alertas lindas
+
+  // 1. CARGAR CONFIGURACIÓN DESDE FIREBASE AL ENTRAR
+  useEffect(() => {
+    const cargarConfig = async () => {
+      try {
+        const docRef = doc(db, 'configuracion', 'grupales');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setConfig(docSnap.data());
+        }
+      } catch (error) {
+        console.error("Error al cargar la configuración:", error);
+      }
+      setLoading(false);
+    };
+    cargarConfig();
+  }, []);
 
   const handleChange = (e) => {
     setConfig({ ...config, [e.target.name]: e.target.value });
   };
 
-  const guardarConfiguracion = () => {
-    alert(`Configuración guardada:\nMarca: ${config.marcaGlobal}%\nComisión: ${config.comisionGlobal}%`);
-    // Acá luego conectamos con Firebase
+  // 2. GUARDAR CONFIGURACIÓN REAL EN FIREBASE
+  const guardarConfiguracion = async () => {
+    setGuardando(true);
+    try {
+      const docRef = doc(db, 'configuracion', 'grupales');
+      await setDoc(docRef, {
+        marcaGlobal: Number(config.marcaGlobal),
+        comisionGlobal: Number(config.comisionGlobal)
+      }, { merge: true }); // Merge true evita borrar otras cosas si agregás más campos luego
+      
+      if (showAlert) {
+        showAlert('¡Configuración guardada exitosamente!', 'success');
+      } else {
+        alert('Configuración guardada'); // Fallback por si falla el contexto
+      }
+    } catch (error) {
+      console.error(error);
+      if (showAlert) {
+        showAlert('Hubo un error al guardar.', 'error');
+      }
+    }
+    setGuardando(false);
   };
 
+  if (loading) {
+    return <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Cargando configuración...</div>;
+  }
+
   return (
-    <div className="bg-white rounded-xl">
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold text-[#11173d] mb-2">Configuración de Grupales / Enlatados</h3>
-        <p className="text-gray-500">Definí los márgenes de rentabilidad para los paquetes mayoristas.</p>
+    <div style={{ background: '#fff', padding: '30px', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}>
+      
+      <div style={{ marginBottom: '30px', borderBottom: '2px solid #f3f4f6', paddingBottom: '20px' }}>
+        <h3 style={{ margin: '0 0 10px 0', fontSize: '1.8rem', color: '#11173d', fontWeight: 900 }}>Configuración de Grupales / Enlatados</h3>
+        <p style={{ margin: 0, color: '#6b7280', fontSize: '1rem' }}>Definí los márgenes de rentabilidad para los paquetes mayoristas.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px' }}>
+        
         {/* PANEL GLOBAL */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h4 className="text-lg font-bold text-[#11173d] border-b pb-2 mb-4 flex items-center gap-2">
+        <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px rgba(0,0,0,0.03)' }}>
+          <h4 style={{ margin: '0 0 20px 0', fontSize: '1.2rem', color: '#11173d', fontWeight: 900, borderBottom: '1px solid #eee', paddingBottom: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             🌍 Valores Globales (Por Defecto)
           </h4>
           
-          <div className="mb-4">
-            <label className="block font-bold text-[#11173d] mb-1">
-              % de Marca <span className="text-sm font-normal text-gray-500">(Costo invisible para vendedores)</span>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>
+              % de Marca <span style={{ fontWeight: 'normal', color: '#6b7280', fontSize: '0.85rem' }}>(Costo invisible)</span>
             </label>
-            <div className="flex items-center">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input 
                 type="number" 
                 name="marcaGlobal"
-                className="border border-gray-300 p-2 rounded-lg w-24 text-center font-bold focus:outline-none focus:border-[#ef5a1a]" 
                 value={config.marcaGlobal} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                style={{ width: '100px', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center', outline: 'none' }} 
               />
-              <span className="ml-2 text-gray-600 font-bold">%</span>
+              <span style={{ fontSize: '1.2rem', color: '#4b5563', fontWeight: 'bold' }}>%</span>
             </div>
           </div>
 
-          <div className="mb-6">
-            <label className="block font-bold text-[#11173d] mb-1">
-              % de Comisión Final <span className="text-sm font-normal text-gray-500">(Tu rentabilidad)</span>
+          <div style={{ marginBottom: '30px' }}>
+            <label style={{ display: 'block', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>
+              % de Comisión Final <span style={{ fontWeight: 'normal', color: '#6b7280', fontSize: '0.85rem' }}>(Tu rentabilidad)</span>
             </label>
-            <div className="flex items-center">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <input 
                 type="number" 
                 name="comisionGlobal"
-                className="border border-gray-300 p-2 rounded-lg w-24 text-center font-bold focus:outline-none focus:border-[#ef5a1a]" 
                 value={config.comisionGlobal} 
-                onChange={handleChange} 
+                onChange={handleChange}
+                style={{ width: '100px', padding: '12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '1.1rem', fontWeight: 'bold', textAlign: 'center', outline: 'none' }} 
               />
-              <span className="ml-2 text-gray-600 font-bold">%</span>
+              <span style={{ fontSize: '1.2rem', color: '#4b5563', fontWeight: 'bold' }}>%</span>
             </div>
           </div>
 
           <button 
             onClick={guardarConfiguracion}
-            className="w-full bg-[#ef5a1a] hover:bg-[#d94e14] text-white font-bold py-2.5 rounded-lg transition shadow-sm"
+            disabled={guardando}
+            style={{ width: '100%', background: '#ef5a1a', color: '#fff', border: 'none', padding: '14px', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: guardando ? 'not-allowed' : 'pointer', boxShadow: '0 4px 6px rgba(239, 90, 26, 0.2)', transition: 'background 0.3s' }}
           >
-            Guardar Globales
+            {guardando ? 'Guardando...' : '💾 Guardar Globales'}
           </button>
         </div>
 
         {/* PANEL EXCEPCIONES */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-          <h4 className="text-lg font-bold text-[#11173d] border-b pb-2 mb-4 flex items-center gap-2">
+        <div style={{ background: '#f9fafb', padding: '25px', borderRadius: '12px', border: '1px dashed #d1d5db', display: 'flex', flexDirection: 'column' }}>
+          <h4 style={{ margin: '0 0 15px 0', fontSize: '1.2rem', color: '#11173d', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '8px' }}>
             🏢 Excepciones por Proveedor
           </h4>
-          <p className="text-sm text-gray-500 mb-4">Si un proveedor tiene un trato distinto, agregalo acá para sobreescribir la regla global.</p>
+          <p style={{ margin: '0 0 25px 0', fontSize: '0.9rem', color: '#6b7280', lineHeight: '1.5' }}>
+            Si un proveedor tiene un trato distinto, agregalo acá para sobreescribir la regla global.
+          </p>
           
-          <button className="border-2 border-dashed border-[#11173d] text-[#11173d] font-bold py-3 w-full rounded-lg hover:bg-gray-50 transition">
+          <button style={{ marginTop: 'auto', background: 'transparent', border: '2px dashed #11173d', color: '#11173d', fontWeight: 'bold', padding: '14px', borderRadius: '8px', cursor: 'pointer', transition: 'background 0.3s' }}>
             + Añadir Proveedor Específico
           </button>
         </div>
+
       </div>
     </div>
   );
