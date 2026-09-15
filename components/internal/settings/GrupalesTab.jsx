@@ -9,7 +9,7 @@ export default function GrupalesTab() {
   const [config, setConfig] = useState({
     marcaGlobal: 10,
     comisionGlobal: 15,
-    excepciones: [] // <-- Array para guardar las reglas de proveedores
+    excepciones: [] 
   });
   
   const [proveedores, setProveedores] = useState([]);
@@ -19,7 +19,7 @@ export default function GrupalesTab() {
   // Estados para el mini-formulario de excepciones
   const [modoExcepcion, setModoExcepcion] = useState(false);
   const [formExcepcion, setFormExcepcion] = useState({ email: '', nombre: '', marca: '', comision: '', esEdicion: false });
-
+  const [excepcionAEliminar, setExcepcionAEliminar] = useState(null); 
   const { showAlert } = useAlert();
 
   // 1. CARGAR CONFIGURACIÓN Y LISTA DE PROVEEDORES
@@ -132,13 +132,18 @@ export default function GrupalesTab() {
     actualizarFirebase({ excepciones: nuevasExcepciones }, '¡Excepción de proveedor guardada!');
   };
 
-  const eliminarExcepcion = (email) => {
-    if (!confirm('¿Seguro que querés eliminar esta regla específica?')) return;
-    const nuevasExcepciones = (config.excepciones || []).filter(e => e.email !== email);
-    setConfig({ ...config, excepciones: nuevasExcepciones });
-    actualizarFirebase({ excepciones: nuevasExcepciones }, '¡Excepción eliminada!');
+  // Abre el modal pasándole el email
+  const pedirConfirmacionEliminar = (email) => {
+    setExcepcionAEliminar(email);
   };
 
+  // Ejecuta el borrado real cuando tocan "Sí, eliminar"
+  const confirmarEliminacion = () => {
+    const nuevasExcepciones = (config.excepciones || []).filter(e => e.email !== excepcionAEliminar);
+    setConfig({ ...config, excepciones: nuevasExcepciones });
+    actualizarFirebase({ excepciones: nuevasExcepciones }, '¡Excepción eliminada!');
+    setExcepcionAEliminar(null); // Cierra el modal
+  };
 
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>Cargando configuración...</div>;
@@ -226,7 +231,7 @@ export default function GrupalesTab() {
                     <button onClick={() => abrirFormularioEditar(exc)} style={{ background: '#e0f2fe', color: '#0369a1', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Editar">
                       ✏️
                     </button>
-                    <button onClick={() => eliminarExcepcion(exc.email)} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar">
+                    <button onClick={() => pedirConfirmacionEliminar(exc.email)} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '8px', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Eliminar">
                       🗑️
                     </button>
                   </div>
@@ -291,6 +296,34 @@ export default function GrupalesTab() {
         </div>
 
       </div>
+
+      {/* MODAL DE CONFIRMACIÓN ELEGANTE */}
+      {excepcionAEliminar && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(17, 23, 61, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, backdropFilter: 'blur(3px)' }}>
+          <div style={{ background: '#fff', padding: '30px', borderRadius: '16px', maxWidth: '400px', width: '90%', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>⚠️</div>
+            <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, margin: '0 0 10px 0' }}>¿Estás seguro?</h3>
+            <p style={{ color: '#6b7280', fontSize: '1rem', margin: '0 0 25px 0' }}>
+              Vas a eliminar esta regla específica. El proveedor volverá a usar los valores globales por defecto.
+            </p>
+            <div style={{ display: 'flex', gap: '15px' }}>
+              <button 
+                onClick={() => setExcepcionAEliminar(null)} 
+                style={{ flex: 1, background: '#f3f4f6', color: '#4b5563', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={confirmarEliminacion} 
+                style={{ flex: 1, background: '#dc2626', color: '#fff', border: 'none', padding: '12px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', boxShadow: '0 4px 6px rgba(220, 38, 38, 0.2)' }}
+              >
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
