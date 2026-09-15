@@ -51,29 +51,44 @@ export default function DetallePaqueteInterno() {
     const isOpen = tooltipActivo === idUnico;
 
     return (
-      <div 
-        style={{ position: 'relative', display: 'inline-block', cursor: !vistaCliente ? 'pointer' : 'default' }} 
-        onClick={() => !vistaCliente && setTooltipActivo(isOpen ? null : idUnico)}
-      >
-        {/* El precio de venta. Le ponemos un subrayado punteado si es staff para que sepan que es clickeable */}
-        <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit', borderBottom: !vistaCliente ? '1px dashed #9ca3af' : 'none' }}>
-          ${formatearPrecio(venta)}
-        </span>
-        
-        {/* El cartelito flotante (Solo se abre si no es vista de cliente) */}
+      <>
+        {/* Fondo invisible para cerrar el cartel al hacer clic afuera */}
         {isOpen && !vistaCliente && (
-          <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', zIndex: 50, width: '150px', textAlign: 'left', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #374151', paddingBottom: '5px', marginBottom: '5px' }}>
-              <span style={{color: '#9ca3af'}}>Costo:</span> <b>${formatearPrecio(costo)}</b>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{color: '#4ade80'}}>Ganancia:</span> <b>${formatearPrecio(ganancia)}</b>
-            </div>
-            {/* El piquito del globo */}
-            <div style={{ position: 'absolute', bottom: '-5px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #11173d' }}></div>
-          </div>
+          <div 
+            onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' }}
+          />
         )}
-      </div>
+
+        <div 
+          style={{ position: 'relative', display: 'inline-block', cursor: !vistaCliente ? 'pointer' : 'default', zIndex: isOpen ? 50 : 1 }} 
+          onClick={(e) => { 
+            if (!vistaCliente) {
+              e.stopPropagation(); // Evita que el clic se propague al fondo invisible inmediatamente
+              setTooltipActivo(isOpen ? null : idUnico);
+            }
+          }}
+        >
+          {/* El precio de venta SIN el subrayado punteado */}
+          <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit' }}>
+            ${formatearPrecio(venta)}
+          </span>
+          
+          {/* El cartelito flotante */}
+          {isOpen && !vistaCliente && (
+            <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', zIndex: 50, width: '150px', textAlign: 'left', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '8px', cursor: 'default' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #374151', paddingBottom: '5px', marginBottom: '5px' }}>
+                <span style={{color: '#9ca3af'}}>Costo:</span> <b>${formatearPrecio(costo)}</b>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{color: '#4ade80'}}>Ganancia:</span> <b>${formatearPrecio(ganancia)}</b>
+              </div>
+              {/* El piquito del globo */}
+              <div style={{ position: 'absolute', bottom: '-5px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #11173d' }}></div>
+            </div>
+          )}
+        </div>
+      </>
     );
   };
 
@@ -379,6 +394,7 @@ export default function DetallePaqueteInterno() {
           </div>
 
           {tarifarioFiltrado.length > 0 && (
+            <>
             <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
               <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
@@ -435,9 +451,15 @@ export default function DetallePaqueteInterno() {
                   })}
                 </tbody>
               </table>
-            </div>
-          )}
-        </div>
+          </div>
+
+          {/* ACLARACIÓN DE TARIFAS POR PERSONA */}
+          <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
+            * Todas las tarifas están expresadas por persona.
+          </div>
+          </>
+        )}
+      </div>
 
         {paquete.observaciones && (
           <div style={{ marginTop: '40px', padding: '20px', background: '#fff5f0', borderRadius: '12px', borderLeft: '4px solid #ef5a1a' }}>
