@@ -7,8 +7,13 @@ import { useStaffAuth } from '@/hooks/useStaffAuth';
 import { useAlert } from '@/contexts/AlertContext'; 
 import Loader from '@/components/shared/Loader';
 
-// El staff ve el precio ya con el recargo, pero para ellos es el precio "Neto"
 const MARKUP_AGENCIA = 1.20; 
+
+// Función auxiliar para quitar tildes y pasar a minúsculas
+const normalizarTexto = (texto) => {
+  if (!texto) return '';
+  return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+};
 
 export default function InternalEnlatadosDashboard() {
   const [mostrandoFormulario, setMostrandoFormulario] = useState(false);
@@ -17,83 +22,25 @@ export default function InternalEnlatadosDashboard() {
   const { currentUser, userData } = useStaffAuth();
   const { showAlert } = useAlert(); 
   
-  const [paquetes, setPaquetes] = useState([]);
+  const [paquetesOriginales, setPaquetesOriginales] = useState([]);
+  const [paquetesFiltrados, setPaquetesFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Verificamos si el usuario es Admin o Editor
+  // --- ESTADOS DE LOS FILTROS ---
+  const [filtroTexto, setFiltroTexto] = useState('');
+  const [filtroTransporte, setFiltroTransporte] = useState('');
+  const [filtroSalida, setFiltroSalida] = useState('');
+  const [filtroProveedor, setFiltroProveedor] = useState('');
+  const [filtroMoneda, setFiltroMoneda] = useState('');
+  const [filtroOrden, setFiltroOrden] = useState('recientes');
+
+  // Listas dinámicas para poblar los <select>
+  const [opcionesSalidas, setOpcionesSalidas] = useState([]);
+  const [opcionesProveedores, setOpcionesProveedores] = useState([]);
+
   const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
 
-  const cargarPaquetes = async () => {
-    setLoading(true);
-    try {
-      const querySnapshot = await getDocs(collection(db, 'enlatados'));
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      setPaquetes(data);
-    } catch (error) {
-      console.error("Error al cargar paquetes:", error);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    cargarPaquetes();
-  }, []);
-
-  const guardarEnFirebase = async (datos) => {
-    if (!currentUser || !userData) {
-      if(showAlert) showAlert('Error de sesión. Volvé a ingresar.', 'error');
-      else alert('Error de sesión. Volvé a ingresar.');
-      return;
-    }
-    
-    const esEdicion = !!datos.id;
-
-    try {
-      if (esEdicion) {
-        const docRef = doc(db, 'enlatados', datos.id);
-        await updateDoc(docRef, {
-          ...datos,
-          fecha_actualizacion: new Date().toLocaleDateString('es-AR')
-        });
-        if(showAlert) showAlert('¡Paquete actualizado correctamente!', 'success');
-      } else {
-        const paqueteNuevo = {
-          ...datos,
-          proveedor_email: currentUser.email,
-          proveedor_nombre: userData.franquicia || currentUser.email,
-          timestamp: Date.now(),
-          fecha_creacion: new Date().toLocaleDateString('es-AR'),
-          estado: 'activo'
-        };
-        await addDoc(collection(db, 'enlatados'), paqueteNuevo);
-        if(showAlert) showAlert('¡Nuevo paquete publicado!', 'success');
-      }
-
-      setMostrandoFormulario(false);
-      setPaqueteAEditar(null);
-      cargarPaquetes(); 
-    } catch (error) {
-      if(showAlert) showAlert('Hubo un problema al guardar.', 'error');
-    }
-  };
-
-  const abrirParaEditar = (pkg) => {
-    setPaqueteAEditar(pkg);
-    setMostrandoFormulario(true);
-  };
-
-  const cancelarEdicion = () => {
-    setPaqueteAEditar(null);
-    setMostrandoFormulario(false);
-  };
-
-  const formatearPrecio = (valor) => {
-    if (!valor) return '-';
-    return Number(valor).toLocaleString('es-AR');
-  };
-
-  const obtenerPrecioDesde = (tarifario) => {
+  const obtenerPrecioFinal = (tarifario) => {
     if (!tarifario || tarifario.length === 0) return 0;
     const precios = tarifario.map(t => {
       if (typeof t.doble === 'object') return parseFloat(t.doble.mayor) || 0;
@@ -103,29 +50,194 @@ export default function InternalEnlatadosDashboard() {
     return Math.round(Math.min(...precios) * MARKUP_AGENCIA);
   };
 
-  if (loading) return <Loader visible={true} text="Cargando sistema central..." />;
+  const cargarPaquetes = async () => {
+    setLoading(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, 'enlatados'));
+      const data = querySnapshot.docs.map(doc => {
+        const pkgData = doc.data();
+        return { 
+          id: doc.id, 
+          ...pkgData,
+          precioFinalCalculado: obtenerPrecioFinal(pkgData.tarifario) // Precalculamos para ordenar más fácil
+        };
+      });
+      data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+      
+      setPaquetesOriginales(data);
+      setPaquetesFiltrados(data);
+
+      // Extraer ciudades de salida únicas (Origen Principal + Paradas)
+      const salidasSet = new Set();
+      const provSet = new Set();
+      
+      data.forEach(p => {
+        if (p.origenPrincipal) salidasSet.add(p.origenPrincipal.trim());
+        if (p.paradas_ascenso && Array.isArray(p.paradas_ascenso)) {
+          p.paradas_ascenso.forEach(parada => salidasSet.add(parada.trim()));
+        }
+        if (p.proveedor_nombre) provSet.add(p.proveedor_nombre.trim());
+      });
+
+      setOpcionesSalidas(Array.from(salidasSet).sort());
+      setOpcionesProveedores(Array.from(provSet).sort());
+
+    } catch (error) { console.error("Error al cargar:", error); }
+    setLoading(false);
+  };
+
+  useEffect(() => { cargarPaquetes(); }, []);
+
+  // --- LÓGICA DEL SÚPER BUSCADOR ---
+  useEffect(() => {
+    let result = [...paquetesOriginales];
+
+    // 1. Buscador de Texto (Destino) - Ignore Case & Accents
+    if (filtroTexto.trim() !== '') {
+      const termino = normalizarTexto(filtroTexto);
+      result = result.filter(p => normalizarTexto(p.destino).includes(termino));
+    }
+
+    // 2. Filtro Transporte
+    if (filtroTransporte !== '') {
+      result = result.filter(p => p.transporte && p.transporte.includes(filtroTransporte));
+    }
+
+    // 3. Filtro Salida (Busca en origenPrincipal O en el array de paradas_ascenso)
+    if (filtroSalida !== '') {
+      result = result.filter(p => {
+        const principalMatch = p.origenPrincipal && p.origenPrincipal.includes(filtroSalida);
+        const paradasMatch = p.paradas_ascenso && p.paradas_ascenso.includes(filtroSalida);
+        return principalMatch || paradasMatch;
+      });
+    }
+
+    // 4. Filtro Proveedor
+    if (filtroProveedor !== '') {
+      result = result.filter(p => p.proveedor_nombre === filtroProveedor);
+    }
+
+    // 5. Filtro Moneda
+    if (filtroMoneda !== '') {
+      result = result.filter(p => (p.moneda || 'USD') === filtroMoneda);
+    }
+
+    // 6. Ordenamiento
+    if (filtroOrden === 'recientes') {
+      result.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    } else if (filtroOrden === 'menor') {
+      result.sort((a, b) => a.precioFinalCalculado - b.precioFinalCalculado);
+    } else if (filtroOrden === 'mayor') {
+      result.sort((a, b) => b.precioFinalCalculado - a.precioFinalCalculado);
+    }
+
+    setPaquetesFiltrados(result);
+  }, [filtroTexto, filtroTransporte, filtroSalida, filtroProveedor, filtroMoneda, filtroOrden, paquetesOriginales]);
+
+  // (Mantuve igual tu función guardarEnFirebase, cancelarEdicion, formatearPrecio, etc.)
+  const guardarEnFirebase = async (datos) => {
+    if (!currentUser || !userData) {
+      if(showAlert) showAlert('Error de sesión. Volvé a ingresar.', 'error');
+      else alert('Error de sesión. Volvé a ingresar.');
+      return;
+    }
+    const esEdicion = !!datos.id;
+    try {
+      if (esEdicion) {
+        const docRef = doc(db, 'enlatados', datos.id);
+        await updateDoc(docRef, { ...datos, fecha_actualizacion: new Date().toLocaleDateString('es-AR') });
+        if(showAlert) showAlert('¡Paquete actualizado!', 'success');
+      } else {
+        const paqueteNuevo = { ...datos, proveedor_email: currentUser.email, proveedor_nombre: userData.franquicia || currentUser.email, timestamp: Date.now(), fecha_creacion: new Date().toLocaleDateString('es-AR'), estado: 'activo' };
+        await addDoc(collection(db, 'enlatados'), paqueteNuevo);
+        if(showAlert) showAlert('¡Nuevo paquete publicado!', 'success');
+      }
+      setMostrandoFormulario(false);
+      setPaqueteAEditar(null);
+      cargarPaquetes(); 
+    } catch (error) { if(showAlert) showAlert('Hubo un error al guardar.', 'error'); }
+  };
+
+  const abrirParaEditar = (pkg) => { setPaqueteAEditar(pkg); setMostrandoFormulario(true); };
+  const cancelarEdicion = () => { setPaqueteAEditar(null); setMostrandoFormulario(false); };
+  const formatearPrecio = (valor) => { if (!valor) return '-'; return Number(valor).toLocaleString('es-AR'); };
+
+  if (loading) return <Loader visible={true} text="Cargando base central..." />;
 
   return (
     <div style={{ padding: '20px' }}>
       {!mostrandoFormulario && (
         <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '25px' }}>
             <div>
               <h1 style={{ color: '#11173d', margin: '0 0 5px 0', fontSize: '2.2rem', fontWeight: 800 }}>Gestión Central de Paquetes</h1>
-              <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1rem' }}>
-                Base de datos completa de viajes enlatados.
-              </p>
+              <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1rem' }}>Mostrando {paquetesFiltrados.length} paquetes activos.</p>
             </div>
-            
             {esGestor && (
-              <button 
-                onClick={() => { setPaqueteAEditar(null); setMostrandoFormulario(true); }}
-                className="btn btn-primario"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 24px', fontSize: '1.1rem' }}
-              >
+              <button onClick={() => { setPaqueteAEditar(null); setMostrandoFormulario(true); }} className="btn btn-primario" style={{ padding: '12px 24px', fontSize: '1.1rem' }}>
                 ➕ Cargar Viaje (Admin)
               </button>
             )}
+          </div>
+
+          {/* BARRA DE FILTROS AVANZADA */}
+          <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+            
+            {/* Buscador de Texto */}
+            <div style={{ flex: '1 1 250px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>🔍 Buscar Destino</label>
+              <input type="text" placeholder="Ej: Rio de Janeiro, Buzios..." value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            </div>
+
+            {/* Filtro Orden */}
+            <div style={{ flex: '1 1 150px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>⏱️ Ordenar por</label>
+              <select value={filtroOrden} onChange={(e) => setFiltroOrden(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
+                <option value="recientes">Recientes primero</option>
+                <option value="menor">Menor Precio</option>
+                <option value="mayor">Mayor Precio</option>
+              </select>
+            </div>
+
+            {/* Filtro Transporte */}
+            <div style={{ flex: '1 1 150px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>🚌 Transporte</label>
+              <select value={filtroTransporte} onChange={(e) => setFiltroTransporte(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
+                <option value="">Todos</option>
+                <option value="bus">Solo Bus</option>
+                <option value="aereo">Solo Aéreo</option>
+                <option value="charter">Aéreo Charter</option>
+              </select>
+            </div>
+
+            {/* Filtro Ciudad/Parada de Salida */}
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>📍 Origen / Parada</label>
+              <select value={filtroSalida} onChange={(e) => setFiltroSalida(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
+                <option value="">Cualquier Salida</option>
+                {opcionesSalidas.map(sal => <option key={sal} value={sal}>{sal}</option>)}
+              </select>
+            </div>
+
+            {/* Filtro Proveedor */}
+            <div style={{ flex: '1 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>🏢 Proveedor</label>
+              <select value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
+                <option value="">Cualquier Proveedor</option>
+                {opcionesProveedores.map(prov => <option key={prov} value={prov}>{prov}</option>)}
+              </select>
+            </div>
+
+            {/* Filtro Moneda */}
+            <div style={{ flex: '1 1 120px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>💵 Moneda</label>
+              <select value={filtroMoneda} onChange={(e) => setFiltroMoneda(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
+                <option value="">Todas</option>
+                <option value="USD">Dólares (USD)</option>
+                <option value="ARS">Pesos (ARS)</option>
+              </select>
+            </div>
+            
           </div>
         </div>
       )}
@@ -134,13 +246,15 @@ export default function InternalEnlatadosDashboard() {
         <FormularioEnlatado paqueteAEditar={paqueteAEditar} onCancel={cancelarEdicion} onSave={guardarEnFirebase} />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {paquetes.length === 0 ? (
-            <p style={{ color: '#6b7280', fontStyle: 'italic' }}>No hay paquetes en el sistema.</p>
+          {paquetesFiltrados.length === 0 ? (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', background: '#f9fafb', borderRadius: '12px', color: '#6b7280' }}>
+              <h3>No se encontraron viajes</h3>
+              <p>Probá borrando algún filtro para ver más resultados.</p>
+              <button onClick={() => {setFiltroTexto(''); setFiltroTransporte(''); setFiltroSalida(''); setFiltroProveedor(''); setFiltroMoneda('');}} style={{ background: '#11173d', color: '#fff', padding: '8px 16px', borderRadius: '8px', border: 'none', cursor: 'pointer', marginTop: '10px' }}>Limpiar Filtros</button>
+            </div>
           ) : (
-            paquetes.map((pkg) => {
-              const precioFinal = obtenerPrecioDesde(pkg.tarifario);
+            paquetesFiltrados.map((pkg) => {
               const imagenPortada = pkg.imagenes && pkg.imagenes.length > 0 ? pkg.imagenes[0] : '/placeholder.jpg'; 
-
               return (
                 <div key={pkg.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
                   
@@ -162,7 +276,7 @@ export default function InternalEnlatadosDashboard() {
                     <div style={{ marginTop: 'auto', textAlign: 'right' }}>
                       <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '5px' }}>
                         <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 'normal' }}>desde</span>
-                        {pkg.moneda || 'USD'} ${formatearPrecio(precioFinal)}
+                        {pkg.moneda || 'USD'} ${formatearPrecio(pkg.precioFinalCalculado)}
                       </div>
                     </div>
                   </div>
@@ -172,10 +286,9 @@ export default function InternalEnlatadosDashboard() {
                       href={`/internal/enlatados/${pkg.id}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="btn"
                       style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold' }}
                     >
-                      Ver Paquete
+                      👁️ Ver Folleto
                     </a>
                     
                     {esGestor && (
