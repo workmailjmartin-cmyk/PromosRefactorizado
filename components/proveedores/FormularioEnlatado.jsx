@@ -56,6 +56,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const [servicioSeleccionado, setServicioSeleccionado] = useState('');
   const [imagenes, setImagenes] = useState([]);
   const [observaciones, setObservaciones] = useState('');
+  const [descripcionViaje, setDescripcionViaje] = useState('');
 
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -86,6 +87,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       setServicios(paqueteAEditar.servicios || []);
       setImagenes(paqueteAEditar.imagenes || []);
       setObservaciones(paqueteAEditar.observaciones || '');
+      setDescripcionViaje(paqueteAEditar.descripcionViaje || '');
     }
   }, [paqueteAEditar]);
 
@@ -214,7 +216,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     
     const paqueteFinal = {
       ...infoGeneral, origenPrincipal: infoGeneral.origenProvincia || infoGeneral.origenAeropuerto,
-      paradas_ascenso: paradas, vuelos, tarifario: salidas, itinerario, servicios, imagenes, observaciones
+      paradas_ascenso: paradas, vuelos, tarifario: salidas, itinerario, servicios, imagenes, observaciones, descripcionViaje
     };
     if (paqueteAEditar?.id) paqueteFinal.id = paqueteAEditar.id;
     onSave(paqueteFinal);
@@ -250,6 +252,18 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             ) : (<input type="text" required name="origenAeropuerto" placeholder="Ej: Terminal Cba" value={infoGeneral.origenAeropuerto} onChange={handleInfoChange} />)}
           </div>
           <div className="form-group" style={{ flex: '1 1 120px' }}><label>Moneda</label><select name="moneda" value={infoGeneral.moneda} onChange={handleInfoChange}><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
+        </div>
+
+        {/* CUADRO DE DESCRIPCIÓN DEL VIAJE */}
+        <div className="form-group" style={{ marginTop: '15px', marginBottom: '20px' }}>
+          <label style={{ fontWeight: 'bold', color: '#11173d' }}>Descripción General del Viaje</label>
+          <textarea 
+            rows="4" 
+            style={{ width: '100%', padding: '12px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical' }} 
+            placeholder="Describí los puntos fuertes del paquete, la experiencia general, atractivos, etc." 
+            value={descripcionViaje} 
+            onChange={(e) => setDescripcionViaje(e.target.value)}
+          ></textarea>
         </div>
 
         {esBus && (

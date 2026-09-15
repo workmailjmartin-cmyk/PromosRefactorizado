@@ -33,6 +33,8 @@ export default function DetallePaqueteMayorista() {
   const [imagenActivaIndex, setImagenActivaIndex] = useState(0);
   const [modoEdicion, setModoEdicion] = useState(false);
 
+  const [descAbierta, setDescAbierta] = useState(true);
+
   const cargarPaquete = async () => {
     if (!params?.id) return;
     try {
@@ -180,17 +182,42 @@ export default function DetallePaqueteMayorista() {
             )}
           </div>
 
-          {/* BLOQUE PRECIO ABAJO */}
           <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', textAlign: 'right' }}>
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
-              <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
-              {paquete.moneda || 'USD'} ${precioDesde}
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
+                <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
+                {paquete.moneda || 'USD'} ${formatearPrecio(precioVentaBase)}
+              </div>
+              {!vistaCliente && <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>*Precio Neto Agencia (Markup incluido)</span>}
+              
+              {/* BOTÓN SCROLL SUAVE A TARIFAS */}
+              <button 
+                onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
+                style={{ width: '100%', marginTop: '5px', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px rgba(17,23,61,0.2)' }}
+              >
+                🗓️ Ver Fechas y Tarifas
+              </button>
             </div>
-            <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio neto para Agencia ({Math.round(MARKUP_AGENCIA * 100 - 100)}% de markup)</span>
-          </div>
 
         </div>
       </div>
+
+      {/* ACORDEÓN DE DESCRIPCIÓN */}
+        {paquete.descripcionViaje && (
+          <div style={{ marginBottom: '40px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+            <div 
+              onClick={() => setDescAbierta(!descAbierta)} 
+              style={{ padding: '15px 20px', background: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: descAbierta ? '1px solid #e5e7eb' : 'none' }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#11173d', fontWeight: 900 }}>📝 Descripción General</h3>
+              <span style={{ fontSize: '1.2rem', color: '#6b7280', transition: 'transform 0.3s', transform: descAbierta ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            {descAbierta && (
+              <div style={{ padding: '20px', color: '#4b5563', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontSize: '1rem' }}>
+                {paquete.descripcionViaje}
+              </div>
+            )}
+          </div>
+        )}
 
       <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
@@ -282,7 +309,7 @@ export default function DetallePaqueteMayorista() {
 
       <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
-      <div>
+      <div id="seccion-tarifas" >
         <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, marginBottom: '25px' }}>
           Seleccioná tu fecha de Salida
         </h3>

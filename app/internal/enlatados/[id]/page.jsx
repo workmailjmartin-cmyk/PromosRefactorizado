@@ -35,7 +35,8 @@ export default function DetallePaqueteInterno() {
   
   // EL INTERRUPTOR MÁGICO PARA MOSTRAR AL CLIENTE
   const [vistaCliente, setVistaCliente] = useState(false);
-  const [tooltipActivo, setTooltipActivo] = useState(null); // <-- Estado para el cartelito
+  const [tooltipActivo, setTooltipActivo] = useState(null); 
+  const [descAbierta, setDescAbierta] = useState(true);
 
   const formatearPrecio = (valor) => {
     if (!valor) return '-';
@@ -260,11 +261,37 @@ export default function DetallePaqueteInterno() {
                 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
                 {paquete.moneda || 'USD'} ${formatearPrecio(precioVentaBase)}
               </div>
-              {!vistaCliente && <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio Neto Agencia (Markup incluido)</span>}
+              {!vistaCliente && <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>*Precio Neto Agencia (Markup incluido)</span>}
+              
+              {/* BOTÓN SCROLL SUAVE A TARIFAS */}
+              <button 
+                onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
+                style={{ width: '100%', marginTop: '5px', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px rgba(17,23,61,0.2)' }}
+              >
+                🗓️ Ver Fechas y Tarifas
+              </button>
             </div>
 
           </div>
         </div>
+
+        {/* ACORDEÓN DE DESCRIPCIÓN */}
+        {paquete.descripcionViaje && (
+          <div style={{ marginBottom: '40px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+            <div 
+              onClick={() => setDescAbierta(!descAbierta)} 
+              style={{ padding: '15px 20px', background: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: descAbierta ? '1px solid #e5e7eb' : 'none' }}
+            >
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#11173d', fontWeight: 900 }}>📝 Descripción General</h3>
+              <span style={{ fontSize: '1.2rem', color: '#6b7280', transition: 'transform 0.3s', transform: descAbierta ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            {descAbierta && (
+              <div style={{ padding: '20px', color: '#4b5563', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontSize: '1rem' }}>
+                {paquete.descripcionViaje}
+              </div>
+            )}
+          </div>
+        )}
 
         <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
@@ -350,7 +377,7 @@ export default function DetallePaqueteInterno() {
 
         <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
-        <div>
+        <div id="seccion-tarifas">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '25px' }}>
             <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>Seleccioná tu fecha de Salida</h3>
             <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>Tarifas en {paquete.moneda || 'USD'}</span>
@@ -431,7 +458,7 @@ export default function DetallePaqueteInterno() {
                           {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
                           {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
                         </td>
-                        <td style={{ padding: '15px 10px', textAlign: 'left', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>{tipoRegimen}</td>
+                        <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>{tipoRegimen}</td>
                         
                         <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={doble.mayor} idUnico={`d-may-${idx}`} destacado={true} /></td>
                         <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.menor} idUnico={`d-men-${idx}`} /></td>
