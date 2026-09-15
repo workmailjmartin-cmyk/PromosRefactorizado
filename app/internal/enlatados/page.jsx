@@ -180,29 +180,37 @@ export default function InternalEnlatadosDashboard() {
             )}
           </div>
 
-          {/* BARRA DE FILTROS AVANZADA */}
-          <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
+          {/* BARRA DE FILTROS AVANZADA (Diseño Original Minimalista) */}
+          <div style={{ background: '#fff', padding: '15px 25px', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-end', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', marginBottom: '30px' }}>
             
             {/* Buscador de Texto */}
-            <div style={{ flex: '1 1 250px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>🔍 Buscar Destino</label>
-              <input type="text" placeholder="Ej: Rio de Janeiro, Buzios..." value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+            <div style={{ flex: '2 1 180px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Destino</label>
+              <input type="text" placeholder="Ej: Rio de Janeiro..." value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem' }} />
             </div>
 
-            {/* Filtro Orden */}
-            <div style={{ flex: '1 1 150px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>⏱️ Ordenar por</label>
-              <select value={filtroOrden} onChange={(e) => setFiltroOrden(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
-                <option value="recientes">Recientes primero</option>
-                <option value="menor">Menor Precio</option>
-                <option value="mayor">Mayor Precio</option>
+            {/* Filtro Ciudad/Parada de Salida */}
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Salida desde</label>
+              <select value={filtroSalida} onChange={(e) => setFiltroSalida(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
+                <option value="">Todas las Salidas</option>
+                {opcionesSalidas.map(sal => <option key={sal} value={sal}>{sal}</option>)}
+              </select>
+            </div>
+
+            {/* Filtro Proveedor */}
+            <div style={{ flex: '1 1 160px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Proveedor</label>
+              <select value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
+                <option value="">Todos los Prov.</option>
+                {opcionesProveedores.map(prov => <option key={prov} value={prov}>{prov}</option>)}
               </select>
             </div>
 
             {/* Filtro Transporte */}
-            <div style={{ flex: '1 1 150px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>🚌 Transporte</label>
-              <select value={filtroTransporte} onChange={(e) => setFiltroTransporte(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
+            <div style={{ flex: '1 1 130px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Transporte</label>
+              <select value={filtroTransporte} onChange={(e) => setFiltroTransporte(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
                 <option value="">Todos</option>
                 <option value="bus">Solo Bus</option>
                 <option value="aereo">Solo Aéreo</option>
@@ -210,34 +218,32 @@ export default function InternalEnlatadosDashboard() {
               </select>
             </div>
 
-            {/* Filtro Ciudad/Parada de Salida */}
-            <div style={{ flex: '1 1 180px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>📍 Origen / Parada</label>
-              <select value={filtroSalida} onChange={(e) => setFiltroSalida(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
-                <option value="">Cualquier Salida</option>
-                {opcionesSalidas.map(sal => <option key={sal} value={sal}>{sal}</option>)}
+            {/* Filtro Orden */}
+            <div style={{ flex: '1 1 130px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Orden</label>
+              <select value={filtroOrden} onChange={(e) => setFiltroOrden(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
+                <option value="recientes">Recientes</option>
+                <option value="menor">Menor Precio</option>
+                <option value="mayor">Mayor Precio</option>
               </select>
             </div>
 
-            {/* Filtro Proveedor */}
-            <div style={{ flex: '1 1 180px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>🏢 Proveedor</label>
-              <select value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
-                <option value="">Cualquier Proveedor</option>
-                {opcionesProveedores.map(prov => <option key={prov} value={prov}>{prov}</option>)}
-              </select>
+            {/* Botones */}
+            <div style={{ display: 'flex', gap: '10px', flex: '0 0 auto' }}>
+              <button 
+                onClick={() => {/* La búsqueda ya es en tiempo real, pero el botón queda por UX visual */}} 
+                style={{ background: '#ef5a1a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                Buscar
+              </button>
+              <button 
+                onClick={() => { setFiltroTexto(''); setFiltroTransporte(''); setFiltroSalida(''); setFiltroProveedor(''); setFiltroMoneda(''); setFiltroOrden('recientes'); }} 
+                style={{ background: '#f3f4f6', color: '#4b5563', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem' }}
+              >
+                Limpiar
+              </button>
             </div>
 
-            {/* Filtro Moneda */}
-            <div style={{ flex: '1 1 120px' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 'bold', color: '#4b5563', marginBottom: '5px' }}>💵 Moneda</label>
-              <select value={filtroMoneda} onChange={(e) => setFiltroMoneda(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}>
-                <option value="">Todas</option>
-                <option value="USD">Dólares (USD)</option>
-                <option value="ARS">Pesos (ARS)</option>
-              </select>
-            </div>
-            
           </div>
         </div>
       )}
@@ -266,7 +272,7 @@ export default function InternalEnlatadosDashboard() {
                     </div>
                   </div>
 
-                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '20px 20px 10px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ fontSize: '0.8em', color: '#6b7280', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>
                       {pkg.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Desde {pkg.transporte.includes('aereo') ? pkg.origenProvincia || pkg.origenPrincipal : pkg.origenPrincipal}
                     </div>
@@ -288,7 +294,7 @@ export default function InternalEnlatadosDashboard() {
                       rel="noopener noreferrer"
                       style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '12px', borderRadius: '10px', fontSize: '0.9em', fontWeight: 'bold' }}
                     >
-                      👁️ Ver Folleto
+                      Ver Paquete
                     </a>
                     
                     {esGestor && (
