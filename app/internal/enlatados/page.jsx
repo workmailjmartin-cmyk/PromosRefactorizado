@@ -168,14 +168,21 @@ export default function InternalEnlatadosDashboard() {
     <div style={{ padding: '20px' }}>
       {!mostrandoFormulario && (
         <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #e5e7eb' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '25px' }}>
-            <div>
-              <h1 style={{ color: '#11173d', margin: '0 0 5px 0', fontSize: '2.2rem', fontWeight: 800 }}>Gestión Central de Paquetes</h1>
-              <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1rem' }}>Mostrando {paquetesFiltrados.length} paquetes activos.</p>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '20px' }}>
+            
+            {/* TÍTULO PRINCIPAL (Sin la línea de cantidad) */}
+            <h1 style={{ color: '#11173d', margin: 0, fontSize: '2.2rem', fontWeight: 800 }}>
+              Gestión Central de Paquetes
+            </h1>
+            
+            {/* BOTÓN ACHICADO */}
             {esGestor && (
-              <button onClick={() => { setPaqueteAEditar(null); setMostrandoFormulario(true); }} className="btn btn-primario" style={{ padding: '12px 24px', fontSize: '1.1rem' }}>
-                ➕ Cargar Viaje (Admin)
+              <button 
+                onClick={() => { setPaqueteAEditar(null); setMostrandoFormulario(true); }} 
+                className="btn btn-primario" 
+                style={{ padding: '8px 16px', fontSize: '0.9rem', borderRadius: '8px', fontWeight: 'bold' }}
+              >
+                ➕ Cargar Viaje
               </button>
             )}
           </div>
