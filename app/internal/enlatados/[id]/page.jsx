@@ -35,6 +35,47 @@ export default function DetallePaqueteInterno() {
   
   // EL INTERRUPTOR MÁGICO PARA MOSTRAR AL CLIENTE
   const [vistaCliente, setVistaCliente] = useState(false);
+  const [tooltipActivo, setTooltipActivo] = useState(null); // <-- Estado para el cartelito
+
+  const formatearPrecio = (valor) => {
+    if (!valor) return '-';
+    return Number(valor).toLocaleString('es-AR');
+  };
+
+  // --- MINI COMPONENTE PARA EL PRECIO CON CARTELITO ---
+  const PrecioClickable = ({ valor, idUnico, destacado = false }) => {
+    if (!valor) return '-';
+    const costo = parseFloat(valor);
+    const venta = Math.round(costo * MARKUP_AGENCIA);
+    const ganancia = venta - costo;
+    const isOpen = tooltipActivo === idUnico;
+
+    return (
+      <div 
+        style={{ position: 'relative', display: 'inline-block', cursor: !vistaCliente ? 'pointer' : 'default' }} 
+        onClick={() => !vistaCliente && setTooltipActivo(isOpen ? null : idUnico)}
+      >
+        {/* El precio de venta. Le ponemos un subrayado punteado si es staff para que sepan que es clickeable */}
+        <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit', borderBottom: !vistaCliente ? '1px dashed #9ca3af' : 'none' }}>
+          ${formatearPrecio(venta)}
+        </span>
+        
+        {/* El cartelito flotante (Solo se abre si no es vista de cliente) */}
+        {isOpen && !vistaCliente && (
+          <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', zIndex: 50, width: '150px', textAlign: 'left', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #374151', paddingBottom: '5px', marginBottom: '5px' }}>
+              <span style={{color: '#9ca3af'}}>Costo:</span> <b>${formatearPrecio(costo)}</b>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{color: '#4ade80'}}>Ganancia:</span> <b>${formatearPrecio(ganancia)}</b>
+            </div>
+            {/* El piquito del globo */}
+            <div style={{ position: 'absolute', bottom: '-5px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #11173d' }}></div>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const cargarPaquete = async () => {
     if (!params?.id) return;
@@ -79,14 +120,9 @@ export default function DetallePaqueteInterno() {
     return <FormularioEnlatado paqueteAEditar={paquete} onCancel={() => setModoEdicion(false)} onSave={guardarEdicion} />;
   }
 
-  const formatearPrecio = (valor) => {
-    if (!valor) return '-';
-    return Number(valor).toLocaleString('es-AR');
-  };
-
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
   
-  // Cálculos para el panel de Control Interno (Márgenes)
+  // Cálculos para el precio base principal
   const preciosDobleReales = paquete.tarifario?.map(t => {
     if (typeof t.doble === 'object') return parseFloat(t.doble.mayor) || 0;
     return parseFloat(t.doble) || 0;
@@ -94,7 +130,6 @@ export default function DetallePaqueteInterno() {
   
   const costoRealBase = preciosDobleReales.length > 0 ? Math.min(...preciosDobleReales) : 0;
   const precioVentaBase = Math.round(costoRealBase * MARKUP_AGENCIA);
-  const gananciaBase = precioVentaBase - costoRealBase;
   
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
@@ -111,46 +146,15 @@ export default function DetallePaqueteInterno() {
   return (
     <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
       
-      {/* BOTÓN FLOTANTE PARA VOLVER A MODO INTERNO SI ESTAMOS EN MODO CLIENTE */}
-      {vistaCliente && (
+      {/* SWITCH DE VISTA CLIENTE / STAFF */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
         <button 
-          onClick={() => setVistaCliente(false)}
-          style={{ position: 'fixed', top: '20px', left: '20px', background: '#11173d', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', zIndex: 999, boxShadow: '0 4px 10px rgba(0,0,0,0.3)' }}
+          onClick={() => { setVistaCliente(!vistaCliente); setTooltipActivo(null); }}
+          style={{ background: vistaCliente ? '#10b981' : '#11173d', color: '#fff', padding: '8px 20px', borderRadius: '25px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
         >
-          ⬅️ Volver a Modo Staff
+          {vistaCliente ? '👀 MODO CLIENTE (Oculto)' : '🏢 MODO STAFF (Interno)'}
         </button>
-      )}
-
-      {/* PANEL DE CONTROL INTERNO (Se oculta en vista cliente) */}
-      {!vistaCliente && (
-        <div style={{ background: '#11173d', color: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', boxShadow: '0 4px 10px rgba(17,23,61,0.2)' }}>
-          <div>
-            <span style={{ background: '#374151', color: '#d1d5db', padding: '3px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold' }}>PANEL INTERNO (STAFF)</span>
-            <div style={{ marginTop: '10px', fontSize: '1.1rem' }}><b>Proveedor:</b> {paquete.proveedor_nombre}</div>
-            <div style={{ color: '#9ca3af', fontSize: '0.9rem' }}>{paquete.proveedor_email}</div>
-          </div>
-          
-          <div style={{ background: '#1f2937', padding: '15px', borderRadius: '8px', border: '1px solid #374151' }}>
-            <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginBottom: '5px', fontWeight: 'bold' }}>ANÁLISIS DE COSTO (BASE DOBLE)</div>
-            <div style={{ display: 'flex', gap: '20px', fontSize: '1.1rem' }}>
-              <div>Costo Proveedor: <b style={{ color: '#f87171' }}>${formatearPrecio(costoRealBase)}</b></div>
-              <div>Precio Venta: <b>${formatearPrecio(precioVentaBase)}</b></div>
-              <div>Margen/Ganancia: <b style={{ color: '#4ade80' }}>${formatearPrecio(gananciaBase)}</b></div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={() => setVistaCliente(true)} style={{ background: '#0284c7', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              👁️ Vista a Cliente
-            </button>
-            {puedeEditar && (
-              <button onClick={() => setModoEdicion(true)} style={{ background: '#ef5a1a', color: '#fff', padding: '10px 20px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer' }}>
-                ✏️ Editar Paquete
-              </button>
-            )}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* ---------------- COMIENZO DEL FOLLETO (Se ve igual para todos) ---------------- */}
       <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
@@ -181,13 +185,30 @@ export default function DetallePaqueteInterno() {
           </div>
 
           <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '0.5px', alignSelf: 'flex-start' }}>
-              {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '0.5px', alignSelf: 'flex-start' }}>
+                {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
+              </div>
+              
+              {/* BOTÓN EDITAR: Vuelve a su posición original (Se oculta en vista cliente) */}
+              {puedeEditar && !vistaCliente && (
+                <button onClick={() => setModoEdicion(true)} style={{ background: '#ef5a1a', color: '#fff', padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.2)' }}>
+                  ✏️ Editar
+                </button>
+              )}
             </div>
             
-            <h1 style={{ margin: '0 0 10px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
+            <h1 style={{ margin: '0 0 5px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
               {paquete.destino}
             </h1>
+
+            {/* NOMBRE DEL PROVEEDOR (Se oculta en vista cliente) */}
+            {!vistaCliente && (
+              <div style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '15px' }}>
+                Proveedor: <b style={{ color: '#11173d' }}>{paquete.proveedor_nombre}</b>
+              </div>
+            )}
             
             <p style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1.1rem', fontWeight: 'bold' }}>
               <span style={{ color: '#ef5a1a', marginRight: '5px' }}>🌙</span>
@@ -224,7 +245,6 @@ export default function DetallePaqueteInterno() {
                 <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
                 {paquete.moneda || 'USD'} ${formatearPrecio(precioVentaBase)}
               </div>
-              {/* Esto solo se ve en vista interna */}
               {!vistaCliente && <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold' }}>*Precio Neto Agencia (Markup incluido)</span>}
             </div>
 
@@ -285,7 +305,7 @@ export default function DetallePaqueteInterno() {
                       </div>
                       {s.tarifa && (
                         <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
-                          + {paquete.moneda || 'USD'} ${formatearPrecio(s.tarifa)}
+                          + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
                         </div>
                       )}
                     </div>
@@ -396,16 +416,20 @@ export default function DetallePaqueteInterno() {
                           {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
                         </td>
                         <td style={{ padding: '15px 10px', textAlign: 'left', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>{tipoRegimen}</td>
-                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${formatearPrecio(aplicarMarkup(doble.mayor))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.menor ? `$${formatearPrecio(aplicarMarkup(doble.menor))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.child ? `$${formatearPrecio(aplicarMarkup(doble.child))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${formatearPrecio(aplicarMarkup(triple.mayor))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.menor ? `$${formatearPrecio(aplicarMarkup(triple.menor))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.child ? `$${formatearPrecio(aplicarMarkup(triple.child))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${formatearPrecio(aplicarMarkup(cuadruple.mayor))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.menor ? `$${formatearPrecio(aplicarMarkup(cuadruple.menor))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.child ? `$${formatearPrecio(aplicarMarkup(cuadruple.child))}` : '-'}</td>
-                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${formatearPrecio(aplicarMarkup(single.mayor))}` : '-'}</td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={doble.mayor} idUnico={`d-may-${idx}`} destacado={true} /></td>
+                        <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.menor} idUnico={`d-men-${idx}`} /></td>
+                        <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.child} idUnico={`d-chi-${idx}`} /></td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={triple.mayor} idUnico={`t-may-${idx}`} destacado={true} /></td>
+                        <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.menor} idUnico={`t-men-${idx}`} /></td>
+                        <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.child} idUnico={`t-chi-${idx}`} /></td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={cuadruple.mayor} idUnico={`c-may-${idx}`} destacado={true} /></td>
+                        <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.menor} idUnico={`c-men-${idx}`} /></td>
+                        <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.child} idUnico={`c-chi-${idx}`} /></td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={single.mayor} idUnico={`s-may-${idx}`} destacado={true} /></td>
                       </tr>
                     )
                   })}
