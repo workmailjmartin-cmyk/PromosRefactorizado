@@ -160,7 +160,11 @@ export default function AsistenteIA() {
       fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatActivoId, text: inputTexto })
+        // 👇 ACA ESTÁ LA MAGIA: Usamos las propiedades de msjUsuario
+        body: JSON.stringify({ 
+          chat_id: msjUsuario.chat_id, 
+          text: msjUsuario.content 
+        })
       });
     } catch (error) {
       console.error("Error webhook:", error);
