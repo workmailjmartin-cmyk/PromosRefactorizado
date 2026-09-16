@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { calcularVentaAgencia, formatMonedaCalc } from '@/lib/internal/calculadora';
+import Link from 'next/link';
+import { useStaffAuth } from '@/hooks/useStaffAuth';
 
 export default function FloatingCalculator({ dbCalculadora }) {
   const [abierto, setAbierto] = useState(false);
@@ -18,9 +20,10 @@ export default function FloatingCalculator({ dbCalculadora }) {
   const [carrito, setCarrito] = useState([]);
   const [copiadoIndividual, setCopiadoIndividual] = useState(false);
   const [copiadoPaquete, setCopiadoPaquete] = useState(false);
-
+  
   const srv = dbCalculadora.find((s) => s.id === servicioId);
   const proveedoresDisponibles = srv?.proveedores || [];
+  const { currentUser } = useStaffAuth();
 
   const handleClose = () => {
     setAbierto(false);
@@ -113,6 +116,39 @@ export default function FloatingCalculator({ dbCalculadora }) {
 
   return (
     <>
+      {/* 🤖 BOTÓN FLOTANTE DEL ASISTENTE IA (Verificando que esté logueado) */}
+      {currentUser && (
+        <Link 
+          href="/internal/asistente" 
+          target="_blank" 
+          rel="noopener noreferrer"
+        >
+          <div 
+            style={{
+              position: 'fixed',
+              bottom: '100px', // <-- Lo ponemos en 100px para que quede justo arriba de la calculadora
+              right: '25px',
+              width: '55px',
+              height: '55px',
+              borderRadius: '50%',
+              background: '#11173d', // Azul oscuro de tu marca
+              border: '2px solid #ef5a1a', // Borde naranja igual a la calculadora
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+              cursor: 'pointer',
+              zIndex: 9999,
+              transition: 'transform 0.2s',
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            title="Asistente IA"
+          >
+            <span style={{ fontSize: '26px' }}>🤖</span>
+          </div>
+        </Link>
+      )}
       <button
         title="Abrir Cotizador"
         onClick={() => setAbierto((v) => !v)}
