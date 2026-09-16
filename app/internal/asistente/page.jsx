@@ -4,7 +4,7 @@ import { useStaffAuth } from '@/hooks/useStaffAuth';
 import { useAlert } from '@/contexts/AlertContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { supabase } from '@/lib/supabase'; // Tu conexión a Supabase
+import { supabase } from '@/lib/supabase';
 
 const MAX_CHATS = 5;
 const MAX_TURNOS = 6;
@@ -19,15 +19,16 @@ export default function AsistenteIA() {
   const [mensajes, setMensajes] = useState([]);
 
   const [inputTexto, setInputTexto] = useState('');
-  const [imagenAdjunta, setImagenAdjunta] = useState(null); // Archivo crudo
-  const [imagenPrevia, setImagenPrevia] = useState(null); // Para mostrar
+  const [imagenAdjunta, setImagenAdjunta] = useState(null); 
+  const [imagenPrevia, setImagenPrevia] = useState(null); 
   const [isLoading, setIsLoading] = useState(false);
+  
+  // NUEVO: Estado para abrir/cerrar el menú en celulares
+  const [sidebarAbierta, setSidebarAbierta] = useState(false);
 
-  // Auto-scroll
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => { scrollToBottom(); }, [mensajes, isLoading]);
 
-  // 1. CARGAR CHATS
   useEffect(() => {
     if (!currentUser?.uid) return;
     const fetchChats = async () => {
@@ -48,11 +49,9 @@ export default function AsistenteIA() {
     fetchChats();
   }, [currentUser]);
 
-  // 2. CARGAR MENSAJES Y SUSCRIBIRSE A REALTIME 🚀
   useEffect(() => {
     if (!chatActivoId) return;
 
-    // A) Traer el historial previo
     const fetchMensajes = async () => {
       const { data } = await supabase
         .from('messages')
@@ -64,14 +63,12 @@ export default function AsistenteIA() {
     };
     fetchMensajes();
 
-    // B) LA MAGIA: Suscribirse a nuevos mensajes de la IA
     const channel = supabase
       .channel('chat_realtime')
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatActivoId}` }, 
         (payload) => {
           const nuevoMensaje = payload.new;
-          // Si el mensaje nuevo es de la IA, lo sumamos a la pantalla y apagamos el cargando
           if (nuevoMensaje.role === 'assistant') {
             setMensajes(prev => [...prev, nuevoMensaje]);
             setIsLoading(false);
@@ -80,10 +77,8 @@ export default function AsistenteIA() {
       )
       .subscribe();
 
-    // Limpiar suscripción al cambiar de chat
     return () => { supabase.removeChannel(channel); };
   }, [chatActivoId]);
-
 
   const crearNuevoChat = async () => {
     if (chats.length >= MAX_CHATS) {
@@ -99,6 +94,7 @@ export default function AsistenteIA() {
       setChats([data[0], ...chats]);
       setChatActivoId(data[0].id);
       setMensajes([]);
+      setSidebarAbierta(false); // Cierra el sidebar en mobile al crear uno nuevo
     }
   };
 
@@ -123,7 +119,6 @@ export default function AsistenteIA() {
     }
   };
 
-  // --- EL FLUJO PROPUESTO (REACT -> SUPABASE -> N8N) ---
   const enviarMensaje = async () => {
     if (!inputTexto.trim() && !imagenAdjunta) return;
     if (mensajes.length >= MAX_TURNOS) {
@@ -134,11 +129,10 @@ export default function AsistenteIA() {
     setIsLoading(true);
     let urlImagenSubida = null;
 
-    // 1. Subir imagen al Bucket si existe (Opcional)
     if (imagenAdjunta) {
       const nombreArchivo = `${Date.now()}_${imagenAdjunta.name}`;
       const { data: uploadData, error } = await supabase.storage
-        .from('cotizaciones_files') // <-- Asegurate de crear este bucket en Supabase
+        .from('cotizaciones_files')
         .upload(nombreArchivo, imagenAdjunta);
       
       if (!error) {
@@ -146,7 +140,6 @@ export default function AsistenteIA() {
       }
     }
 
-    // 2. Guardar mensaje del usuario en la tabla 'messages'
     const msjUsuario = {
       chat_id: chatActivoId,
       role: 'user',
@@ -156,25 +149,19 @@ export default function AsistenteIA() {
 
     const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
     
-    // Mostramos nuestro propio mensaje en pantalla inmediatamente
     if (dbMsgUser) setMensajes(prev => [...prev, dbMsgUser[0]]);
     
     setInputTexto('');
     setImagenAdjunta(null);
     setImagenPrevia(null);
 
-    // 3. Disparar el Webhook de n8n (Solo pasamos el ID)
     try {
       const WEBHOOK_N8N_URL = 'https://TU-N8N.com/webhook/cotizador-ia'; 
-      // Hacemos fetch pero NO le ponemos 'await' a la respuesta del JSON, 
-      // porque n8n solo debe devolver un 200 OK de recibido rápido, y luego procesar por atrás.
       fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: chatActivoId })
       });
-      // El estado 'isLoading' queda en TRUE. 
-      // Se va a apagar solo cuando el useEffect de Realtime reciba la respuesta de n8n.
     } catch (error) {
       console.error("Error webhook:", error);
       setIsLoading(false);
@@ -184,43 +171,79 @@ export default function AsistenteIA() {
   const esLimiteAlcanzado = mensajes.length >= MAX_TURNOS;
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 100px)', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', overflow: 'hidden', boxShadow: '0 10px 25px rgba(0,0,0,0.03)' }}>
+    // ACHICAMOS EL ALTO PARA QUE NO CHOCARA CON TU FOOTER DE JUAN PABLO MARTIN
+    <div className="relative flex w-full bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm" style={{ height: 'calc(100vh - 120px)' }}>
       
-      {/* SIDEBAR */}
-      <div style={{ width: '280px', background: '#f9fafb', borderRight: '1px solid #e5e7eb', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '20px' }}>
-          <button onClick={crearNuevoChat} style={{ width: '100%', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: chats.length >= MAX_CHATS ? 'not-allowed' : 'pointer', opacity: chats.length >= MAX_CHATS ? 0.7 : 1 }}>
+      {/* 📱 FONDO OSCURO PARA MOBILE (Cierra el menú al tocar afuera) */}
+      {sidebarAbierta && (
+        <div 
+          className="absolute inset-0 bg-black/50 z-20 md:hidden" 
+          onClick={() => setSidebarAbierta(false)} 
+        />
+      )}
+
+      {/* ================= SIDEBAR (RESPONSIVE) ================= */}
+      <div 
+        className={`absolute md:relative z-30 h-full w-[280px] bg-gray-50 border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${
+          sidebarAbierta ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}
+      >
+        <div className="p-5 flex justify-between items-center">
+          <button 
+            onClick={crearNuevoChat} 
+            className="flex-1 bg-[#11173d] text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-[#1a235c] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={chats.length >= MAX_CHATS}
+          >
             ➕ Nueva Cotización
+          </button>
+          
+          {/* Botón de cerrar solo en mobile */}
+          <button onClick={() => setSidebarAbierta(false)} className="md:hidden ml-3 text-xl p-2 text-gray-500">
+            ✖
           </button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 20px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <div className="flex-1 overflow-y-auto px-3 pb-5 flex flex-col gap-2">
           {chats.map(chat => (
-            <div key={chat.id} onClick={() => setChatActivoId(chat.id)} style={{ padding: '12px 15px', background: chatActivoId === chat.id ? '#e0f2fe' : 'transparent', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', color: chatActivoId === chat.id ? '#0369a1' : '#4b5563', fontWeight: chatActivoId === chat.id ? 'bold' : 'normal' }}>
+            <div 
+              key={chat.id} 
+              onClick={() => { setChatActivoId(chat.id); setSidebarAbierta(false); }} 
+              className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all ${
+                chatActivoId === chat.id ? 'bg-[#e0f2fe] border border-[#bae6fd]' : 'bg-transparent border border-transparent hover:bg-gray-100'
+              }`}
+            >
+              <div className={`overflow-hidden text-ellipsis whitespace-nowrap text-sm ${chatActivoId === chat.id ? 'text-[#0369a1] font-bold' : 'text-gray-600'}`}>
                 💬 {chat.title}
               </div>
-              <button onClick={(e) => archivarChat(e, chat.id)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer' }}>🗑️</button>
+              <button onClick={(e) => archivarChat(e, chat.id)} className="bg-transparent border-none text-gray-400 hover:text-red-500 cursor-pointer">
+                🗑️
+              </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ÁREA DE CHAT */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* ================= ÁREA DE CHAT ================= */}
+      <div className="flex-1 flex flex-col relative min-w-0 h-full">
         
-        <div style={{ padding: '15px 25px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#11173d', fontWeight: 900 }}>Asistente de Cotizaciones AI</h2>
-          <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold', background: '#f3f4f6', padding: '4px 10px', borderRadius: '12px' }}>
+        <div className="px-5 py-4 border-b border-gray-200 bg-white flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            {/* BOTÓN HAMBURGUESA SOLO EN MOBILE */}
+            <button onClick={() => setSidebarAbierta(true)} className="md:hidden text-2xl text-[#11173d] focus:outline-none">
+              ☰
+            </button>
+            <h2 className="m-0 text-lg md:text-xl text-[#11173d] font-black truncate">Asistente de Cotizaciones AI</h2>
+          </div>
+          
+          <span className="text-xs md:text-sm text-gray-500 font-bold bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
             Turnos: {mensajes.length} / {MAX_TURNOS}
           </span>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '30px', display: 'flex', flexDirection: 'column', gap: '20px', background: '#fcfcfc' }}>
-          
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-5 bg-[#fcfcfc]">
           {mensajes.length === 0 && !isLoading && (
-            <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: '50px' }}>
-              <h3>¡Hola! Soy tu asistente.</h3>
+            <div className="text-center text-gray-400 mt-10">
+              <h3 className="text-xl font-bold text-gray-500 mb-2">¡Hola! Soy tu asistente.</h3>
               <p>Mandame la cotización y la analizo con las reglas de nuestros manuales.</p>
             </div>
           )}
@@ -228,16 +251,20 @@ export default function AsistenteIA() {
           {mensajes.map((msg) => {
             const isAI = msg.role === 'assistant';
             return (
-              <div key={msg.id} style={{ display: 'flex', justifyContent: isAI ? 'flex-start' : 'flex-end', width: '100%' }}>
-                <div style={{ maxWidth: '75%', background: isAI ? '#fff' : '#11173d', color: isAI ? '#11173d' : '#fff', padding: '15px 20px', borderRadius: isAI ? '0px 16px 16px 16px' : '16px 0px 16px 16px', border: isAI ? '1px solid #e5e7eb' : 'none', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', fontSize: '0.95rem' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: isAI ? '#ef5a1a' : '#9ca3af', marginBottom: '8px' }}>
+              <div key={msg.id} className={`flex w-full ${isAI ? 'justify-start' : 'justify-end'}`}>
+                <div className={`max-w-[90%] md:max-w-[75%] p-4 text-sm md:text-base shadow-sm ${
+                  isAI 
+                    ? 'bg-white text-[#11173d] rounded-r-2xl rounded-bl-2xl border border-gray-200' 
+                    : 'bg-[#11173d] text-white rounded-l-2xl rounded-br-2xl'
+                }`}>
+                  <div className={`text-xs font-bold mb-2 ${isAI ? 'text-[#ef5a1a]' : 'text-gray-400'}`}>
                     {isAI ? '🤖 Asistente Feliz Viaje' : '👤 Tú'}
                   </div>
                   {msg.image_url && (
                      // eslint-disable-next-line @next/next/no-img-element
-                    <img src={msg.image_url} alt="Adjunto" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', marginBottom: '10px' }} />
+                    <img src={msg.image_url} alt="Adjunto" className="max-w-full max-h-[200px] rounded-lg mb-3" />
                   )}
-                  <div className="markdown-body" style={{ color: 'inherit' }}>
+                  <div className="markdown-body text-inherit leading-relaxed">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
@@ -246,44 +273,49 @@ export default function AsistenteIA() {
           })}
 
           {isLoading && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-              <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', color: '#6b7280', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                <span className="spinner-ia">🤖</span> Analizando base de conocimientos...
+            <div className="flex justify-start w-full">
+              <div className="bg-white p-4 rounded-r-2xl rounded-bl-2xl border border-gray-200 text-gray-500 text-sm font-bold flex items-center gap-2 shadow-sm">
+                <span className="spinner-ia text-lg">🤖</span> Analizando base de conocimientos...
               </div>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ÁREA DE INPUT */}
-        <div style={{ padding: '20px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+        {/* ================= ÁREA DE INPUT (AHORA CON MENOS ESPACIO ABAJO) ================= */}
+        <div className="p-3 md:p-4 bg-white border-t border-gray-200">
           {esLimiteAlcanzado ? (
-            <div style={{ textAlign: 'center', padding: '15px', background: '#fee2e2', color: '#dc2626', borderRadius: '12px', fontWeight: 'bold' }}>
+            <div className="text-center p-3 bg-red-100 text-red-600 rounded-xl font-bold text-sm">
               🛑 Contexto máximo alcanzado. Iniciá una nueva cotización.
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: '#f9fafb', padding: '15px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
+            <div className="flex flex-col gap-2 bg-gray-50 p-2 md:p-3 rounded-2xl border border-gray-200">
               
               {imagenPrevia && (
-                <div style={{ position: 'relative', width: 'max-content' }}>
+                <div className="relative w-max mb-1">
                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imagenPrevia} alt="Previa" style={{ height: '60px', borderRadius: '8px' }} />
-                  <button onClick={() => {setImagenAdjunta(null); setImagenPrevia(null)}} style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', fontSize: '10px', fontWeight: 'bold' }}>✕</button>
+                  <img src={imagenPrevia} alt="Previa" className="h-[50px] rounded-lg" />
+                  <button 
+                    onClick={() => {setImagenAdjunta(null); setImagenPrevia(null)}} 
+                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer text-[10px] font-bold shadow-md"
+                  >
+                    ✕
+                  </button>
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
-                <label style={{ cursor: isLoading ? 'not-allowed' : 'pointer', background: '#e5e7eb', padding: '12px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="flex gap-2 items-end">
+                <label className={`cursor-pointer bg-gray-200 p-3 rounded-full flex items-center justify-center transition-colors hover:bg-gray-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   📎
-                  <input type="file" accept="image/*" onChange={handleImagenUpload} style={{ display: 'none' }} disabled={isLoading} />
+                  <input type="file" accept="image/*" onChange={handleImagenUpload} className="hidden" disabled={isLoading} />
                 </label>
 
                 <textarea 
-                  placeholder="Escribí o pegá tu cotización acá..."
+                  placeholder="Pegá tu cotización acá..."
                   value={inputTexto}
                   onChange={(e) => setInputTexto(e.target.value)}
                   disabled={isLoading}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'none', outline: 'none' }}
+                  className="flex-1 p-3 rounded-xl border border-gray-300 text-sm md:text-base resize-none outline-none focus:border-[#0369a1] bg-white min-h-[50px] max-h-[120px]"
                   rows="2"
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje(); } }}
                 />
@@ -291,9 +323,12 @@ export default function AsistenteIA() {
                 <button 
                   onClick={enviarMensaje}
                   disabled={isLoading || (!inputTexto.trim() && !imagenAdjunta)}
-                  style={{ background: '#ef5a1a', color: '#fff', border: 'none', padding: '12px 20px', borderRadius: '12px', fontWeight: 'bold', cursor: (isLoading || (!inputTexto.trim() && !imagenAdjunta)) ? 'not-allowed' : 'pointer' }}
+                  className={`bg-[#ef5a1a] text-white border-none py-3 px-4 md:px-5 rounded-xl font-bold flex items-center gap-2 transition-transform ${
+                    (isLoading || (!inputTexto.trim() && !imagenAdjunta)) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 cursor-pointer'
+                  }`}
                 >
-                  {isLoading ? '⏳' : 'Enviar 🚀'}
+                  <span className="hidden md:inline">{isLoading ? 'Procesando...' : 'Enviar'}</span>
+                  {isLoading ? '⏳' : '🚀'}
                 </button>
               </div>
             </div>
@@ -301,13 +336,15 @@ export default function AsistenteIA() {
         </div>
       </div>
       
-      {/* Estilos para el Markdown */}
+      {/* Estilos Globales para la IA */}
       <style dangerouslySetInnerHTML={{__html: `
-        .markdown-body table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        .markdown-body th, .markdown-body td { border: 1px solid #d1d5db; padding: 8px; text-align: left; }
-        .markdown-body th { background: #f3f4f6; color: #11173d; font-weight: bold; }
-        .spinner-ia { display: inline-block; animation: latir 1.5s infinite; }
-        @keyframes latir { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; }
+        .markdown-body th, .markdown-body td { border: 1px solid #d1d5db; padding: 10px; text-align: left; font-size: 0.9em; }
+        .markdown-body th { background: #f3f4f6; color: #11173d; font-weight: 900; }
+        .markdown-body strong { font-weight: 900; color: inherit; }
+        .markdown-body ul { padding-left: 20px; list-style-type: disc; margin-bottom: 10px; }
+        .spinner-ia { display: inline-block; animation: latir 1s infinite alternate; }
+        @keyframes latir { 0% { transform: scale(0.9); } 100% { transform: scale(1.2); } }
       `}} />
     </div>
   );

@@ -117,7 +117,7 @@ export default function FloatingCalculator({ dbCalculadora }) {
   return (
     <>
       {/* 🤖 BOTÓN FLOTANTE DEL ASISTENTE IA */}
-      {currentUser && (
+      {currentUser && !abierto && (
         <Link 
           href="/internal/asistente" 
           target="_blank" 
