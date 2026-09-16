@@ -276,8 +276,8 @@ export default function AsistenteIA() {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Zona de Input */}
-        <div style={{ padding: '15px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+       {/* Zona de Input */}
+<div style={{ padding: '10px 15px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
           {esLimiteAlcanzado ? (
             <div style={{ textAlign: 'center', padding: '12px', background: '#fee2e2', color: '#dc2626', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.9rem' }}>
               🛑 Contexto máximo alcanzado. Por favor, iniciá una nueva cotización.
@@ -329,8 +329,7 @@ export default function AsistenteIA() {
       
       {/* 🔥 MAGIA CSS: Hace que sea responsive sin depender de Tailwind 🔥 */}
       <style dangerouslySetInnerHTML={{__html: `
-        .chat-ia-wrapper { display: flex; height: calc(100vh - 120px); background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; font-family: system-ui, -apple-system, sans-serif; }
-        .chat-sidebar { width: 280px; background: #f9fafb; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 30; }
+        .chat-ia-wrapper { display: flex; height: calc(100dvh - 75px); background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; font-family: system-ui, -apple-system, sans-serif; }        .chat-sidebar { width: 280px; background: #f9fafb; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 30; }
         .chat-main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; z-index: 10; }
         .chat-btn-cerrar-mobile, .chat-btn-menu-mobile { display: none; background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #11173d; }
         .chat-mobile-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 20; }
