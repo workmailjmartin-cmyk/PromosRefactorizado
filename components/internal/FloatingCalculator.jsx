@@ -116,7 +116,7 @@ export default function FloatingCalculator({ dbCalculadora }) {
 
   return (
     <>
-      {/* 🤖 BOTÓN FLOTANTE DEL ASISTENTE IA (Verificando que esté logueado) */}
+      {/* 🤖 BOTÓN FLOTANTE DEL ASISTENTE IA */}
       {currentUser && (
         <Link 
           href="/internal/asistente" 
@@ -126,33 +126,54 @@ export default function FloatingCalculator({ dbCalculadora }) {
           <div 
             style={{
               position: 'fixed',
-              bottom: '100px', // <-- Lo ponemos en 100px para que quede justo arriba de la calculadora
-              right: '25px',
-              width: '55px',
-              height: '55px',
+              bottom: '110px', // <-- Calculadora (30px) + Alto (65px) + Espacio (15px)
+              right: '30px',   // <-- Alineado perfecto con la calculadora
+              width: '65px',   // <-- Mismo tamaño que la calculadora
+              height: '65px',
               borderRadius: '50%',
-              background: '#11173d', // Azul oscuro de tu marca
-              border: '2px solid #ef5a1a', // Borde naranja igual a la calculadora
+              background: '#11173d',
+              border: '2px solid #ef5a1a',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+              boxShadow: '0 4px 15px rgba(17, 23, 61, 0.4)', // <-- Misma sombra
               cursor: 'pointer',
               zIndex: 9999,
-              transition: 'transform 0.2s',
+              transition: 'transform 0.2s', // Animación suave
             }}
             onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
             onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
             title="Asistente IA"
           >
-            <span style={{ fontSize: '26px' }}>🤖</span>
+            <span style={{ fontSize: '32px' }}>🤖</span>
           </div>
         </Link>
       )}
+
+      {/* 🧮 BOTÓN FLOTANTE DE LA CALCULADORA */}
       <button
         title="Abrir Cotizador"
         onClick={() => setAbierto((v) => !v)}
-        style={{ position: 'fixed', bottom: '30px', right: '30px', width: '65px', height: '65px', borderRadius: '50%', backgroundColor: '#11173d', border: '2px solid #ef5a1a', color: '#ef5a1a', boxShadow: '0 4px 15px rgba(17, 23, 61, 0.4)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', cursor: 'pointer' }}
+        style={{ 
+          position: 'fixed', 
+          bottom: '30px', 
+          right: '30px', 
+          width: '65px', 
+          height: '65px', 
+          borderRadius: '50%', 
+          backgroundColor: '#11173d', 
+          border: '2px solid #ef5a1a', 
+          color: '#ef5a1a', 
+          boxShadow: '0 4px 15px rgba(17, 23, 61, 0.4)', 
+          zIndex: 9999, 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          cursor: 'pointer',
+          transition: 'transform 0.2s' // <-- Se lo sumamos a la calculadora
+        }}
+        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'} // <-- Animación hover
+        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}    // <-- Animación hover
       >
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
