@@ -160,7 +160,7 @@ export default function AsistenteIA() {
       fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatActivoId })
+        body: JSON.stringify({ chat_id: chatActivoId, text: inputTexto })
       });
     } catch (error) {
       console.error("Error webhook:", error);
