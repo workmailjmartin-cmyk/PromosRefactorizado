@@ -120,7 +120,16 @@ export default function AsistenteIA() {
   };
 
   const enviarMensaje = async () => {
+    // 1. SEGURO ANTI-NULOS: Verificamos que haya texto y un chat activo
     if (!inputTexto.trim() && !imagenAdjunta) return;
+    
+    if (!chatActivoId) {
+      if(showAlert) showAlert('No hay un chat activo. Por favor, hacé clic en "Nueva Cotización".', 'error');
+      // Intentamos forzar la creación de uno si no había
+      crearNuevoChat();
+      return; 
+    }
+
     if (mensajes.length >= MAX_TURNOS) {
        if(showAlert) showAlert('Contexto máximo alcanzado. Iniciá una nueva cotización.', 'error');
        return;
@@ -160,10 +169,10 @@ export default function AsistenteIA() {
       fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // 👇 ACA ESTÁ LA MAGIA: Usamos las propiedades de msjUsuario
         body: JSON.stringify({ 
           chat_id: msjUsuario.chat_id, 
-          text: msjUsuario.content 
+          text: msjUsuario.content,
+          user_id: currentUser.uid // 👈 ACÁ MANDAMOS TU USUARIO DE FIREBASE COMO PEDISTE
         })
       });
     } catch (error) {
