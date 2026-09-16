@@ -23,7 +23,7 @@ export default function AsistenteIA() {
   const [imagenPrevia, setImagenPrevia] = useState(null); 
   const [isLoading, setIsLoading] = useState(false);
   
-  // NUEVO: Estado para abrir/cerrar el menú en celulares
+  // Estado para abrir/cerrar el menú en celulares
   const [sidebarAbierta, setSidebarAbierta] = useState(false);
 
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -94,7 +94,7 @@ export default function AsistenteIA() {
       setChats([data[0], ...chats]);
       setChatActivoId(data[0].id);
       setMensajes([]);
-      setSidebarAbierta(false); // Cierra el sidebar en mobile al crear uno nuevo
+      setSidebarAbierta(false);
     }
   };
 
@@ -171,51 +171,37 @@ export default function AsistenteIA() {
   const esLimiteAlcanzado = mensajes.length >= MAX_TURNOS;
 
   return (
-    // ACHICAMOS EL ALTO PARA QUE NO CHOCARA CON TU FOOTER DE JUAN PABLO MARTIN
-    <div className="relative flex w-full bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm" style={{ height: 'calc(100vh - 120px)' }}>
+    <div className="chat-ia-wrapper">
       
-      {/* 📱 FONDO OSCURO PARA MOBILE (Cierra el menú al tocar afuera) */}
+      {/* Overlay oscuro para mobile */}
       {sidebarAbierta && (
-        <div 
-          className="absolute inset-0 bg-black/50 z-20 md:hidden" 
-          onClick={() => setSidebarAbierta(false)} 
-        />
+        <div className="chat-mobile-overlay" onClick={() => setSidebarAbierta(false)}></div>
       )}
 
-      {/* ================= SIDEBAR (RESPONSIVE) ================= */}
-      <div 
-        className={`absolute md:relative z-30 h-full w-[280px] bg-gray-50 border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out ${
-          sidebarAbierta ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
-      >
-        <div className="p-5 flex justify-between items-center">
+      {/* ================= SIDEBAR (HISTORIAL) ================= */}
+      <div className={`chat-sidebar ${sidebarAbierta ? 'abierta' : ''}`}>
+        <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button 
-            onClick={crearNuevoChat} 
-            className="flex-1 bg-[#11173d] text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-[#1a235c] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={crearNuevoChat}
             disabled={chats.length >= MAX_CHATS}
+            style={{ flex: 1, padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: chats.length >= MAX_CHATS ? 'not-allowed' : 'pointer', opacity: chats.length >= MAX_CHATS ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
           >
             ➕ Nueva Cotización
           </button>
-          
-          {/* Botón de cerrar solo en mobile */}
-          <button onClick={() => setSidebarAbierta(false)} className="md:hidden ml-3 text-xl p-2 text-gray-500">
-            ✖
-          </button>
+          <button className="chat-btn-cerrar-mobile" onClick={() => setSidebarAbierta(false)}>✖</button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 pb-5 flex flex-col gap-2">
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 20px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
           {chats.map(chat => (
             <div 
-              key={chat.id} 
-              onClick={() => { setChatActivoId(chat.id); setSidebarAbierta(false); }} 
-              className={`p-3 rounded-xl cursor-pointer flex justify-between items-center transition-all ${
-                chatActivoId === chat.id ? 'bg-[#e0f2fe] border border-[#bae6fd]' : 'bg-transparent border border-transparent hover:bg-gray-100'
-              }`}
+              key={chat.id}
+              onClick={() => { setChatActivoId(chat.id); setSidebarAbierta(false); }}
+              style={{ padding: '12px 15px', background: chatActivoId === chat.id ? '#e0f2fe' : 'transparent', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: chatActivoId === chat.id ? '1px solid #bae6fd' : '1px solid transparent', transition: 'all 0.2s' }}
             >
-              <div className={`overflow-hidden text-ellipsis whitespace-nowrap text-sm ${chatActivoId === chat.id ? 'text-[#0369a1] font-bold' : 'text-gray-600'}`}>
+              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', color: chatActivoId === chat.id ? '#0369a1' : '#4b5563', fontWeight: chatActivoId === chat.id ? 'bold' : 'normal' }}>
                 💬 {chat.title}
               </div>
-              <button onClick={(e) => archivarChat(e, chat.id)} className="bg-transparent border-none text-gray-400 hover:text-red-500 cursor-pointer">
+              <button onClick={(e) => archivarChat(e, chat.id)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1.1rem' }} title="Eliminar Chat">
                 🗑️
               </button>
             </div>
@@ -223,48 +209,55 @@ export default function AsistenteIA() {
         </div>
       </div>
 
-      {/* ================= ÁREA DE CHAT ================= */}
-      <div className="flex-1 flex flex-col relative min-w-0 h-full">
+      {/* ================= ÁREA PRINCIPAL (CHAT) ================= */}
+      <div className="chat-main-area">
         
-        <div className="px-5 py-4 border-b border-gray-200 bg-white flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            {/* BOTÓN HAMBURGUESA SOLO EN MOBILE */}
-            <button onClick={() => setSidebarAbierta(true)} className="md:hidden text-2xl text-[#11173d] focus:outline-none">
-              ☰
-            </button>
-            <h2 className="m-0 text-lg md:text-xl text-[#11173d] font-black truncate">Asistente de Cotizaciones AI</h2>
+        {/* Cabecera del chat */}
+        <div style={{ padding: '15px 20px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button className="chat-btn-menu-mobile" onClick={() => setSidebarAbierta(true)}>☰</button>
+            <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#11173d', fontWeight: 900 }}>Asistente de Cotizaciones AI</h2>
           </div>
-          
-          <span className="text-xs md:text-sm text-gray-500 font-bold bg-gray-100 px-3 py-1 rounded-full whitespace-nowrap">
+          <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold', background: '#f3f4f6', padding: '4px 10px', borderRadius: '12px' }}>
             Turnos: {mensajes.length} / {MAX_TURNOS}
           </span>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 flex flex-col gap-5 bg-[#fcfcfc]">
+        {/* Zona de Mensajes */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', background: '#fcfcfc' }}>
+          
           {mensajes.length === 0 && !isLoading && (
-            <div className="text-center text-gray-400 mt-10">
-              <h3 className="text-xl font-bold text-gray-500 mb-2">¡Hola! Soy tu asistente.</h3>
-              <p>Mandame la cotización y la analizo con las reglas de nuestros manuales.</p>
+            <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: '40px' }}>
+              <h3 style={{ fontSize: '1.2rem', color: '#6b7280', marginBottom: '10px' }}>¡Hola! Soy tu asistente.</h3>
+              <p style={{ fontSize: '0.95rem' }}>Mandame la cotización y la analizo con las reglas de nuestros manuales.</p>
             </div>
           )}
 
           {mensajes.map((msg) => {
             const isAI = msg.role === 'assistant';
             return (
-              <div key={msg.id} className={`flex w-full ${isAI ? 'justify-start' : 'justify-end'}`}>
-                <div className={`max-w-[90%] md:max-w-[75%] p-4 text-sm md:text-base shadow-sm ${
-                  isAI 
-                    ? 'bg-white text-[#11173d] rounded-r-2xl rounded-bl-2xl border border-gray-200' 
-                    : 'bg-[#11173d] text-white rounded-l-2xl rounded-br-2xl'
-                }`}>
-                  <div className={`text-xs font-bold mb-2 ${isAI ? 'text-[#ef5a1a]' : 'text-gray-400'}`}>
+              <div key={msg.id} style={{ display: 'flex', justifyContent: isAI ? 'flex-start' : 'flex-end', width: '100%' }}>
+                <div style={{ 
+                  maxWidth: '85%', 
+                  background: isAI ? '#fff' : '#11173d', 
+                  color: isAI ? '#11173d' : '#fff', 
+                  padding: '15px 20px', 
+                  borderRadius: isAI ? '0px 16px 16px 16px' : '16px 0px 16px 16px',
+                  border: isAI ? '1px solid #e5e7eb' : 'none',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
+                  fontSize: '0.95rem',
+                  lineHeight: '1.6'
+                }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: isAI ? '#ef5a1a' : '#9ca3af', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                     {isAI ? '🤖 Asistente Feliz Viaje' : '👤 Tú'}
                   </div>
+                  
                   {msg.image_url && (
                      // eslint-disable-next-line @next/next/no-img-element
-                    <img src={msg.image_url} alt="Adjunto" className="max-w-full max-h-[200px] rounded-lg mb-3" />
+                    <img src={msg.image_url} alt="Adjunto" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', marginBottom: '10px', border: '1px solid #374151' }} />
                   )}
-                  <div className="markdown-body text-inherit leading-relaxed">
+
+                  <div className="markdown-body" style={{ color: 'inherit' }}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
@@ -273,41 +266,37 @@ export default function AsistenteIA() {
           })}
 
           {isLoading && (
-            <div className="flex justify-start w-full">
-              <div className="bg-white p-4 rounded-r-2xl rounded-bl-2xl border border-gray-200 text-gray-500 text-sm font-bold flex items-center gap-2 shadow-sm">
-                <span className="spinner-ia text-lg">🤖</span> Analizando base de conocimientos...
+            <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+              <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '10px', color: '#6b7280', fontSize: '0.9rem', fontWeight: 'bold' }}>
+                <span className="spinner-ia">🤖</span> Analizando manuales...
               </div>
             </div>
           )}
+
           <div ref={messagesEndRef} />
         </div>
 
-        {/* ================= ÁREA DE INPUT (AHORA CON MENOS ESPACIO ABAJO) ================= */}
-        <div className="p-3 md:p-4 bg-white border-t border-gray-200">
+        {/* Zona de Input */}
+        <div style={{ padding: '15px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
           {esLimiteAlcanzado ? (
-            <div className="text-center p-3 bg-red-100 text-red-600 rounded-xl font-bold text-sm">
-              🛑 Contexto máximo alcanzado. Iniciá una nueva cotización.
+            <div style={{ textAlign: 'center', padding: '12px', background: '#fee2e2', color: '#dc2626', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.9rem' }}>
+              🛑 Contexto máximo alcanzado. Por favor, iniciá una nueva cotización.
             </div>
           ) : (
-            <div className="flex flex-col gap-2 bg-gray-50 p-2 md:p-3 rounded-2xl border border-gray-200">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb', padding: '10px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
               
               {imagenPrevia && (
-                <div className="relative w-max mb-1">
-                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imagenPrevia} alt="Previa" className="h-[50px] rounded-lg" />
-                  <button 
-                    onClick={() => {setImagenAdjunta(null); setImagenPrevia(null)}} 
-                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center cursor-pointer text-[10px] font-bold shadow-md"
-                  >
-                    ✕
-                  </button>
+                <div style={{ position: 'relative', width: 'max-content' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imagenPrevia} alt="Previa" style={{ height: '50px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
+                  <button onClick={() => {setImagenAdjunta(null); setImagenPrevia(null)}} style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px', fontWeight: 'bold' }}>✕</button>
                 </div>
               )}
 
-              <div className="flex gap-2 items-end">
-                <label className={`cursor-pointer bg-gray-200 p-3 rounded-full flex items-center justify-center transition-colors hover:bg-gray-300 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                <label style={{ cursor: isLoading ? 'not-allowed' : 'pointer', background: '#e5e7eb', width: '45px', height: '45px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isLoading ? 0.5 : 1, transition: 'background 0.2s' }}>
                   📎
-                  <input type="file" accept="image/*" onChange={handleImagenUpload} className="hidden" disabled={isLoading} />
+                  <input type="file" accept="image/*" onChange={handleImagenUpload} style={{ display: 'none' }} disabled={isLoading} />
                 </label>
 
                 <textarea 
@@ -315,20 +304,22 @@ export default function AsistenteIA() {
                   value={inputTexto}
                   onChange={(e) => setInputTexto(e.target.value)}
                   disabled={isLoading}
-                  className="flex-1 p-3 rounded-xl border border-gray-300 text-sm md:text-base resize-none outline-none focus:border-[#0369a1] bg-white min-h-[50px] max-h-[120px]"
-                  rows="2"
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviarMensaje(); } }}
+                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'none', outline: 'none', minHeight: '45px', maxHeight: '100px', fontFamily: 'inherit', background: '#fff' }}
+                  rows="1"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      enviarMensaje();
+                    }
+                  }}
                 />
 
                 <button 
                   onClick={enviarMensaje}
                   disabled={isLoading || (!inputTexto.trim() && !imagenAdjunta)}
-                  className={`bg-[#ef5a1a] text-white border-none py-3 px-4 md:px-5 rounded-xl font-bold flex items-center gap-2 transition-transform ${
-                    (isLoading || (!inputTexto.trim() && !imagenAdjunta)) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 cursor-pointer'
-                  }`}
+                  style={{ background: '#ef5a1a', color: '#fff', border: 'none', height: '45px', padding: '0 20px', borderRadius: '12px', fontWeight: 'bold', cursor: (isLoading || (!inputTexto.trim() && !imagenAdjunta)) ? 'not-allowed' : 'pointer', opacity: (isLoading || (!inputTexto.trim() && !imagenAdjunta)) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'transform 0.2s' }}
                 >
-                  <span className="hidden md:inline">{isLoading ? 'Procesando...' : 'Enviar'}</span>
-                  {isLoading ? '⏳' : '🚀'}
+                  <span className="chat-btn-text">Enviar</span> 🚀
                 </button>
               </div>
             </div>
@@ -336,15 +327,30 @@ export default function AsistenteIA() {
         </div>
       </div>
       
-      {/* Estilos Globales para la IA */}
+      {/* 🔥 MAGIA CSS: Hace que sea responsive sin depender de Tailwind 🔥 */}
       <style dangerouslySetInnerHTML={{__html: `
-        .markdown-body table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; }
-        .markdown-body th, .markdown-body td { border: 1px solid #d1d5db; padding: 10px; text-align: left; font-size: 0.9em; }
-        .markdown-body th { background: #f3f4f6; color: #11173d; font-weight: 900; }
-        .markdown-body strong { font-weight: 900; color: inherit; }
+        .chat-ia-wrapper { display: flex; height: calc(100vh - 120px); background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; font-family: system-ui, -apple-system, sans-serif; }
+        .chat-sidebar { width: 280px; background: #f9fafb; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 30; }
+        .chat-main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; z-index: 10; }
+        .chat-btn-cerrar-mobile, .chat-btn-menu-mobile { display: none; background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #11173d; }
+        .chat-mobile-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 20; }
+        
+        .markdown-body table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .markdown-body th, .markdown-body td { border: 1px solid #d1d5db; padding: 8px; text-align: left; font-size: 0.9em; }
+        .markdown-body th { background: #f3f4f6; color: #11173d; font-weight: bold; }
         .markdown-body ul { padding-left: 20px; list-style-type: disc; margin-bottom: 10px; }
+        .markdown-body strong { font-weight: 900; color: inherit; }
         .spinner-ia { display: inline-block; animation: latir 1s infinite alternate; }
         @keyframes latir { 0% { transform: scale(0.9); } 100% { transform: scale(1.2); } }
+
+        /* REGLAS PARA CELULARES */
+        @media (max-width: 768px) {
+          .chat-sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
+          .chat-sidebar.abierta { transform: translateX(0); }
+          .chat-btn-menu-mobile, .chat-btn-cerrar-mobile, .chat-mobile-overlay { display: block; }
+          .chat-btn-text { display: none; } /* Oculta la palabra "Enviar" en celu, deja el cohete */
+          .chat-main-area .markdown-body { font-size: 0.9rem; }
+        }
       `}} />
     </div>
   );
