@@ -156,7 +156,7 @@ export default function AsistenteIA() {
     setImagenPrevia(null);
 
     try {
-      const WEBHOOK_N8N_URL = 'https://TU-N8N.com/webhook/cotizador-ia'; 
+      const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia'; 
       fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
