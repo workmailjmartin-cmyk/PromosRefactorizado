@@ -62,39 +62,33 @@ export default function DetallePaqueteInterno() {
 
     // Solo calculamos si hay una fecha de salida seleccionada
     if (fechaSeleccionada) {
-      const fechaSalida = new Date(`${fechaSeleccionada}T12:00:00Z`); // Asegura zona horaria neutra
+      const fechaSalida = new Date(`${fechaSeleccionada}T12:00:00Z`);
       const hoy = new Date();
       
-      // Fecha límite (30 días antes de salir)
       const fechaTope = new Date(fechaSalida.getTime());
       fechaTope.setDate(fechaTope.getDate() - 30);
       
-      // Días de diferencia entre HOY y la Fecha de Salida
       const diffTime = fechaSalida.getTime() - hoy.getTime();
       const diasFaltantesParaViaje = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
       if (diasFaltantesParaViaje <= 30) {
-        // Regla A: Faltan menos de 30 días -> Pago al contado.
         exigeContado = true;
       } else {
-        // Regla B/C: Hay margen para señar.
         const tipoFinanciacion = paquete?.financiacion || 'sena_30';
         
         if (tipoFinanciacion === 'sena_30') {
-          sena = Math.round(venta * 0.30); // 30% del precio de venta
+          sena = Math.round(venta * 0.30);
         } else if (tipoFinanciacion === 'financiado_100') {
-          sena = 0; // 100% financiado (sin seña inicial)
+          sena = 0;
         }
         
         const saldoAFinanciar = venta - sena;
         fechaLimitePago = fechaTope.toLocaleDateString('es-AR');
 
-        // Calcular cuotas mensuales hasta la fecha tope
         const diffTimeHastaTope = fechaTope.getTime() - hoy.getTime();
         const diasHastaTope = Math.ceil(diffTimeHastaTope / (1000 * 60 * 60 * 24));
         
         if (diasHastaTope >= 30) {
-          // Hay meses disponibles para cuotas (cada 30 días = 1 cuota)
           cuotasDisponibles = Math.floor(diasHastaTope / 30);
           valorCuota = Math.round(saldoAFinanciar / cuotasDisponibles);
         }
@@ -103,7 +97,6 @@ export default function DetallePaqueteInterno() {
 
     return (
       <>
-        {/* Fondo invisible para cerrar el cartel al hacer clic afuera */}
         {isOpen && (
           <div 
             onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
@@ -118,15 +111,15 @@ export default function DetallePaqueteInterno() {
             setTooltipActivo(isOpen ? null : idUnico);
           }}
         >
-          <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit', borderBottom: '1px dashed #cbd5e1' }}>
+          {/* 1. ACÁ LE SACAMOS LA LÍNEA PUNTEADA AL NÚMERO */}
+          <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit' }}>
             ${formatearPrecio(venta)}
           </span>
           
-          {/* El cartelito flotante */}
+          {/* 2. EL GLOBO AHORA ABRE HACIA ABAJO (top: 100%) PARA NO SER CORTADO POR EL TECHO DE LA TABLA */}
           {isOpen && (
-            <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 50, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', marginBottom: '10px', cursor: 'default' }}>
+            <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 50, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', marginTop: '12px', cursor: 'default' }}>
               
-              {/* BLOQUE STAFF (Oculto al cliente) */}
               {!vistaCliente && (
                 <div style={{ borderBottom: '1px solid #374151', paddingBottom: '10px', marginBottom: '10px' }}>
                   <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Uso Interno</div>
@@ -139,7 +132,6 @@ export default function DetallePaqueteInterno() {
                 </div>
               )}
 
-              {/* BLOQUE CLIENTE / FINANCIACIÓN (Visible para todos) */}
               <div>
                 <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Plan de Pago</div>
                 
@@ -172,8 +164,8 @@ export default function DetallePaqueteInterno() {
                 )}
               </div>
 
-              {/* El piquito del globo */}
-              <div style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid #11173d' }}></div>
+              {/* El piquito del globo AHORA APUNTA HACIA ARRIBA (top: -8px) */}
+              <div style={{ position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderBottom: '8px solid #11173d' }}></div>
             </div>
           )}
         </div>
