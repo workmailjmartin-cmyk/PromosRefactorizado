@@ -36,7 +36,6 @@ export default function DetallePaqueteInterno() {
   // EL INTERRUPTOR MÁGICO PARA MOSTRAR AL CLIENTE
   const [vistaCliente, setVistaCliente] = useState(false);
   const [tooltipActivo, setTooltipActivo] = useState(null); 
-  const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 }); 
   const [descAbierta, setDescAbierta] = useState(true);
 
   const formatearPrecio = (valor) => {
@@ -44,7 +43,7 @@ export default function DetallePaqueteInterno() {
     return Number(valor).toLocaleString('es-AR');
   };
 
-  // --- MINI COMPONENTE PARA EL PRECIO CON CARTELITO Y CÁLCULO DE FINANCIACIÓN ---
+ // --- MINI COMPONENTE PARA EL PRECIO CON CARTELITO Y CÁLCULO DE FINANCIACIÓN ---
   const PrecioClickable = ({ valor, idUnico, destacado = false }) => {
     if (!valor) return '-';
     
@@ -61,7 +60,6 @@ export default function DetallePaqueteInterno() {
     let fechaLimitePago = '';
     let exigeContado = false;
 
-    // Solo calculamos si hay una fecha de salida seleccionada
     if (fechaSeleccionada) {
       const fechaSalida = new Date(`${fechaSeleccionada}T12:00:00Z`);
       const hoy = new Date();
@@ -98,7 +96,6 @@ export default function DetallePaqueteInterno() {
 
     return (
       <>
-        {/* Fondo invisible para cerrar el cartel al hacer clic afuera */}
         {isOpen && (
           <div 
             onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
@@ -107,26 +104,18 @@ export default function DetallePaqueteInterno() {
         )}
 
         <div 
-          style={{ display: 'inline-block', cursor: 'pointer' }} 
+          style={{ position: 'relative', display: 'inline-block', cursor: 'pointer', zIndex: isOpen ? 50 : 1 }} 
           onClick={(e) => { 
             e.stopPropagation();
-            if (isOpen) {
-               setTooltipActivo(null);
-            } else {
-               // MAGIA: Capturamos la coordenada X e Y de tu clic para "escapar" de la tabla
-               const rect = e.currentTarget.getBoundingClientRect();
-               setTooltipCoords({ top: rect.top, left: rect.left + (rect.width / 2) });
-               setTooltipActivo(idUnico);
-            }
+            setTooltipActivo(isOpen ? null : idUnico);
           }}
         >
           <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit' }}>
             ${formatearPrecio(venta)}
           </span>
           
-          {/* EL GLOBO FLOTANTE LIBRE (position: fixed) */}
           {isOpen && (
-            <div style={{ position: 'fixed', top: tooltipCoords.top - 12, left: tooltipCoords.left, transform: 'translateX(-50%) translateY(-100%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 99999, width: '220px', textAlign: 'left', boxShadow: '0 15px 30px rgba(0,0,0,0.5)', cursor: 'default' }}>
+            <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 9999, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', marginBottom: '12px', cursor: 'default' }}>
               
               {!vistaCliente && (
                 <div style={{ borderBottom: '1px solid #374151', paddingBottom: '10px', marginBottom: '10px' }}>
@@ -172,7 +161,7 @@ export default function DetallePaqueteInterno() {
                 )}
               </div>
 
-              {/* El piquito del globo apunta hacia ABAJO porque el globo abre hacia ARRIBA */}
+              {/* Piquito apuntando hacia abajo */}
               <div style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid #11173d' }}></div>
             </div>
           )}
@@ -515,7 +504,10 @@ export default function DetallePaqueteInterno() {
 
           {tarifarioFiltrado.length > 0 && (
             <>
-            <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
+            {/* Contenedor sin overflow oculto para que el globo pueda sobresalir */}
+            <div style={{ borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
+              {/* Contenedor interno para el scroll horizontal en celulares */}
+              <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '200px', marginBottom: '-200px' }}>
               <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ background: '#11173d', color: '#fff' }}>
@@ -571,7 +563,8 @@ export default function DetallePaqueteInterno() {
                   })}
                 </tbody>
               </table>
-          </div>
+              </div> {/* Cierre del contenedor de scroll */}
+          </div> {/* Cierre del contenedor principal con borde */}
 
           {/* ACLARACIÓN DE TARIFAS POR PERSONA */}
           <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
