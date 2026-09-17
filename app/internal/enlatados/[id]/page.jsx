@@ -74,16 +74,12 @@ export default function DetallePaqueteInterno() {
         exigeContado = true;
       } else {
         const tipoFinanciacion = paquete?.financiacion || 'sena_30';
-        
-        if (tipoFinanciacion === 'sena_30') {
-          sena = Math.round(venta * 0.30);
-        } else if (tipoFinanciacion === 'financiado_100') {
-          sena = 0;
-        }
+        if (tipoFinanciacion === 'sena_30') sena = Math.round(venta * 0.30);
+        else if (tipoFinanciacion === 'financiado_100') sena = 0;
         
         const saldoAFinanciar = venta - sena;
         fechaLimitePago = fechaTope.toLocaleDateString('es-AR');
-
+        
         const diffTimeHastaTope = fechaTope.getTime() - hoy.getTime();
         const diasHastaTope = Math.ceil(diffTimeHastaTope / (1000 * 60 * 60 * 24));
         
@@ -94,8 +90,34 @@ export default function DetallePaqueteInterno() {
       }
     }
 
+    // MAGIA: MOTOR DE ANCLAJE AL SCROLL
+    const [coords, setCoords] = useState({ top: 0, left: 0 });
+    const anchorRef = React.useRef(null); // Referencia exacta al número
+
+    useEffect(() => {
+      if (!isOpen || !anchorRef.current) return;
+      
+      const updatePosition = () => {
+        const rect = anchorRef.current.getBoundingClientRect();
+        // Calculamos el centro exacto del número en la pantalla actual
+        setCoords({ top: rect.top, left: rect.left + (rect.width / 2) });
+      };
+
+      updatePosition(); // Calculamos al instante al hacer clic
+
+      // Recalculamos automáticamente si movés la rueda del mouse o la tabla
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }, [isOpen]);
+
     return (
       <>
+        {/* Fondo invisible para cerrar el cartel al hacer clic afuera */}
         {isOpen && (
           <div 
             onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
@@ -104,6 +126,7 @@ export default function DetallePaqueteInterno() {
         )}
 
         <div 
+          ref={anchorRef} 
           style={{ position: 'relative', display: 'inline-block', cursor: 'pointer', zIndex: isOpen ? 50 : 1 }} 
           onClick={(e) => { 
             e.stopPropagation();
@@ -114,8 +137,9 @@ export default function DetallePaqueteInterno() {
             ${formatearPrecio(venta)}
           </span>
           
+          {/* EL GLOBO FLOTANTE (Position: fixed para evitar la guillotina de la tabla) */}
           {isOpen && (
-            <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 9999, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', marginBottom: '12px', cursor: 'default' }}>
+            <div style={{ position: 'fixed', top: coords.top - 12, left: coords.left, transform: 'translateX(-50%) translateY(-100%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 99999, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', cursor: 'default' }}>
               
               {!vistaCliente && (
                 <div style={{ borderBottom: '1px solid #374151', paddingBottom: '10px', marginBottom: '10px' }}>
@@ -161,7 +185,7 @@ export default function DetallePaqueteInterno() {
                 )}
               </div>
 
-              {/* Piquito apuntando hacia abajo */}
+              {/* El piquito apunta hacia ABAJO porque el globo abre hacia ARRIBA */}
               <div style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid #11173d' }}></div>
             </div>
           )}
