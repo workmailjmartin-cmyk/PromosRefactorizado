@@ -45,15 +45,39 @@ export default function DetallePaqueteInterno() {
 
  // --- MINI COMPONENTE PARA EL PRECIO CON CARTELITO Y CÁLCULO DE FINANCIACIÓN ---
   const PrecioClickable = ({ valor, idUnico, destacado = false }) => {
+    // 1. REGLA DE REACT: TODOS LOS HOOKS AL PRINCIPIO
+    const [coords, setCoords] = useState({ top: 0, left: 0 });
+    const anchorRef = React.useRef(null);
+    const isOpen = tooltipActivo === idUnico;
+
+    useEffect(() => {
+      if (!isOpen || !anchorRef.current) return;
+      
+      const updatePosition = () => {
+        const rect = anchorRef.current.getBoundingClientRect();
+        setCoords({ top: rect.top, left: rect.left + (rect.width / 2) });
+      };
+
+      updatePosition();
+
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }, [isOpen]);
+
+    // 2. AHORA SÍ, ESCAPE RÁPIDO SI NO HAY PRECIO
     if (!valor) return '-';
     
-    // 1. Cálculos base (Agencia)
+    // 3. CÁLCULOS BASE
     const costo = parseFloat(valor);
     const venta = Math.round(costo * MARKUP_AGENCIA);
     const ganancia = venta - costo;
-    const isOpen = tooltipActivo === idUnico;
 
-    // 2. Variables de Financiación
+    // 4. VARIABLES DE FINANCIACIÓN
     let sena = 0;
     let cuotasDisponibles = 0;
     let valorCuota = 0;
@@ -90,34 +114,8 @@ export default function DetallePaqueteInterno() {
       }
     }
 
-    // MAGIA: MOTOR DE ANCLAJE AL SCROLL
-    const [coords, setCoords] = useState({ top: 0, left: 0 });
-    const anchorRef = React.useRef(null); // Referencia exacta al número
-
-    useEffect(() => {
-      if (!isOpen || !anchorRef.current) return;
-      
-      const updatePosition = () => {
-        const rect = anchorRef.current.getBoundingClientRect();
-        // Calculamos el centro exacto del número en la pantalla actual
-        setCoords({ top: rect.top, left: rect.left + (rect.width / 2) });
-      };
-
-      updatePosition(); // Calculamos al instante al hacer clic
-
-      // Recalculamos automáticamente si movés la rueda del mouse o la tabla
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
-      
-      return () => {
-        window.removeEventListener('scroll', updatePosition, true);
-        window.removeEventListener('resize', updatePosition);
-      };
-    }, [isOpen]);
-
     return (
       <>
-        {/* Fondo invisible para cerrar el cartel al hacer clic afuera */}
         {isOpen && (
           <div 
             onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
@@ -137,7 +135,6 @@ export default function DetallePaqueteInterno() {
             ${formatearPrecio(venta)}
           </span>
           
-          {/* EL GLOBO FLOTANTE (Position: fixed para evitar la guillotina de la tabla) */}
           {isOpen && (
             <div style={{ position: 'fixed', top: coords.top - 12, left: coords.left, transform: 'translateX(-50%) translateY(-100%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 99999, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.4)', cursor: 'default' }}>
               
@@ -185,7 +182,6 @@ export default function DetallePaqueteInterno() {
                 )}
               </div>
 
-              {/* El piquito apunta hacia ABAJO porque el globo abre hacia ARRIBA */}
               <div style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid #11173d' }}></div>
             </div>
           )}
