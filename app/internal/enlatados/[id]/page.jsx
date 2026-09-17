@@ -1,6 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import React, { useEffect, useState, useRef } from 'react';import { useParams } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Loader from '@/components/shared/Loader'; 
@@ -47,7 +46,7 @@ export default function DetallePaqueteInterno() {
   const PrecioClickable = ({ valor, idUnico, destacado = false }) => {
     // 1. REGLA DE REACT: TODOS LOS HOOKS AL PRINCIPIO
     const [coords, setCoords] = useState({ top: 0, left: 0 });
-    const anchorRef = React.useRef(null);
+    const anchorRef = useRef(null);
     const isOpen = tooltipActivo === idUnico;
 
     useEffect(() => {
