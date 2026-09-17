@@ -262,7 +262,12 @@ export default function DetallePaqueteInterno() {
                 {paquete.moneda || 'USD'} ${formatearPrecio(precioVentaBase)}
               </div>
               {!vistaCliente && <span style={{ fontSize: '0.7rem', color: '#9ca3af', fontWeight: 'bold', display: 'block', marginBottom: '10px' }}>*Precio Neto Agencia (Markup incluido)</span>}
-              
+              <div className="mt-2 text-[10px] sm:text-xs text-red-600 font-semibold uppercase bg-red-50 p-1.5 rounded border border-red-100 text-center flex items-center justify-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Disponibilidad sujeta a confirmación
+              </div>
               {/* BOTÓN SCROLL SUAVE A TARIFAS */}
               <button 
                 onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
@@ -483,6 +488,12 @@ export default function DetallePaqueteInterno() {
           {/* ACLARACIÓN DE TARIFAS POR PERSONA */}
           <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
             * Todas las tarifas están expresadas por persona.
+          </div>
+          <div className="mt-2 text-[10px] sm:text-xs text-red-600 font-semibold uppercase bg-red-50 p-1.5 rounded border border-red-100 text-center flex items-center justify-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            Disponibilidad sujeta a confirmación
           </div>
           </>
         )}
