@@ -43,18 +43,68 @@ export default function DetallePaqueteInterno() {
     return Number(valor).toLocaleString('es-AR');
   };
 
-  // --- MINI COMPONENTE PARA EL PRECIO CON CARTELITO ---
+  // --- MINI COMPONENTE PARA EL PRECIO CON CARTELITO Y CÁLCULO DE FINANCIACIÓN ---
   const PrecioClickable = ({ valor, idUnico, destacado = false }) => {
     if (!valor) return '-';
+    
+    // 1. Cálculos base (Agencia)
     const costo = parseFloat(valor);
     const venta = Math.round(costo * MARKUP_AGENCIA);
     const ganancia = venta - costo;
     const isOpen = tooltipActivo === idUnico;
 
+    // 2. Variables de Financiación
+    let sena = 0;
+    let cuotasDisponibles = 0;
+    let valorCuota = 0;
+    let fechaLimitePago = '';
+    let exigeContado = false;
+
+    // Solo calculamos si hay una fecha de salida seleccionada
+    if (fechaSeleccionada) {
+      const fechaSalida = new Date(`${fechaSeleccionada}T12:00:00Z`); // Asegura zona horaria neutra
+      const hoy = new Date();
+      
+      // Fecha límite (30 días antes de salir)
+      const fechaTope = new Date(fechaSalida.getTime());
+      fechaTope.setDate(fechaTope.getDate() - 30);
+      
+      // Días de diferencia entre HOY y la Fecha de Salida
+      const diffTime = fechaSalida.getTime() - hoy.getTime();
+      const diasFaltantesParaViaje = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diasFaltantesParaViaje <= 30) {
+        // Regla A: Faltan menos de 30 días -> Pago al contado.
+        exigeContado = true;
+      } else {
+        // Regla B/C: Hay margen para señar.
+        const tipoFinanciacion = paquete?.financiacion || 'sena_30';
+        
+        if (tipoFinanciacion === 'sena_30') {
+          sena = Math.round(venta * 0.30); // 30% del precio de venta
+        } else if (tipoFinanciacion === 'financiado_100') {
+          sena = 0; // 100% financiado (sin seña inicial)
+        }
+        
+        const saldoAFinanciar = venta - sena;
+        fechaLimitePago = fechaTope.toLocaleDateString('es-AR');
+
+        // Calcular cuotas mensuales hasta la fecha tope
+        const diffTimeHastaTope = fechaTope.getTime() - hoy.getTime();
+        const diasHastaTope = Math.ceil(diffTimeHastaTope / (1000 * 60 * 60 * 24));
+        
+        if (diasHastaTope >= 30) {
+          // Hay meses disponibles para cuotas (cada 30 días = 1 cuota)
+          cuotasDisponibles = Math.floor(diasHastaTope / 30);
+          valorCuota = Math.round(saldoAFinanciar / cuotasDisponibles);
+        }
+      }
+    }
+
     return (
       <>
         {/* Fondo invisible para cerrar el cartel al hacer clic afuera */}
-        {isOpen && !vistaCliente && (
+        {isOpen && (
           <div 
             onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
             style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 40, cursor: 'default' }}
@@ -62,30 +112,68 @@ export default function DetallePaqueteInterno() {
         )}
 
         <div 
-          style={{ position: 'relative', display: 'inline-block', cursor: !vistaCliente ? 'pointer' : 'default', zIndex: isOpen ? 50 : 1 }} 
+          style={{ position: 'relative', display: 'inline-block', cursor: 'pointer', zIndex: isOpen ? 50 : 1 }} 
           onClick={(e) => { 
-            if (!vistaCliente) {
-              e.stopPropagation(); // Evita que el clic se propague al fondo invisible inmediatamente
-              setTooltipActivo(isOpen ? null : idUnico);
-            }
+            e.stopPropagation();
+            setTooltipActivo(isOpen ? null : idUnico);
           }}
         >
-          {/* El precio de venta SIN el subrayado punteado */}
-          <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit' }}>
+          <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit', borderBottom: '1px dashed #cbd5e1' }}>
             ${formatearPrecio(venta)}
           </span>
           
           {/* El cartelito flotante */}
-          {isOpen && !vistaCliente && (
-            <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '10px', borderRadius: '8px', fontSize: '0.85rem', zIndex: 50, width: '150px', textAlign: 'left', boxShadow: '0 4px 15px rgba(0,0,0,0.3)', marginBottom: '8px', cursor: 'default' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #374151', paddingBottom: '5px', marginBottom: '5px' }}>
-                <span style={{color: '#9ca3af'}}>Costo:</span> <b>${formatearPrecio(costo)}</b>
+          {isOpen && (
+            <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 50, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', marginBottom: '10px', cursor: 'default' }}>
+              
+              {/* BLOQUE STAFF (Oculto al cliente) */}
+              {!vistaCliente && (
+                <div style={{ borderBottom: '1px solid #374151', paddingBottom: '10px', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Uso Interno</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                    <span style={{color: '#d1d5db'}}>Costo Neto:</span> <b>${formatearPrecio(costo)}</b>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{color: '#4ade80'}}>Ganancia:</span> <b style={{color: '#4ade80'}}>${formatearPrecio(ganancia)}</b>
+                  </div>
+                </div>
+              )}
+
+              {/* BLOQUE CLIENTE / FINANCIACIÓN (Visible para todos) */}
+              <div>
+                <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Plan de Pago</div>
+                
+                {exigeContado ? (
+                  <div style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '0.9rem', textAlign: 'center', padding: '10px 0' }}>
+                    ⚠️ Pago 100% Contado
+                    <div style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#d1d5db', marginTop: '4px' }}>(Viaje próximo)</div>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                      <span style={{color: '#d1d5db'}}>Seña:</span> <b>${formatearPrecio(sena)}</b>
+                    </div>
+                    
+                    {cuotasDisponibles > 0 ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', background: 'rgba(255,255,255,0.1)', padding: '4px 6px', borderRadius: '4px' }}>
+                        <span style={{color: '#fff'}}>Saldo en:</span> <b>{cuotasDisponibles} x ${formatearPrecio(valorCuota)}</b>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                        <span style={{color: '#d1d5db'}}>Saldo total:</span> <b>${formatearPrecio(venta - sena)}</b>
+                      </div>
+                    )}
+                    
+                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '8px', borderTop: '1px dashed #4b5563', paddingTop: '5px' }}>
+                      Fecha límite de pago:<br/>
+                      <strong style={{color: '#fbbf24'}}>{fechaLimitePago}</strong>
+                    </div>
+                  </>
+                )}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{color: '#4ade80'}}>Ganancia:</span> <b>${formatearPrecio(ganancia)}</b>
-              </div>
+
               {/* El piquito del globo */}
-              <div style={{ position: 'absolute', bottom: '-5px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #11173d' }}></div>
+              <div style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid #11173d' }}></div>
             </div>
           )}
         </div>
