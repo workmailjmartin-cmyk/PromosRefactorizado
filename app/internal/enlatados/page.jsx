@@ -219,9 +219,9 @@ export default function InternalEnlatadosDashboard() {
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Transporte</label>
               <select value={filtroTransporte} onChange={(e) => setFiltroTransporte(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
                 <option value="">Todos</option>
-                <option value="bus">Solo Bus</option>
-                <option value="aereo">Solo Aéreo</option>
-                <option value="charter">Aéreo Charter</option>
+                <option value="bus">Paquete Bus</option>
+                <option value="aereo">Paquete Aéreo</option>
+                <option value="charter">🛩️ Grupal Acompañado</option>
               </select>
             </div>
 
