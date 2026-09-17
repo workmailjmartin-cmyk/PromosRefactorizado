@@ -42,7 +42,7 @@ const tarifaVacia = {
 export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = null }) {
   const [loading, setLoading] = useState(false);
   
-  const [infoGeneral, setInfoGeneral] = useState({ destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD' });
+  const [infoGeneral, setInfoGeneral] = useState({ destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD', financiacion: '' });
   const [paradas, setParadas] = useState([]);
   const [tempParada, setTempParada] = useState('');
   const [vuelos, setVuelos] = useState([]);
@@ -66,7 +66,8 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       setInfoGeneral({
         destino: paqueteAEditar.destino || '', tipo: paqueteAEditar.tipo || 'Grupales', transporte: paqueteAEditar.transporte || 'bus-mix',
         dias: paqueteAEditar.dias || '', noches: paqueteAEditar.noches || '', origenProvincia: paqueteAEditar.origenProvincia || '',
-        origenAeropuerto: paqueteAEditar.origenAeropuerto || paqueteAEditar.origenPrincipal || '', moneda: paqueteAEditar.moneda || 'USD'
+        origenAeropuerto: paqueteAEditar.origenAeropuerto || paqueteAEditar.origenPrincipal || '', moneda: paqueteAEditar.moneda || 'USD',
+        financiacion: paqueteAEditar.financiacion || ''
       });
       setParadas(paqueteAEditar.paradas_ascenso || []);
       setVuelos(paqueteAEditar.vuelos || []);
@@ -252,6 +253,14 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             ) : (<input type="text" required name="origenAeropuerto" placeholder="Ej: Terminal Cba" value={infoGeneral.origenAeropuerto} onChange={handleInfoChange} />)}
           </div>
           <div className="form-group" style={{ flex: '1 1 120px' }}><label>Moneda</label><select name="moneda" value={infoGeneral.moneda} onChange={handleInfoChange}><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
+          <div className="form-group" style={{ flex: '2 1 200px' }}>
+            <label>Financiación *</label>
+            <select required name="financiacion" value={infoGeneral.financiacion} onChange={handleInfoChange}>
+              <option value="">Seleccionar...</option>
+              <option value="sena_30">Seña 30% + Resto Financiado</option>
+              <option value="financiado_100">100% Financiado</option>
+            </select>
+          </div>
         </div>
 
         {/* CUADRO DE DESCRIPCIÓN DEL VIAJE */}
