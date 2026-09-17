@@ -36,6 +36,7 @@ export default function DetallePaqueteInterno() {
   // EL INTERRUPTOR MÁGICO PARA MOSTRAR AL CLIENTE
   const [vistaCliente, setVistaCliente] = useState(false);
   const [tooltipActivo, setTooltipActivo] = useState(null); 
+  const [tooltipCoords, setTooltipCoords] = useState({ top: 0, left: 0 }); 
   const [descAbierta, setDescAbierta] = useState(true);
 
   const formatearPrecio = (valor) => {
@@ -97,6 +98,7 @@ export default function DetallePaqueteInterno() {
 
     return (
       <>
+        {/* Fondo invisible para cerrar el cartel al hacer clic afuera */}
         {isOpen && (
           <div 
             onClick={(e) => { e.stopPropagation(); setTooltipActivo(null); }}
@@ -105,20 +107,26 @@ export default function DetallePaqueteInterno() {
         )}
 
         <div 
-          style={{ position: 'relative', display: 'inline-block', cursor: 'pointer', zIndex: isOpen ? 50 : 1 }} 
+          style={{ display: 'inline-block', cursor: 'pointer' }} 
           onClick={(e) => { 
             e.stopPropagation();
-            setTooltipActivo(isOpen ? null : idUnico);
+            if (isOpen) {
+               setTooltipActivo(null);
+            } else {
+               // MAGIA: Capturamos la coordenada X e Y de tu clic para "escapar" de la tabla
+               const rect = e.currentTarget.getBoundingClientRect();
+               setTooltipCoords({ top: rect.top, left: rect.left + (rect.width / 2) });
+               setTooltipActivo(idUnico);
+            }
           }}
         >
-          {/* 1. ACÁ LE SACAMOS LA LÍNEA PUNTEADA AL NÚMERO */}
           <span style={{ color: destacado ? '#ef5a1a' : 'inherit', fontWeight: destacado ? '900' : 'inherit' }}>
             ${formatearPrecio(venta)}
           </span>
           
-          {/* 2. EL GLOBO AHORA ABRE HACIA ABAJO (top: 100%) PARA NO SER CORTADO POR EL TECHO DE LA TABLA */}
+          {/* EL GLOBO FLOTANTE LIBRE (position: fixed) */}
           {isOpen && (
-            <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 50, width: '220px', textAlign: 'left', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', marginTop: '12px', cursor: 'default' }}>
+            <div style={{ position: 'fixed', top: tooltipCoords.top - 12, left: tooltipCoords.left, transform: 'translateX(-50%) translateY(-100%)', background: '#11173d', color: '#fff', padding: '15px', borderRadius: '12px', fontSize: '0.85rem', zIndex: 99999, width: '220px', textAlign: 'left', boxShadow: '0 15px 30px rgba(0,0,0,0.5)', cursor: 'default' }}>
               
               {!vistaCliente && (
                 <div style={{ borderBottom: '1px solid #374151', paddingBottom: '10px', marginBottom: '10px' }}>
@@ -164,8 +172,8 @@ export default function DetallePaqueteInterno() {
                 )}
               </div>
 
-              {/* El piquito del globo AHORA APUNTA HACIA ARRIBA (top: -8px) */}
-              <div style={{ position: 'absolute', top: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderBottom: '8px solid #11173d' }}></div>
+              {/* El piquito del globo apunta hacia ABAJO porque el globo abre hacia ARRIBA */}
+              <div style={{ position: 'absolute', bottom: '-8px', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '8px solid #11173d' }}></div>
             </div>
           )}
         </div>
