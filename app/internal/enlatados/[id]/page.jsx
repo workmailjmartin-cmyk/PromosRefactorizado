@@ -168,7 +168,7 @@ export default function DetallePaqueteInterno() {
           onClick={() => { setVistaCliente(!vistaCliente); setTooltipActivo(null); }}
           style={{ background: vistaCliente ? '#10b981' : '#11173d', color: '#fff', padding: '8px 20px', borderRadius: '25px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
         >
-          {vistaCliente ? '👀 MODO CLIENTE (Oculto)' : '🏢 MODO STAFF (Interno)'}
+          {vistaCliente ? '👀 MODO CLIENTE' : '🏢 MODO STAFF'}
         </button>
       </div>
 
