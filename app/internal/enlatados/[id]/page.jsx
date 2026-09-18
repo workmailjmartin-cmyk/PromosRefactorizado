@@ -257,11 +257,22 @@ export default function DetallePaqueteInterno() {
   let servicioHotel = null;
   if (tarifarioFiltrado.length > 0) {
     const tarifaBase = tarifarioFiltrado[0];
-    servicioHotel = {
-      tipo: 'hotel',
-      detalle1: tarifaBase.hotelNombre || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[0] : 'Alojamiento'),
-      detalle2: tarifaBase.regimen || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[1] : '')
-    };
+    
+    if (tarifaBase.hotel2Nombre) {
+      // Tiene hotel combinado -> Lo resumimos
+      servicioHotel = {
+        tipo: 'hotel',
+        detalle1: '2 Hoteles Combinados',
+        detalle2: 'Ver alojamientos y regímenes en la tabla de tarifas'
+      };
+    } else {
+      // Es un solo hotel -> Lo mostramos normal
+      servicioHotel = {
+        tipo: 'hotel',
+        detalle1: tarifaBase.hotelNombre || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[0] : 'Alojamiento'),
+        detalle2: tarifaBase.regimen || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[1] : '')
+      };
+    }
   }
 
   // 3. Extraemos el Transporte Principal
@@ -582,6 +593,8 @@ export default function DetallePaqueteInterno() {
                     const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
                     const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
                     const estrellas = fila.hotelEstrellas ? '⭐'.repeat(parseInt(fila.hotelEstrellas)) : '';
+                    
+                    const estrellas2 = fila.hotel2Estrellas ? '⭐'.repeat(parseInt(fila.hotel2Estrellas)) : '';
 
                     return (
                       <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
@@ -589,8 +602,28 @@ export default function DetallePaqueteInterno() {
                           <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
                           {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
                           {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                          
+                          {/* DIBUJO DEL HOTEL 2 COMBINADO */}
+                          {fila.hotel2Nombre && (
+                             <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #e5e7eb' }}>
+                               <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
+                               <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{fila.hotel2Nombre}</div>
+                               {estrellas2 && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas2}</div>}
+                               {fila.hotel2Ubicacion && (<a href={fila.hotel2Ubicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                             </div>
+                          )}
                         </td>
-                        <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>{tipoRegimen}</td>
+                        
+                        {/* REGIMEN (Combinado si hace falta) */}
+                        <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>
+                          <div>{tipoRegimen}</div>
+                          {fila.hotel2Nombre && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed transparent' }}>
+                               <div style={{ fontSize: '0.7rem', color: 'transparent', marginBottom: '2px' }}>+</div>
+                               <div>{fila.hotel2Regimen}</div>
+                            </div>
+                          )}
+                        </td>
                         
                         <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={doble.mayor} idUnico={`d-may-${idx}`} destacado={true} /></td>
                         <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.menor} idUnico={`d-men-${idx}`} /></td>
