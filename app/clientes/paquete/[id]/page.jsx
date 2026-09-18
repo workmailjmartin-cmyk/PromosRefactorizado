@@ -9,12 +9,14 @@ import Loader from '@/components/shared/Loader';
 const MARKUP_AGENCIA = 1.20; 
 
 const getServicioIcon = (tipo) => {
-  const t = tipo?.toLowerCase();
-  if (t === 'aereo') return '✈️';
-  if (t === 'hotel') return '🏨';
-  if (t === 'traslado') return '🚕';
-  if (t === 'excursion') return '🌲';
-  if (t === 'seguro') return '🛡️';
+  const t = tipo?.toLowerCase() || '';
+  if (t.includes('aereo')) return '✈️';
+  if (t.includes('hotel')) return '🏨';
+  if (t.includes('bus')) return '🚌';
+  if (t.includes('traslado')) return '🚕';
+  if (t.includes('excursion')) return '🌲';
+  if (t.includes('seguro')) return '🛡️';
+  if (t.includes('butaca')) return '💺';
   return '➕';
 };
 
@@ -67,25 +69,113 @@ export default function DetallePaqueteCliente() {
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
   
-  const serviciosIncluidos = (paquete.servicios || []).filter(s => !s.opcional);
   const serviciosOpcionales = (paquete.servicios || []).filter(s => s.opcional);
   const vuelos = paquete.vuelos || []; 
-  
+
+  // --- GENERACIÓN DE SERVICIOS INCLUIDOS AUTOMÁTICOS ---
+  const serviciosManuales = (paquete.servicios || []).filter(s => !s.opcional);
+  let servicioHotel = null;
+  if (tarifarioFiltrado.length > 0) {
+    const tarifaBase = tarifarioFiltrado[0];
+    if (tarifaBase.hotel2Nombre) {
+      servicioHotel = { tipo: 'hotel', detalle1: '2 Hoteles Combinados', detalle2: 'Ver alojamientos y regímenes en la tabla de tarifas' };
+    } else {
+      servicioHotel = { tipo: 'hotel', detalle1: tarifaBase.hotelNombre || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[0] : 'Alojamiento'), detalle2: tarifaBase.regimen || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[1] : '') };
+    }
+  }
+
+  let servicioTransporte = null;
+  if (paquete.transporte) {
+    if (paquete.transporte.includes('aereo')) {
+      servicioTransporte = { tipo: 'aereo', detalle1: 'Vuelos Incluidos', detalle2: 'Ver itinerario debajo' };
+    } else if (paquete.transporte.includes('bus')) {
+      servicioTransporte = { tipo: 'Bus Larga Distancia', detalle1: paquete.transporte.replace('-', ' ').toUpperCase(), detalle2: '' };
+    }
+  }
+  const serviciosIncluidos = [servicioTransporte, servicioHotel, ...serviciosManuales].filter(Boolean);
+
   const abrirLightbox = (index) => { setImagenActivaIndex(index); setLightboxAbierto(true); };
   const cerrarLightbox = () => setLightboxAbierto(false);
   const sigImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev + 1) % paquete.imagenes.length); };
   const antImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev === 0 ? paquete.imagenes.length - 1 : prev - 1)); };
 
-  // NÚMERO DE WHATSAPP DE TU AGENCIA
-  const numeroAgencia = "5491112345678"; // <-- Cambialo por el tuyo
+  const numeroAgencia = "5491112345678"; 
   const mensajeWsp = `Hola! Me interesa consultar por el viaje a ${paquete.destino} de ${paquete.dias} días. ¿Me pasan más info?`;
+
+  // --- MOTOR DE FINANCIACIÓN PARA CELDAS ---
+  const CeldaCuotas = ({ valorBase }) => {
+    if (!valorBase || valorBase === '-') return <span style={{ color: '#9ca3af' }}>-</span>;
+    
+    const venta = Math.round(parseFloat(valorBase) * MARKUP_AGENCIA);
+    let sena = 0;
+    let cuotasDisponibles = 0;
+    let valorCuota = 0;
+    let exigeContado = false;
+
+    if (fechaSeleccionada) {
+      const fechaSalida = new Date(`${fechaSeleccionada}T12:00:00Z`);
+      const hoy = new Date();
+      const fechaTope = new Date(fechaSalida.getTime());
+      fechaTope.setDate(fechaTope.getDate() - 30);
+      
+      const diffTime = fechaSalida.getTime() - hoy.getTime();
+      const diasFaltantesParaViaje = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diasFaltantesParaViaje <= 30) {
+        exigeContado = true;
+      } else {
+        const tipoFinanciacion = paquete?.financiacion || 'sena_30';
+        if (tipoFinanciacion === 'sena_30') sena = Math.round(venta * 0.30);
+        else if (tipoFinanciacion === 'financiado_100') sena = 0;
+        
+        const saldoAFinanciar = venta - sena;
+        const diffTimeHastaTope = fechaTope.getTime() - hoy.getTime();
+        const diasHastaTope = Math.ceil(diffTimeHastaTope / (1000 * 60 * 60 * 24));
+        
+        if (diasHastaTope >= 30) {
+          cuotasDisponibles = Math.floor(diasHastaTope / 30);
+          valorCuota = Math.round(saldoAFinanciar / cuotasDisponibles);
+        }
+      }
+    }
+
+    if (exigeContado) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+          <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#11173d' }}>${formatearPrecio(venta)}</span>
+          <span style={{ fontSize: '0.65rem', color: '#ef5a1a', fontWeight: 'bold', textTransform: 'uppercase', background: '#fef2f2', padding: '2px 6px', borderRadius: '8px', marginTop: '2px' }}>Contado</span>
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+        {sena > 0 ? (
+          <>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold' }}>Seña: ${formatearPrecio(sena)}</span>
+            {cuotasDisponibles > 0 ? (
+               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900' }}>+ {cuotasDisponibles}x ${formatearPrecio(valorCuota)}</span>
+            ) : (
+               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900' }}>+ Saldo ${formatearPrecio(venta - sena)}</span>
+            )}
+          </>
+        ) : (
+          <>
+            {cuotasDisponibles > 0 ? (
+               <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900' }}>{cuotasDisponibles}x ${formatearPrecio(valorCuota)}</span>
+            ) : (
+               <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#11173d' }}>${formatearPrecio(venta)}</span>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
       
-      {/* SECCIÓN 1: GALERÍA E INFO */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
-        
         <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
           {paquete.imagenes && paquete.imagenes.length > 0 ? (
             <>
@@ -110,15 +200,12 @@ export default function DetallePaqueteCliente() {
         </div>
 
         <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
-          
           <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '0.5px', alignSelf: 'flex-start' }}>
             {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
           </div>
-          
           <h1 style={{ margin: '0 0 10px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
             {paquete.destino}
           </h1>
-          
           <p style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1.1rem', fontWeight: 'bold' }}>
             <span style={{ color: '#ef5a1a', marginRight: '5px' }}>🌙</span>
             {paquete.dias} Días / {paquete.noches} Noches
@@ -133,7 +220,8 @@ export default function DetallePaqueteCliente() {
                     <span style={{ fontSize: '1.2rem', width: '25px', textAlign: 'center' }}>{getServicioIcon(s.tipo)}</span>
                     <div style={{ flex: 1, borderLeft: '2px solid #e5e7eb', paddingLeft: '10px' }}>
                       <div style={{ color: '#11173d', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: '1' }}>{s.tipo}</div>
-                      <div style={{ color: '#6b7280', fontSize: '0.8rem', marginTop: '2px' }}>{s.detalle1}</div>
+                      <div style={{ color: '#4b5563', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '2px' }}>{s.detalle1}</div>
+                      {s.detalle2 && <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '1px' }}>{s.detalle2}</div>}
                     </div>
                   </div>
                 ))}
@@ -149,7 +237,6 @@ export default function DetallePaqueteCliente() {
               {paquete.moneda || 'USD'} ${formatearPrecio(precioDesde)}
             </div>
             
-            {/* BOTÓN WHATSAPP PARA CLIENTES */}
             <a 
               href={`https://wa.me/${numeroAgencia}?text=${encodeURIComponent(mensajeWsp)}`}
               target="_blank"
@@ -159,19 +246,16 @@ export default function DetallePaqueteCliente() {
               💬 Consultar por WhatsApp
             </a>
 
-            {/* BOTÓN SCROLL SUAVE A TARIFAS */}
               <button 
                 onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
                 style={{ width: '100%', marginTop: '5px', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px rgba(17,23,61,0.2)' }}
               >
-                🗓️ Ver Fechas y Tarifas
+                🗓️ Ver Planes de Pago
               </button>
           </div>
-
         </div>
       </div>
 
-      {/* ACORDEÓN DE DESCRIPCIÓN */}
         {paquete.descripcionViaje && (
           <div style={{ marginBottom: '40px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
             <div 
@@ -191,71 +275,72 @@ export default function DetallePaqueteCliente() {
 
       <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
-      {/* SECCIÓN 2: VUELOS, OPCIONALES E ITINERARIO */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '50px', marginBottom: '50px' }}>
         
-        <div style={{ flex: '1 1 300px' }}>
-          {vuelos.length > 0 && (
-            <div style={{ marginBottom: '40px' }}>
-              <h3 style={{ color: '#0369a1', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                ✈️ Itinerario de Vuelos
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                {vuelos.map((v, idx) => {
-                  const fechaSalidaArg = v.fechaSalida ? new Date(v.fechaSalida).toLocaleDateString('es-AR') : '';
-                  const fechaLlegadaArg = v.fechaLlegada ? new Date(v.fechaLlegada).toLocaleDateString('es-AR') : '';
-                  return (
-                    <div key={idx} style={{ padding: '15px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px dashed #7dd3fc', paddingBottom: '10px' }}>
-                        <strong style={{ color: '#0369a1' }}>Tramo {idx + 1}: {v.aerolinea}</strong>
-                        <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 'bold', background: '#e0f2fe', padding: '2px 8px', borderRadius: '12px' }}>{v.equipaje}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaSalida}</div>
-                          <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaSalidaArg}</div>
-                          <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.origen}</div>
+        {(vuelos.length > 0 || serviciosOpcionales.length > 0) && (
+          <div style={{ flex: '1 1 300px' }}>
+            {vuelos.length > 0 && (
+              <div style={{ marginBottom: '40px' }}>
+                <h3 style={{ color: '#0369a1', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  ✈️ Itinerario de Vuelos
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  {vuelos.map((v, idx) => {
+                    const fechaSalidaArg = v.fechaSalida ? new Date(`${v.fechaSalida}T12:00:00Z`).toLocaleDateString('es-AR') : '';
+                    const fechaLlegadaArg = v.fechaLlegada ? new Date(`${v.fechaLlegada}T12:00:00Z`).toLocaleDateString('es-AR') : '';
+                    return (
+                      <div key={idx} style={{ padding: '15px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px dashed #7dd3fc', paddingBottom: '10px' }}>
+                          <strong style={{ color: '#0369a1' }}>Tramo {idx + 1}: {v.aerolinea}</strong>
+                          <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 'bold', background: '#e0f2fe', padding: '2px 8px', borderRadius: '12px' }}>{v.equipaje}</span>
                         </div>
-                        <div style={{ color: '#bae6fd', fontSize: '2rem' }}>⟶</div>
-                        <div style={{ flex: 1, textAlign: 'right' }}>
-                          <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaLlegada}</div>
-                          <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaLlegadaArg}</div>
-                          <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaSalida}</div>
+                            <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaSalidaArg}</div>
+                            <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.origen}</div>
+                          </div>
+                          <div style={{ color: '#bae6fd', fontSize: '2rem' }}>⟶</div>
+                          <div style={{ flex: 1, textAlign: 'right' }}>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaLlegada}</div>
+                            <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaLlegadaArg}</div>
+                            <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {serviciosOpcionales.length > 0 && (
-            <div>
-              <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {serviciosOpcionales.map((s, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
-                    <div style={{ flex: 1 }}>
-                      <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
-                      <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
-                        {s.detalle1}
+            {serviciosOpcionales.length > 0 && (
+              <div>
+                <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {serviciosOpcionales.map((s, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
+                      <div style={{ flex: 1 }}>
+                        <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
+                        <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
+                          {s.detalle1}
+                        </div>
                       </div>
+                      {s.tarifa && (
+                        <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
+                          + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
+                        </div>
+                      )}
                     </div>
-                    {s.tarifa && (
-                      <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
-                        + {paquete.moneda || 'USD'} ${formatearPrecio(s.tarifa)}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        <div style={{ flex: '1 1 300px' }}>
+        <div style={{ flex: (vuelos.length > 0 || serviciosOpcionales.length > 0) ? '1 1 300px' : '1 1 100%' }}>
           <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Itinerario Resumido</h3>
           {paquete.itinerario && paquete.itinerario.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -275,11 +360,10 @@ export default function DetallePaqueteCliente() {
 
       <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
-      {/* SECCIÓN 3: CALENDARIO Y TARIFARIO PARA CLIENTES */}
       <div id="seccion-tarifas">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '25px' }}>
           <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>
-            Seleccioná tu fecha de Salida
+            Planes de Pago por Fecha
           </h3>
           <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
             Tarifas en {paquete.moneda || 'USD'}
@@ -359,6 +443,7 @@ export default function DetallePaqueteCliente() {
                   const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
                   const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
                   const estrellas = fila.hotelEstrellas ? '⭐'.repeat(parseInt(fila.hotelEstrellas)) : '';
+                  const estrellas2 = fila.hotel2Estrellas ? '⭐'.repeat(parseInt(fila.hotel2Estrellas)) : '';
 
                   return (
                     <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
@@ -366,28 +451,41 @@ export default function DetallePaqueteCliente() {
                       <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle' }}>
                         <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
                         {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
-                        {fila.hotelUbicacion && (
-                          <a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>
+                        {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                        
+                        {fila.hotel2Nombre && (
+                           <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #e5e7eb' }}>
+                             <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
+                             <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{fila.hotel2Nombre}</div>
+                             {estrellas2 && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas2}</div>}
+                             {fila.hotel2Ubicacion && (<a href={fila.hotel2Ubicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                           </div>
                         )}
                       </td>
                       
-                      <td style={{ padding: '15px 10px', textAlign: 'left', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>
-                        {tipoRegimen}
+                      <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>
+                        <div>{tipoRegimen}</div>
+                        {fila.hotel2Nombre && (
+                          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed transparent' }}>
+                             <div style={{ fontSize: '0.7rem', color: 'transparent', marginBottom: '2px' }}>+</div>
+                             <div>{fila.hotel2Regimen}</div>
+                          </div>
+                        )}
                       </td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: '900', color: '#ef5a1a' }}>{doble.mayor ? `$${formatearPrecio(aplicarMarkup(doble.mayor))}` : '-'}</td>
-                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.menor ? `$${formatearPrecio(aplicarMarkup(doble.menor))}` : '-'}</td>
-                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{doble.child ? `$${formatearPrecio(aplicarMarkup(doble.child))}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={doble.mayor} /></td>
+                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={doble.menor} /></td>
+                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={doble.child} /></td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{triple.mayor ? `$${formatearPrecio(aplicarMarkup(triple.mayor))}` : '-'}</td>
-                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.menor ? `$${formatearPrecio(aplicarMarkup(triple.menor))}` : '-'}</td>
-                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{triple.child ? `$${formatearPrecio(aplicarMarkup(triple.child))}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={triple.mayor} /></td>
+                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={triple.menor} /></td>
+                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={triple.child} /></td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{cuadruple.mayor ? `$${formatearPrecio(aplicarMarkup(cuadruple.mayor))}` : '-'}</td>
-                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.menor ? `$${formatearPrecio(aplicarMarkup(cuadruple.menor))}` : '-'}</td>
-                      <td style={{ padding: '15px 2px', color: '#6b7280' }}>{cuadruple.child ? `$${formatearPrecio(aplicarMarkup(cuadruple.child))}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={cuadruple.mayor} /></td>
+                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={cuadruple.menor} /></td>
+                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={cuadruple.child} /></td>
                       
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb', fontWeight: 'bold', color: '#11173d' }}>{single.mayor ? `$${formatearPrecio(aplicarMarkup(single.mayor))}` : '-'}</td>
+                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={single.mayor} /></td>
                     </tr>
                   )
                 })}
@@ -395,6 +493,9 @@ export default function DetallePaqueteCliente() {
             </table>
           </div>
         )}
+        <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
+          * Todas las tarifas y cuotas están expresadas por persona.
+        </div>
       </div>
 
       {lightboxAbierto && paquete.imagenes && (

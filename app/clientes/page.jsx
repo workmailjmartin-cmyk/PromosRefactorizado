@@ -52,9 +52,6 @@ export default function ClientesPage() {
     return result;
   }, [allPackages, filtros]);
 
-  // El original relee el <input> de destino en vivo cada vez que applyFilters()
-  // corre (sea por el botón Buscar, o por el 'change' de Salida/Orden) — no solo
-  // al tocar "Buscar". Por eso cada disparador debe "arrastrar" destinoDraft.
   const handleBuscar = () => setFiltros((f) => ({ ...f, destino: destinoDraft }));
   const handleSalidaChange = (v) => setFiltros((f) => ({ ...f, destino: destinoDraft, salida: v }));
   const handleOrdenChange = (v) => setFiltros((f) => ({ ...f, destino: destinoDraft, orden: v }));
@@ -68,7 +65,18 @@ export default function ClientesPage() {
       <HeaderB2C />
 
       <div className="container">
+        
+        {/* NUEVO BANNER EXPLICATIVO PARA CLIENTES */}
+        <div style={{ background: '#e0f2fe', border: '1px solid #7dd3fc', borderRadius: '12px', padding: '20px', margin: '20px auto 40px', maxWidth: '1200px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+          <h2 style={{ margin: '0 0 10px 0', color: '#0284c7', fontSize: '1.4rem', fontWeight: '900' }}>Paquetes Pre-Comprados con Financiación Exclusiva</h2>
+          <p style={{ margin: 0, color: '#0369a1', fontSize: '1rem', lineHeight: '1.5' }}>
+            Estas son ofertas de cupo limitado que te permiten financiar tu viaje en cómodas cuotas. 
+            <br /><b>¿Buscás la tarifa más económica posible?</b> <a href={`https://wa.me/${WPP_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{ color: '#ef5a1a', textDecoration: 'underline', fontWeight: 'bold' }}>Contactá a un asesor</a> para cotizar un paquete a medida.
+          </p>
+        </div>
+
         <div id="view-search" className="view active">
+          
           <FilterBar
             destinoDraft={destinoDraft}
             onDestinoDraftChange={setDestinoDraft}
