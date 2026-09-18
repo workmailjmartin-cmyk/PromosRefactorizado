@@ -10,12 +10,14 @@ import { useAlert } from '@/contexts/AlertContext';
 const MARKUP_AGENCIA = 1.20; 
 
 const getServicioIcon = (tipo) => {
-  const t = tipo?.toLowerCase();
-  if (t === 'aereo') return '✈️';
-  if (t === 'hotel') return '🏨';
-  if (t === 'traslado') return '🚕';
-  if (t === 'excursion') return '🌲';
-  if (t === 'seguro') return '🛡️';
+  const t = tipo?.toLowerCase() || '';
+  if (t.includes('aereo')) return '✈️';
+  if (t.includes('hotel')) return '🏨';
+  if (t.includes('bus')) return '🚌';
+  if (t.includes('traslado')) return '🚕';
+  if (t.includes('excursion')) return '🌲';
+  if (t.includes('seguro')) return '🛡️';
+  if (t.includes('butaca')) return '💺';
   return '➕';
 };
 
@@ -281,7 +283,7 @@ export default function DetallePaqueteInterno() {
     if (paquete.transporte.includes('aereo')) {
       servicioTransporte = { tipo: 'aereo', detalle1: 'Vuelos Incluidos', detalle2: 'Ver itinerario debajo' };
     } else if (paquete.transporte.includes('bus')) {
-      servicioTransporte = { tipo: 'traslado', detalle1: 'Bus de Larga Distancia', detalle2: paquete.transporte.replace('-', ' ').toUpperCase() };
+      servicioTransporte = { tipo: 'Bus Larga Distancia', detalle1: paquete.transporte.replace('-', ' ').toUpperCase(), detalle2: '' };
     }
   }
 
@@ -435,69 +437,75 @@ export default function DetallePaqueteInterno() {
 
         <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
 
+        {/* LÓGICA INTELIGENTE: Si no hay vuelos ni opcionales, la columna izquierda desaparece */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '50px', marginBottom: '50px' }}>
-          <div style={{ flex: '1 1 300px' }}>
-            {vuelos.length > 0 && (
-              <div style={{ marginBottom: '40px' }}>
-                <h3 style={{ color: '#0369a1', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>✈️ Itinerario de Vuelos</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {vuelos.map((v, idx) => {
-                    const fechaSalidaArg = v.fechaSalida ? new Date(v.fechaSalida).toLocaleDateString('es-AR') : '';
-                    const fechaLlegadaArg = v.fechaLlegada ? new Date(v.fechaLlegada).toLocaleDateString('es-AR') : '';
-                    return (
-                      <div key={idx} style={{ padding: '15px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px dashed #7dd3fc', paddingBottom: '10px' }}>
-                          <strong style={{ color: '#0369a1' }}>Tramo {idx + 1}: {v.aerolinea}</strong>
-                          <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 'bold', background: '#e0f2fe', padding: '2px 8px', borderRadius: '12px' }}>{v.equipaje}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaSalida}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaSalidaArg}</div>
-                            <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.origen}</div>
+          
+          {(vuelos.length > 0 || serviciosOpcionales.length > 0) && (
+            <div style={{ flex: '1 1 300px' }}>
+              {vuelos.length > 0 && (
+                <div style={{ marginBottom: '40px' }}>
+                  {/* ... (Acá adentro va a quedar el código que ya tenías de vuelos) ... */}
+                  <h3 style={{ color: '#0369a1', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>✈️ Itinerario de Vuelos</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    {vuelos.map((v, idx) => {
+                      const fechaSalidaArg = v.fechaSalida ? new Date(`${v.fechaSalida}T12:00:00Z`).toLocaleDateString('es-AR') : '';
+                      const fechaLlegadaArg = v.fechaLlegada ? new Date(`${v.fechaLlegada}T12:00:00Z`).toLocaleDateString('es-AR') : '';
+                      return (
+                        <div key={idx} style={{ padding: '15px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px dashed #7dd3fc', paddingBottom: '10px' }}>
+                            <strong style={{ color: '#0369a1' }}>Tramo {idx + 1}: {v.aerolinea}</strong>
+                            <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 'bold', background: '#e0f2fe', padding: '2px 8px', borderRadius: '12px' }}>{v.equipaje}</span>
                           </div>
-                          <div style={{ color: '#bae6fd', fontSize: '2rem' }}>⟶</div>
-                          <div style={{ flex: 1, textAlign: 'right' }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaLlegada}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaLlegadaArg}</div>
-                            <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaSalida}</div>
+                              <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaSalidaArg}</div>
+                              <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.origen}</div>
+                            </div>
+                            <div style={{ color: '#bae6fd', fontSize: '2rem' }}>⟶</div>
+                            <div style={{ flex: 1, textAlign: 'right' }}>
+                              <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaLlegada}</div>
+                              <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaLlegadaArg}</div>
+                              <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
+                            </div>
                           </div>
+                          {v.obs && <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#4b5563', fontStyle: 'italic' }}>* {v.obs}</div>}
                         </div>
-                        {v.obs && <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#4b5563', fontStyle: 'italic' }}>* {v.obs}</div>}
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {serviciosOpcionales.length > 0 && (
-              <div>
-                <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {serviciosOpcionales.map((s, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
-                        <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
-                          {s.detalle1} {s.fechaHora ? ` - ${new Date(s.fechaHora).toLocaleDateString('es-AR')}` : ''}
+              {serviciosOpcionales.length > 0 && (
+                <div>
+                  <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {serviciosOpcionales.map((s, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
+                          <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
+                            {s.detalle1} {s.fechaHora ? ` - ${new Date(`${s.fechaHora}T12:00:00Z`).toLocaleDateString('es-AR')}` : ''}
+                          </div>
+                          {s.detalle2 && <div style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{s.detalle2}</div>}
                         </div>
-                        {s.detalle2 && <div style={{ color: '#9ca3af', fontSize: '0.8rem' }}>{s.detalle2}</div>}
+                        {s.tarifa && (
+                          <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
+                            + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
+                          </div>
+                        )}
                       </div>
-                      {s.tarifa && (
-                        <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
-                          + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
 
-          <div style={{ flex: '1 1 300px' }}>
+          {/* El itinerario ahora toma todo el ancho (100%) si la columna izquierda está oculta */}
+          <div style={{ flex: (vuelos.length > 0 || serviciosOpcionales.length > 0) ? '1 1 300px' : '1 1 100%' }}>
             <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Itinerario Resumido</h3>
             {paquete.itinerario && paquete.itinerario.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

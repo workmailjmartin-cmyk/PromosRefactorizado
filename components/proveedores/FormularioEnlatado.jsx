@@ -8,6 +8,7 @@ const TIPOS_SERVICIO_BASE = [
   { value: 'traslado', label: '🚕 Traslado' },
   { value: 'excursion', label: '🌲 Excursión' },
   { value: 'seguro', label: '🛡️ Asistencia / Seguro' },
+  { value: 'butaca', label: '💺 Adicional Butaca' }
 ];
 
 const OPCIONES_REGIMEN = [
@@ -593,10 +594,15 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                   <div className="form-group" style={{ flex: '1 1 150px', margin: 0 }}><label>Fecha y Hora (Opcional)</label><input type="datetime-local" min={fechaReferenciaVuelo ? `${fechaReferenciaVuelo}T00:00` : undefined} value={s.fechaHora || ''} onChange={(e) => actualizarServicio(s.id, 'fechaHora', e.target.value)} /></div>
                   <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Notas / Observaciones</label><input type="text" placeholder="Ej: No incluye entrada" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
                 </div>
+              ) : s.tipo === 'butaca' ? (
+                <div className="form-group-row">
+                  <div className="form-group"><label>Tipo de Butaca</label><input type="text" placeholder="Ej: Butaca Cama, Cafetera, Ventana Superior..." value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
+                  <div className="form-group"><label>Notas (Opcional)</label><input type="text" placeholder="Ej: Sujeto a disponibilidad" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
+                </div>
               ) : (
                 <div className="form-group-row">
-                  <div className="form-group"><label>{s.tipo === 'hotel' ? 'Nombre del Hotel' : 'Detalle'}</label><input type="text" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
-                  <div className="form-group"><label>{s.tipo === 'hotel' ? 'Régimen' : 'Notas'}</label><input type="text" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
+                  <div className="form-group"><label>Detalle</label><input type="text" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
+                  <div className="form-group"><label>Notas</label><input type="text" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
                 </div>
               )}
             </div>
