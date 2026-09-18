@@ -97,7 +97,9 @@ export default function DetallePaqueteCliente() {
   const antImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev === 0 ? paquete.imagenes.length - 1 : prev - 1)); };
 
   const numeroAgencia = "5491112345678"; 
-  const mensajeWsp = `Hola! Me interesa consultar por el viaje a ${paquete.destino} de ${paquete.dias} días. ¿Me pasan más info?`;
+  // Intentamos obtener la URL actual para el link, si no existe (SSR) mandamos una genérica
+  const linkPaquete = typeof window !== 'undefined' ? window.location.href : '';
+  const mensajeWsp = `Hola! Me interesa consultar por este paquete a ${paquete.destino} que vi en la web:\n${linkPaquete}\n\n¿Me pasan más info?`;
 
   const CeldaCuotas = ({ valorBase }) => {
     if (!valorBase || valorBase === '-') return <span style={{ color: '#9ca3af' }}>-</span>;
@@ -148,19 +150,19 @@ export default function DetallePaqueteCliente() {
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
         {sena > 0 ? (
           <>
-            <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold' }}>Seña: ${formatearPrecio(sena)}</span>
+            <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Seña: ${formatearPrecio(sena)}</span>
             {cuotasDisponibles > 0 ? (
-               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900' }}>+ {cuotasDisponibles}x ${formatearPrecio(valorCuota)}</span>
+               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>+ {cuotasDisponibles} cuotas de ${formatearPrecio(valorCuota)}</span>
             ) : (
-               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900' }}>+ Saldo ${formatearPrecio(venta - sena)}</span>
+               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>+ Saldo ${formatearPrecio(venta - sena)}</span>
             )}
           </>
         ) : (
           <>
             {cuotasDisponibles > 0 ? (
-               <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900' }}>{cuotasDisponibles}x ${formatearPrecio(valorCuota)}</span>
+               <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>{cuotasDisponibles} cuotas de ${formatearPrecio(valorCuota)}</span>
             ) : (
-               <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#11173d' }}>${formatearPrecio(venta)}</span>
+               <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#11173d', whiteSpace: 'nowrap' }}>${formatearPrecio(venta)}</span>
             )}
           </>
         )}
@@ -233,21 +235,23 @@ export default function DetallePaqueteCliente() {
               {paquete.moneda || 'USD'} ${formatearPrecio(precioDesde)}
             </div>
             
-            <a 
-              href={`https://wa.me/${numeroAgencia}?text=${encodeURIComponent(mensajeWsp)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ display: 'block', width: '100%', marginTop: '15px', background: '#25D366', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: '10px', fontWeight: 'bold', textDecoration: 'none', fontSize: '1.1rem' }}
-            >
-              💬 Consultar por WhatsApp
-            </a>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
+              <a 
+                href={`https://wa.me/${numeroAgencia}?text=${encodeURIComponent(mensajeWsp)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ width: '100%', background: '#25D366', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: '10px', fontWeight: 'bold', textDecoration: 'none', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s', boxSizing: 'border-box' }}
+              >
+                💬 Consultar por WhatsApp
+              </a>
 
               <button 
                 onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
-                style={{ width: '100%', marginTop: '5px', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px rgba(17,23,61,0.2)' }}
+                style={{ width: '100%', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s', boxSizing: 'border-box' }}
               >
                 🗓️ Ver Planes de Pago
               </button>
+            </div>
           </div>
         </div>
       </div>
@@ -405,11 +409,11 @@ export default function DetallePaqueteCliente() {
         </div>
 
         {tarifarioFiltrado.length > 0 && (
-          <div style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
-            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+          <div className="table-responsive-container" style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff', maxWidth: '100%' }}>
+            <table style={{ minWidth: '900px', width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
                 <tr style={{ background: '#11173d', color: '#fff' }}>
-                  <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '18%' }}>Alojamiento</th>
+                  <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '18%', position: 'sticky', left: 0, background: '#11173d', zIndex: 2 }}>Alojamiento</th>
                   <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '12%' }}>Régimen</th>
                   <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Doble</th>
                   <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Triple</th>
@@ -444,7 +448,7 @@ export default function DetallePaqueteCliente() {
                   return (
                     <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
                       
-                      <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle', position: 'sticky', left: 0, background: '#fff', zIndex: 1, borderRight: '1px solid #e5e7eb' }}>
                         <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
                         {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
                         {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
