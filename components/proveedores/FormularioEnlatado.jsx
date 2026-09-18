@@ -32,6 +32,7 @@ const OPCIONES_EQUIPAJE = [
 // Estructura limpia para resetear el form de tarifas
 const tarifaVacia = {
   fecha: '', hotelNombre: '', hotelEstrellas: '3', hotelUbicacion: '', hotelRegimen: '',
+  hotel2Nombre: '', hotel2Estrellas: '3', hotel2Ubicacion: '', hotel2Regimen: '',
   doble: { mayor: '', menor: '', child: '' },
   triple: { mayor: '', menor: '', child: '' },
   cuadruple: { mayor: '', menor: '', child: '' },
@@ -48,6 +49,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   
   const [salidas, setSalidas] = useState([]);
   const [tempSalida, setTempSalida] = useState(tarifaVacia);
+  const [mostrarHotel2, setMostrarHotel2] = useState(false);
   
   const [itinerario, setItinerario] = useState([]);
   const [tempDia, setTempDia] = useState({ titulo: '', descripcion: '' });
@@ -111,17 +113,22 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   // PARADAS
   const agregarParada = () => { if (tempParada && !paradas.includes(tempParada)) { setParadas([...paradas, tempParada]); setTempParada(''); } };
   
-  // TARIFARIO NUEVO (Complejo)
+ // TARIFARIO NUEVO (Complejo)
   const handleTarifaChange = (base, campo, valor) => {
+    // FILTRO ANTI-NEGATIVOS: Si es menor a 0, lo fuerza a 0.
+    const valorLimpio = valor === '' ? '' : Math.max(0, parseInt(valor) || 0);
     setTempSalida(prev => ({
       ...prev,
-      [base]: { ...prev[base], [campo]: valor }
+      [base]: { ...prev[base], [campo]: valorLimpio }
     }));
   };
 
   const agregarSalida = () => {
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor) {
-      const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
+      // Magia para concatenar los dos hoteles si existe el segundo
+      const hotelYRegimenCombinado = tempSalida.hotel2Nombre 
+        ? `${tempSalida.hotelNombre} (${tempSalida.hotelRegimen}) + ${tempSalida.hotel2Nombre} (${tempSalida.hotel2Regimen})`
+        : `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
       
       const nuevaSalida = { 
         id: tempSalida.id || Date.now(), 
@@ -131,6 +138,10 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         hotelEstrellas: tempSalida.hotelEstrellas,
         hotelUbicacion: tempSalida.hotelUbicacion,
         regimen: tempSalida.hotelRegimen,
+        hotel2Nombre: tempSalida.hotel2Nombre,
+        hotel2Estrellas: tempSalida.hotel2Estrellas,
+        hotel2Ubicacion: tempSalida.hotel2Ubicacion,
+        hotel2Regimen: tempSalida.hotel2Regimen,
         doble: tempSalida.doble, 
         triple: tempSalida.triple, 
         cuadruple: tempSalida.cuadruple, 
@@ -142,7 +153,8 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       
       setSalidas(nuevasSalidas);
       setTempSalida(tarifaVacia);
-    } else { alert("La Fecha, Hotel, Régimen y Precio Doble (Adulto) son obligatorios."); }
+      setMostrarHotel2(false); // Ocultamos el hotel 2 al guardar
+    } else { alert("La Fecha, Nombre del Hotel 1, Régimen 1 y Precio Doble (Adulto) son obligatorios."); }
   };
 
   const editarSalida = (id) => {
@@ -150,9 +162,12 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
     let salidasActuales = [...salidas];
 
-    // Autoguardado: Si había otra fila editándose a la vez, la guardamos antes de subir la nueva
+    // Autoguardado si había fila a medias
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.doble?.mayor) {
-      const hotelYRegimenCombinado = `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
+      const hotelYRegimenCombinado = tempSalida.hotel2Nombre 
+        ? `${tempSalida.hotelNombre} (${tempSalida.hotelRegimen}) + ${tempSalida.hotel2Nombre} (${tempSalida.hotel2Regimen})`
+        : `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
+      
       const salidaPrevia = { 
         ...tempSalida, 
         id: tempSalida.id || Date.now(),
@@ -171,11 +186,17 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         hotelEstrellas: salidaAEditar.hotelEstrellas || '3',
         hotelUbicacion: salidaAEditar.hotelUbicacion || '',
         hotelRegimen: salidaAEditar.regimen || salidaAEditar.hotelRegimen?.split(' - ')[1] || '',
+        hotel2Nombre: salidaAEditar.hotel2Nombre || '',
+        hotel2Estrellas: salidaAEditar.hotel2Estrellas || '3',
+        hotel2Ubicacion: salidaAEditar.hotel2Ubicacion || '',
+        hotel2Regimen: salidaAEditar.hotel2Regimen || '',
         doble: salidaAEditar.doble,
         triple: salidaAEditar.triple,
         cuadruple: salidaAEditar.cuadruple,
         single: salidaAEditar.single
       });
+      // Si la fila a editar tiene un hotel 2, abrimos la caja automáticamente
+      setMostrarHotel2(!!salidaAEditar.hotel2Nombre);
 
       const nuevasSalidas = salidasActuales.filter(s => s.id !== id);
       nuevasSalidas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
@@ -320,103 +341,126 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 2: TARIFARIO (NUEVO DISEÑO CON CATEGORÍAS) */}
-        <h3 className="section-title" style={{ marginTop: '30px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
+        {/* SECCIÓN 2: TARIFARIO (MINIMALISTA) */}
+        <h3 className="section-title" style={{ marginTop: '30px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
         
-        <div style={{ background: '#fff5f0', padding: '20px', borderRadius: '12px', border: '1px solid #ffedd5', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '15px' }}>
-            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} /></div>
-            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Nombre Hotel *</label><input type="text" placeholder="Ej: Hilton Copacabana" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} /></div>
-            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Estrellas</label><select value={tempSalida.hotelEstrellas || '3'} onChange={e => setTempSalida({...tempSalida, hotelEstrellas: e.target.value})}><option value="1">1 ⭐</option><option value="2">2 ⭐</option><option value="3">3 ⭐</option><option value="4">4 ⭐</option><option value="5">5 ⭐</option></select></div>
-            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Ubicación (Maps)</label><input type="url" placeholder="https://maps.app.goo.gl/..." value={tempSalida.hotelUbicacion || ''} onChange={e => setTempSalida({...tempSalida, hotelUbicacion: e.target.value})} /></div>
-            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#ef5a1a' }}>Régimen *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
+          {/* DATOS DEL HOTEL 1 */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Nombre Hotel 1 *</label><input type="text" placeholder="Ej: Hilton Copacabana" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Estrellas</label><select value={tempSalida.hotelEstrellas || '3'} onChange={e => setTempSalida({...tempSalida, hotelEstrellas: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }}><option value="1">1 ⭐</option><option value="2">2 ⭐</option><option value="3">3 ⭐</option><option value="4">4 ⭐</option><option value="5">5 ⭐</option></select></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Ubicación (Maps)</label><input type="url" placeholder="https://maps.app.goo.gl/..." value={tempSalida.hotelUbicacion || ''} onChange={e => setTempSalida({...tempSalida, hotelUbicacion: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
+            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Régimen 1 *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '15px' }}>
-            {/* CAJA DOBLE */}
-            <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Doble *</h4>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Adulto*</label><input type="number" style={{ padding: '6px' }} value={tempSalida.doble.mayor} onChange={e => handleTarifaChange('doble', 'mayor', e.target.value)} /></div>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Menor</label><input type="number" style={{ padding: '6px' }} value={tempSalida.doble.menor} onChange={e => handleTarifaChange('doble', 'menor', e.target.value)} /></div>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Child(0-1)</label><input type="number" style={{ padding: '6px' }} value={tempSalida.doble.child} onChange={e => handleTarifaChange('doble', 'child', e.target.value)} /></div>
+          {/* BOTON PARA HOTEL 2 (COMBINADO) */}
+          {!mostrarHotel2 ? (
+            <div>
+              <button type="button" onClick={() => setMostrarHotel2(true)} style={{ background: '#f3f4f6', color: '#374151', border: '1px dashed #9ca3af', padding: '6px 15px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer' }}>+ Combinar con 2do Hotel</button>
+            </div>
+          ) : (
+            <div style={{ background: '#f8fafc', borderLeft: '3px solid #0ea5e9', padding: '15px', borderRadius: '0 8px 8px 0', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ margin: 0, color: '#0ea5e9', fontSize: '0.9rem', textTransform: 'uppercase' }}>Hotel 2 (Combinado)</h4>
+                <button type="button" onClick={() => { setMostrarHotel2(false); setTempSalida({...tempSalida, hotel2Nombre: '', hotel2Ubicacion: '', hotel2Regimen: ''}); }} style={{ background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.85rem' }}>✕ Quitar</button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
+                <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Nombre Hotel 2 *</label><input type="text" placeholder="Ej: Pousada Centro" value={tempSalida.hotel2Nombre} onChange={e => setTempSalida({...tempSalida, hotel2Nombre: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
+                <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Estrellas</label><select value={tempSalida.hotel2Estrellas || '3'} onChange={e => setTempSalida({...tempSalida, hotel2Estrellas: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }}><option value="1">1 ⭐</option><option value="2">2 ⭐</option><option value="3">3 ⭐</option><option value="4">4 ⭐</option><option value="5">5 ⭐</option></select></div>
+                <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Ubicación (Maps)</label><input type="url" placeholder="Opcional..." value={tempSalida.hotel2Ubicacion || ''} onChange={e => setTempSalida({...tempSalida, hotel2Ubicacion: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
+                <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Régimen 2 *</label><select value={tempSalida.hotel2Regimen} onChange={e => setTempSalida({...tempSalida, hotel2Regimen: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
               </div>
             </div>
+          )}
+
+          {/* TARIFAS (Inputs) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '10px' }}>
+            {[
+              { key: 'doble', title: 'Base Doble *' },
+              { key: 'triple', title: 'Base Triple' },
+              { key: 'cuadruple', title: 'Base Cuádruple' }
+            ].map(base => (
+              <div key={base.key} style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#11173d', fontSize: '0.9rem' }}>{base.title}</h4>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {/* Se agregó el min="0" para evitar tipeo de negativos */}
+                  <div style={{ flex: 1 }}><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Adulto</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida[base.key].mayor} onChange={e => handleTarifaChange(base.key, 'mayor', e.target.value)} /></div>
+                  <div style={{ flex: 1 }}><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Menor</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida[base.key].menor} onChange={e => handleTarifaChange(base.key, 'menor', e.target.value)} /></div>
+                  <div style={{ flex: 1 }}><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Child</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida[base.key].child} onChange={e => handleTarifaChange(base.key, 'child', e.target.value)} /></div>
+                </div>
+              </div>
+            ))}
             
-            {/* CAJA TRIPLE */}
-            <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Triple</h4>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Adulto</label><input type="number" style={{ padding: '6px' }} value={tempSalida.triple.mayor} onChange={e => handleTarifaChange('triple', 'mayor', e.target.value)} /></div>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Menor</label><input type="number" style={{ padding: '6px' }} value={tempSalida.triple.menor} onChange={e => handleTarifaChange('triple', 'menor', e.target.value)} /></div>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Child(0-1)</label><input type="number" style={{ padding: '6px' }} value={tempSalida.triple.child} onChange={e => handleTarifaChange('triple', 'child', e.target.value)} /></div>
-              </div>
-            </div>
-
-            {/* CAJA CUÁDRUPLE */}
-            <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Cuádruple</h4>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Adulto</label><input type="number" style={{ padding: '6px' }} value={tempSalida.cuadruple.mayor} onChange={e => handleTarifaChange('cuadruple', 'mayor', e.target.value)} /></div>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Menor</label><input type="number" style={{ padding: '6px' }} value={tempSalida.cuadruple.menor} onChange={e => handleTarifaChange('cuadruple', 'menor', e.target.value)} /></div>
-                <div style={{ flex: 1 }}><label style={{ fontSize: '0.75rem' }}>Child(0-1)</label><input type="number" style={{ padding: '6px' }} value={tempSalida.cuadruple.child} onChange={e => handleTarifaChange('cuadruple', 'child', e.target.value)} /></div>
-              </div>
-            </div>
-
-            {/* CAJA SINGLE Y BOTON */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb', flex: 1 }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#11173d', borderBottom: '1px solid #eee', paddingBottom: '5px' }}>Base Single</h4>
-                <div><label style={{ fontSize: '0.75rem' }}>Adulto</label><input type="number" style={{ padding: '6px', width: '50%' }} value={tempSalida.single.mayor} onChange={e => handleTarifaChange('single', 'mayor', e.target.value)} /></div>
+              <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb', flex: 1 }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#11173d', fontSize: '0.9rem' }}>Base Single</h4>
+                <div><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Adulto</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida.single.mayor} onChange={e => handleTarifaChange('single', 'mayor', e.target.value)} /></div>
               </div>
-              <button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '45px', borderRadius: '8px' }}>➕ Guardar Fila</button>
             </div>
+          </div>
+          
+          <div style={{ textAlign: 'right' }}>
+            <button type="button" className="btn btn-primario" onClick={agregarSalida} style={{ height: '45px', borderRadius: '8px', padding: '0 30px' }}>➕ Guardar Fila a la Tabla</button>
           </div>
         </div>
 
-        {/* TABLA RESUMEN EN EL FORMULARIO */}
+        {/* TABLA RESUMEN MINIMALISTA */}
         {salidas.length > 0 && (
-          <div style={{ overflowX: 'auto', marginTop: '15px' }}>
-            <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.85em', border: '1px solid #ddd' }}>
+          <div style={{ overflowX: 'auto', marginTop: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', background: '#fff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+            <table style={{ width: '100%', tableLayout: 'auto', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
               <thead>
-                <tr style={{ background: '#f3f4f6', borderBottom: '2px solid #ddd', textAlign: 'center' }}>
-                  <th rowSpan="2" style={{ padding: '8px', textAlign: 'left', width: '22%' }}>Salida y Alojamiento</th>
-                  <th rowSpan="2" style={{ padding: '8px', textAlign: 'left', width: '12%' }}>Régimen</th>
-                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd', width: '18%' }}>Doble</th>
-                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd', width: '18%' }}>Triple</th>
-                  <th colSpan="3" style={{ borderLeft: '1px solid #ddd', width: '18%' }}>Cuádruple</th>
-                  <th style={{ borderLeft: '1px solid #ddd', width: '6%' }}>Sgl</th>
-                  <th rowSpan="2" style={{ width: '6%' }}></th>
+                <tr style={{ background: '#f9fafb', color: '#374151', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>
+                  <th style={{ padding: '15px', textAlign: 'left', borderBottom: '2px solid #e5e7eb' }}>Salida y Alojamiento</th>
+                  <th colSpan="3" style={{ padding: '15px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', borderLeft: '1px solid #f3f4f6' }}>Doble</th>
+                  <th colSpan="3" style={{ padding: '15px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', borderLeft: '1px solid #f3f4f6' }}>Triple</th>
+                  <th colSpan="3" style={{ padding: '15px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', borderLeft: '1px solid #f3f4f6' }}>Cuádruple</th>
+                  <th style={{ padding: '15px', textAlign: 'center', borderBottom: '2px solid #e5e7eb', borderLeft: '1px solid #f3f4f6' }}>Sgl</th>
+                  <th style={{ padding: '15px', textAlign: 'center', borderBottom: '2px solid #e5e7eb' }}>Acciones</th>
                 </tr>
-                <tr style={{ background: '#f9fafb', fontSize: '0.8em', color: '#6b7280' }}>
-                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th><th>Me</th><th>Ch</th>
-                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th><th>Me</th><th>Ch</th>
-                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th><th>Me</th><th>Ch</th>
-                  <th style={{ borderLeft: '1px solid #ddd' }}>Ad</th>
+                <tr style={{ background: '#fff', color: '#9ca3af', fontSize: '0.7rem' }}>
+                  <th style={{ borderBottom: '1px solid #e5e7eb' }}></th>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #f3f4f6', borderBottom: '1px solid #e5e7eb' }}>Ad</th><th style={{ borderBottom: '1px solid #e5e7eb' }}>Me</th><th style={{ borderBottom: '1px solid #e5e7eb' }}>Ch</th>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #f3f4f6', borderBottom: '1px solid #e5e7eb' }}>Ad</th><th style={{ borderBottom: '1px solid #e5e7eb' }}>Me</th><th style={{ borderBottom: '1px solid #e5e7eb' }}>Ch</th>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #f3f4f6', borderBottom: '1px solid #e5e7eb' }}>Ad</th><th style={{ borderBottom: '1px solid #e5e7eb' }}>Me</th><th style={{ borderBottom: '1px solid #e5e7eb' }}>Ch</th>
+                  <th style={{ padding: '8px', borderLeft: '1px solid #f3f4f6', borderBottom: '1px solid #e5e7eb' }}>Ad</th>
+                  <th style={{ borderBottom: '1px solid #e5e7eb' }}></th>
                 </tr>
               </thead>
-              <tbody style={{ textAlign: 'center' }}>
+              <tbody style={{ textAlign: 'center', color: '#4b5563' }}>
                 {salidas.map(s => {
-                  const nombre = s.hotelNombre || (s.hotelRegimen ? s.hotelRegimen.split(' - ')[0] : 'Hotel');
-                  const regimen = s.regimen || (s.hotelRegimen ? s.hotelRegimen.split(' - ')[1] : '');
+                  // Función helper para que el cero o vacío se vea como un guión elegante
+                  const formatPrecio = (val) => (!val || val === '0' || val === 0) ? <span style={{color: '#d1d5db'}}>-</span> : <span style={{fontWeight: 'bold', color: '#11173d'}}>${val}</span>;
+                  
                   return (
-                    <tr key={s.id} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle' }}><b>{s.fecha}</b><br/>{nombre}</td>
-                      <td style={{ padding: '8px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle' }}>{regimen}</td>
+                    <tr key={s.id} style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#f8fafc'} onMouseOut={e=>e.currentTarget.style.background='transparent'}>
+                      <td style={{ padding: '15px', textAlign: 'left', lineHeight: '1.4' }}>
+                        <div style={{ display: 'inline-block', background: '#e0f2fe', color: '#0284c7', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '5px' }}>{s.fecha}</div>
+                        
+                        {/* HOTEL 1 */}
+                        <div style={{ fontWeight: 'bold', color: '#11173d', fontSize: '0.9rem' }}>{s.hotelNombre}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: s.hotel2Nombre ? '8px' : '0' }}>{s.regimen}</div>
+                        
+                        {/* HOTEL 2 (Si existe) */}
+                        {s.hotel2Nombre && (
+                          <>
+                            <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
+                            <div style={{ fontWeight: 'bold', color: '#11173d', fontSize: '0.9rem' }}>{s.hotel2Nombre}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{s.hotel2Regimen}</div>
+                          </>
+                        )}
+                      </td>
                       
-                      <td style={{ borderLeft: '1px solid #ddd', fontWeight: 'bold', verticalAlign: 'middle' }}>{s.doble.mayor ? `$${s.doble.mayor}` : '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.doble.menor || '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.doble.child || '-'}</td>
+                      <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.doble.mayor)}</td><td>{formatPrecio(s.doble.menor)}</td><td>{formatPrecio(s.doble.child)}</td>
+                      <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.triple.mayor)}</td><td>{formatPrecio(s.triple.menor)}</td><td>{formatPrecio(s.triple.child)}</td>
+                      <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.cuadruple.mayor)}</td><td>{formatPrecio(s.cuadruple.menor)}</td><td>{formatPrecio(s.cuadruple.child)}</td>
+                      <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.single.mayor)}</td>
                       
-                      <td style={{ borderLeft: '1px solid #ddd', verticalAlign: 'middle' }}>{s.triple.mayor ? `$${s.triple.mayor}` : '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.triple.menor || '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.triple.child || '-'}</td>
-                      
-                      <td style={{ borderLeft: '1px solid #ddd', verticalAlign: 'middle' }}>{s.cuadruple.mayor ? `$${s.cuadruple.mayor}` : '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.cuadruple.menor || '-'}</td><td style={{ verticalAlign: 'middle' }}>{s.cuadruple.child || '-'}</td>
-                      
-                      <td style={{ borderLeft: '1px solid #ddd', verticalAlign: 'middle' }}>{s.single.mayor ? `$${s.single.mayor}` : '-'}</td>
-                      
-                      <td style={{ padding: '8px', verticalAlign: 'middle' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
-                          <button type="button" onClick={() => editarSalida(s.id)} style={{ color: '#0369a1', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>✏️</button>
-                          <button type="button" onClick={() => eliminarSalida(s.id)} style={{ color: 'red', fontWeight: 'bold', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.1rem' }}>X</button>
+                      <td style={{ padding: '15px' }}>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                          <button type="button" onClick={() => editarSalida(s.id)} style={{ color: '#0ea5e9', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', transition: 'transform 0.1s' }} title="Editar">✏️</button>
+                          <button type="button" onClick={() => eliminarSalida(s.id)} style={{ color: '#ef4444', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', transition: 'transform 0.1s' }} title="Eliminar">🗑️</button>
                         </div>
                       </td>
                     </tr>
