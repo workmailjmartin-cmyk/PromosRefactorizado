@@ -9,14 +9,15 @@ export default function HeaderB2C() {
   return (
     <div className="header-b2c" style={{ position: 'relative' }}>
       <div className="logo-container">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo.png"
-          alt="Feliz Viaje"
-          className="logo-img"
-          style={{ maxHeight: '70px', width: 'auto', cursor: 'pointer' }}
-          onClick={() => window.location.reload()}
-        />
+        <a href="/clientes">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="Feliz Viaje"
+            className="logo-img"
+            style={{ maxHeight: '70px', width: 'auto', cursor: 'pointer' }}
+          />
+        </a>
       </div>
 
       <h1

@@ -8,9 +8,6 @@ import { SALIDAS_INICIALES } from '@/lib/constants';
 
 const SALIDAS_PLACEHOLDER = SALIDAS_INICIALES.map((s) => s.value).filter(Boolean);
 
-// Equivalente a fetchAndLoadPackages() en clientes.js: trae metadata/config
-// (texto del listón "Solo x Hoy", vidriera destacada, banco de imágenes) y
-// la colección "paquetes", aplicando exactamente el mismo filtro de visibilidad.
 export function usePackagesData(ready) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,12 +25,18 @@ export function usePackagesData(ready) {
     async function fetchAndLoadPackages() {
       setLoading(true);
       try {
+        let vidrieraIds = []; // Guardamos los IDs de los 4 elegidos
+
         try {
           const configDoc = await getDoc(doc(db, 'metadata', 'config'));
           if (configDoc.exists()) {
             const data = configDoc.data();
             if (data.texto_liston) setTextoListon(data.texto_liston);
-            if (data.vidriera) setVidriera(data.vidriera);
+            if (data.vidriera) {
+              setVidriera(data.vidriera);
+              // Extraemos solo los IDs para usarlos como filtro VIP
+              vidrieraIds = data.vidriera.map(v => v.paquete_id).filter(Boolean);
+            }
             if (data.banco_imagenes) setBancoImagenes(data.banco_imagenes);
           }
         } catch (e) {
@@ -46,6 +49,10 @@ export function usePackagesData(ready) {
         const packages = snapshot.docs
           .map((d) => ({ id_paquete: d.id, ...d.data() }))
           .filter((pkg) => {
+            // EXCEPCIÓN VIP: Si el paquete está en la Vidriera, se muestra SIEMPRE (ignora las reglas de abajo)
+            if (vidrieraIds.includes(pkg.id_paquete)) return true;
+
+            // Reglas normales de limpieza para el resto del listado:
             if (pkg.alcance === 'casa_central' || pkg.status === 'pending' || pkg.ocultar_cliente) return false;
             if (pkg.tipo_promo === 'FEED' || pkg.tipo_promo === 'ADS') {
               const antiguedad = Date.now() - (pkg.timestamp || 0);
