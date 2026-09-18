@@ -104,7 +104,7 @@ export default function FeaturedOffers({ vidriera, allPackages, bancoImagenes, o
         <h2 style={{ fontSize: '2.2em', fontWeight: 900, color: '#11173d', margin: '0 0 5px 0' }}>Ofertas Destacadas ✈️</h2>
         <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1em' }}>Nuestras recomendaciones para vos</p>
       </div>
-      <div id="grid-ofertas" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '50px' }}>
+      <div id="grid-ofertas" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '50px' }}>
         {paquetesVidriera.map(({ pkg, imagenIdFondo }) => (
           <OfertaCard
             key={pkg.id_paquete}
