@@ -5,7 +5,6 @@ import { AEROPUERTOS_POR_PROVINCIA } from '@/lib/internal/airports';
 
 const TIPOS_SERVICIO_BASE = [
   { value: '', label: 'Seleccionar Servicio...' },
-  { value: 'hotel', label: '🏨 Hotel' },
   { value: 'traslado', label: '🚕 Traslado' },
   { value: 'excursion', label: '🌲 Excursión' },
   { value: 'seguro', label: '🛡️ Asistencia / Seguro' },
@@ -443,7 +442,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         )}
 
         {/* SECCIÓN 4 */}
-        <h3 className="section-title" style={{ marginTop: '30px' }}>4. Otros Servicios ({esAereo ? 'Traslados, Hoteles extras, Excursiones' : 'Hoteles, Excursiones'})</h3>
+        <h3 className="section-title" style={{ marginTop: '30px' }}>4. Otros Servicios ({esAereo ? 'Traslados, Excursiones, Seguro' : 'Seguro, Excursiones'})</h3>
         <div id="servicios-container">
           {servicios.map(s => (
             <div key={s.id} style={{ padding: '20px', border: '1px solid #e5e7eb', borderRadius: '12px', marginBottom: '15px', position: 'relative', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
@@ -492,7 +491,11 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         </div>
 
         {/* SECCIÓN 5 */}
-        <h3 className="section-title" style={{ marginTop: '30px' }}>5. Galería (Máx 4)</h3>
+        <h3 className="section-title" style={{ marginTop: '30px', marginBottom: '5px' }}>5. Galería (Máx 4 fotos)</h3>
+        <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '15px' }}>
+          * La <b>primera foto</b> debe ser del destino turístico (Portada).<br/>
+          * Las <b>otras 3 fotos</b> deben ser de las instalaciones del hotel.
+        </p>
         <div style={{ padding: '20px', border: '2px dashed #ddd', borderRadius: '8px', textAlign: 'center', background: '#f9fafb' }}>
           <label style={{ cursor: 'pointer', background: '#fff', padding: '10px 20px', border: '1px solid #ccc', borderRadius: '6px', fontWeight: 'bold' }}>📸 Subir Foto<input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleSubirFoto} disabled={loading || imagenes.length >= 4} /></label>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '15px' }}>
