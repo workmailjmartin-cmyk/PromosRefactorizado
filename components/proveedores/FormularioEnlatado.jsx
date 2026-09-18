@@ -231,9 +231,21 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (salidas.length === 0) return alert("Tenés que agregar al menos una tarifa.");
-    if (imagenes.length === 0) return alert("Subí al menos 1 imagen de portada.");
-    if (esAereo && vuelos.length === 0) return alert("Al ser un paquete aéreo, debés cargar la información de vuelos.");
+    
+    // Validación Sección 1: Información General
+    if (!infoGeneral.destino || !infoGeneral.dias || !infoGeneral.noches || !infoGeneral.origenProvincia || !infoGeneral.origenAeropuerto || !infoGeneral.financiacion) {
+      return alert("Por favor, completá todos los campos obligatorios de la Sección 1 (Información del Viaje).");
+    }
+
+    if (salidas.length === 0) return alert("Tenés que agregar al menos una tarifa en la Sección 2.");
+    if (imagenes.length === 0) return alert("Subí al menos 1 imagen de portada en la Sección 5.");
+    
+    // Validación Sección Vuelos
+    if (esAereo) {
+      if (vuelos.length === 0) return alert("Al ser un paquete aéreo, debés cargar al menos un vuelo.");
+      const vuelosIncompletos = vuelos.some(v => !v.aerolinea || !v.origen || !v.fechaSalida || !v.horaSalida || !v.destino || !v.fechaLlegada || !v.horaLlegada || !v.equipaje);
+      if (vuelosIncompletos) return alert("Por favor, completá todos los campos obligatorios de la Información de Vuelos.");
+    }
     
     const paqueteFinal = {
       ...infoGeneral, origenPrincipal: infoGeneral.origenProvincia || infoGeneral.origenAeropuerto,
@@ -255,14 +267,37 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         {/* SECCIÓN 1 */}
         <h3 className="section-title">1. Información del Viaje</h3>
         <div className="form-group-row">
-          <div className="form-group" style={{ flex: 2 }}><label>Título / Destino Principal</label><input type="text" required name="destino" placeholder="Ej: Cataratas Premium" value={infoGeneral.destino} onChange={handleInfoChange} /></div>
-          <div className="form-group"><label>Transporte Principal</label><select name="transporte" value={infoGeneral.transporte} onChange={handleInfoChange}><option value="bus-mix">🚌 Bus Mix</option><option value="bus-cama">🚌 Bus Cama</option><option value="bus-semicama">🚌 Bus Semicama</option><option value="aereo">✈️ Aéreo (Regular)</option><option value="aereo-charter">✈️ Aéreo (Charter Exclusivo)</option></select></div>
+          <div className="form-group" style={{ flex: 2 }}>
+            <label>Título / Destino Principal *</label>
+            <input type="text" required name="destino" placeholder="Ej: Cataratas Premium" value={infoGeneral.destino} onChange={handleInfoChange} />
+          </div>
+          <div className="form-group">
+            <label>Transporte Principal *</label>
+            <select required name="transporte" value={infoGeneral.transporte} onChange={handleInfoChange}>
+              <option value="bus-mix">🚌 Bus Mix</option>
+              <option value="bus-cama">🚌 Bus Cama</option>
+              <option value="bus-semicama">🚌 Bus Semicama</option>
+              <option value="aereo">✈️ Aéreo (Regular)</option>
+              <option value="aereo-charter">✈️ Aéreo (Charter Exclusivo)</option>
+            </select>
+          </div>
         </div>
         
         <div className="form-group-row" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-          <div className="form-group" style={{ flex: '1 1 80px' }}><label>Días</label><input type="number" required name="dias" value={infoGeneral.dias} onChange={handleInfoChange} /></div>
-          <div className="form-group" style={{ flex: '1 1 80px' }}><label>Noches</label><input type="number" required name="noches" value={infoGeneral.noches} onChange={handleInfoChange} /></div>
-          <div className="form-group" style={{ flex: '2 1 200px' }}><label>Provincia Salida *</label><select required name="origenProvincia" value={infoGeneral.origenProvincia} onChange={handleInfoChange}>{PROVINCIAS.map(p => (<option key={p.value} value={p.value} disabled={p.value === ''}>{p.label}</option>))}</select></div>
+          <div className="form-group" style={{ flex: '1 1 80px' }}>
+            <label>Días *</label>
+            <input type="number" required name="dias" value={infoGeneral.dias} onChange={handleInfoChange} />
+          </div>
+          <div className="form-group" style={{ flex: '1 1 80px' }}>
+            <label>Noches *</label>
+            <input type="number" required name="noches" value={infoGeneral.noches} onChange={handleInfoChange} />
+          </div>
+          <div className="form-group" style={{ flex: '2 1 200px' }}>
+            <label>Provincia Salida *</label>
+            <select required name="origenProvincia" value={infoGeneral.origenProvincia} onChange={handleInfoChange}>
+              {PROVINCIAS.map(p => (<option key={p.value} value={p.value} disabled={p.value === ''}>{p.label}</option>))}
+            </select>
+          </div>
           <div className="form-group" style={{ flex: '2 1 200px' }}>
             <label>{esAereo ? 'Aeropuerto de Salida *' : 'Ciudad / Terminal *'}</label>
             {esAereo ? (
@@ -272,7 +307,13 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               </select>
             ) : (<input type="text" required name="origenAeropuerto" placeholder="Ej: Terminal Cba" value={infoGeneral.origenAeropuerto} onChange={handleInfoChange} />)}
           </div>
-          <div className="form-group" style={{ flex: '1 1 120px' }}><label>Moneda</label><select name="moneda" value={infoGeneral.moneda} onChange={handleInfoChange}><option value="USD">USD</option><option value="ARS">ARS</option></select></div>
+          <div className="form-group" style={{ flex: '1 1 120px' }}>
+            <label>Moneda *</label>
+            <select required name="moneda" value={infoGeneral.moneda} onChange={handleInfoChange}>
+              <option value="USD">USD</option>
+              <option value="ARS">ARS</option>
+            </select>
+          </div>
           <div className="form-group" style={{ flex: '2 1 200px' }}>
             <label>Financiación *</label>
             <select required name="financiacion" value={infoGeneral.financiacion} onChange={handleInfoChange}>
@@ -322,16 +363,16 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                     <button type="button" onClick={() => eliminarVuelo(v.id)} style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}>✕</button>
                     <b style={{ display: 'block', marginBottom: '10px', color: '#0369a1' }}>Tramo {idx + 1}</b>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px' }}>
-                      <div className="form-group" style={{ margin: 0 }}><label>Aerolínea</label><input type="text" value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida</label><input type="text" value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Salida</label><input type="date" value={v.fechaSalida} onChange={e => actualizarVuelo(v.id, 'fechaSalida', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Hora Salida</label><input type="time" value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Aerolínea *</label><input type="text" required value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida *</label><input type="text" required value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Salida *</label><input type="date" required value={v.fechaSalida} onChange={e => actualizarVuelo(v.id, 'fechaSalida', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Hora Salida *</label><input type="time" required value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px', borderTop: '1px dashed #bae6fd', paddingTop: '15px' }}>
-                      <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido</label><select value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}>{OPCIONES_EQUIPAJE.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Llegada</label><input type="text" value={v.destino} onChange={e => actualizarVuelo(v.id, 'destino', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada</label><input type="date" value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada</label><input type="time" value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido *</label><select required value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}><option value="" disabled>Seleccionar...</option>{OPCIONES_EQUIPAJE.map(o => { if(o.value) return <option key={o.value} value={o.value}>{o.label}</option> })}</select></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Llegada *</label><input type="text" required value={v.destino} onChange={e => actualizarVuelo(v.id, 'destino', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada *</label><input type="date" required value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada *</label><input type="time" required value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
                     </div>
                     <div className="form-group" style={{ margin: 0, marginTop: '15px' }}><label>Observaciones del Vuelo</label><input type="text" placeholder="Ej: Vuelo directo." value={v.obs} onChange={e => actualizarVuelo(v.id, 'obs', e.target.value)} /></div>
                   </div>
@@ -375,30 +416,38 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             </div>
           )}
 
-          {/* TARIFAS (Inputs) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px', marginTop: '10px' }}>
+          {/* TARIFAS (Inputs) - DISEÑO 2x2 CON CAJAS AMPLIADAS */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '15px' }}>
             {[
-              { key: 'doble', title: 'Base Doble *' },
-              { key: 'triple', title: 'Base Triple' },
-              { key: 'cuadruple', title: 'Base Cuádruple' }
+              { key: 'doble', title: 'Base Doble *', campos: ['mayor', 'menor', 'child'] },
+              { key: 'triple', title: 'Base Triple', campos: ['mayor', 'menor', 'child'] },
+              { key: 'cuadruple', title: 'Base Cuádruple', campos: ['mayor', 'menor', 'child'] },
+              { key: 'single', title: 'Base Single', campos: ['mayor'] }
             ].map(base => (
-              <div key={base.key} style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb' }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#11173d', fontSize: '0.9rem' }}>{base.title}</h4>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {/* Se agregó el min="0" para evitar tipeo de negativos */}
-                  <div style={{ flex: 1 }}><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Adulto</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida[base.key].mayor} onChange={e => handleTarifaChange(base.key, 'mayor', e.target.value)} /></div>
-                  <div style={{ flex: 1 }}><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Menor</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida[base.key].menor} onChange={e => handleTarifaChange(base.key, 'menor', e.target.value)} /></div>
-                  <div style={{ flex: 1 }}><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Child</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida[base.key].child} onChange={e => handleTarifaChange(base.key, 'child', e.target.value)} /></div>
+              <div key={base.key} style={{ background: '#f9fafb', padding: '20px', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
+                <h4 style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1rem', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>{base.title}</h4>
+                <div style={{ display: 'flex', gap: '15px' }}>
+                  {base.campos.includes('mayor') && (
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.75rem', color: '#4b5563', fontWeight: 'bold' }}>Adulto</label>
+                      <input type="number" min="0" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={tempSalida[base.key].mayor} onChange={e => handleTarifaChange(base.key, 'mayor', e.target.value)} />
+                    </div>
+                  )}
+                  {base.campos.includes('menor') && (
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.75rem', color: '#4b5563', fontWeight: 'bold' }}>Menor</label>
+                      <input type="number" min="0" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={tempSalida[base.key].menor} onChange={e => handleTarifaChange(base.key, 'menor', e.target.value)} />
+                    </div>
+                  )}
+                  {base.campos.includes('child') && (
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.75rem', color: '#4b5563', fontWeight: 'bold' }}>Child(0-1)</label>
+                      <input type="number" min="0" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={tempSalida[base.key].child} onChange={e => handleTarifaChange(base.key, 'child', e.target.value)} />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #e5e7eb', flex: 1 }}>
-                <h4 style={{ margin: '0 0 10px 0', color: '#11173d', fontSize: '0.9rem' }}>Base Single</h4>
-                <div><label style={{ fontSize: '0.7rem', color: '#6b7280' }}>Adulto</label><input type="number" min="0" style={{ padding: '6px', width: '100%', border: '1px solid #d1d5db', borderRadius: '4px' }} value={tempSalida.single.mayor} onChange={e => handleTarifaChange('single', 'mayor', e.target.value)} /></div>
-              </div>
-            </div>
           </div>
           
           <div style={{ textAlign: 'right' }}>
@@ -508,8 +557,12 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               
               {s.tipo === 'traslado' ? (
                 <div className="form-group-row">
-                  <div className="form-group" style={{ flex: 1, display: 'flex', gap: '15px', alignItems: 'center' }}><label><input type="checkbox" checked={s.in || false} onChange={(e) => actualizarServicio(s.id, 'in', e.target.checked)} /> IN</label><label><input type="checkbox" checked={s.out || false} onChange={(e) => actualizarServicio(s.id, 'out', e.target.checked)} /> OUT</label></div>
-                  <div className="form-group" style={{ flex: 2 }}><label>Detalle</label><input type="text" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
+                  <div className="form-group" style={{ flex: 1, display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <label><input type="checkbox" checked={s.in || false} onChange={(e) => actualizarServicio(s.id, 'in', e.target.checked)} /> IN</label>
+                    <label><input type="checkbox" checked={s.out || false} onChange={(e) => actualizarServicio(s.id, 'out', e.target.checked)} /> OUT</label>
+                    <label><input type="checkbox" checked={s.hotel_a_hotel || false} onChange={(e) => actualizarServicio(s.id, 'hotel_a_hotel', e.target.checked)} /> Hotel a Hotel</label>
+                  </div>
+                  <div className="form-group" style={{ flex: 2 }}><label>Detalle</label><input type="text" placeholder="Ej: Aeropuerto -> Hilton" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
                   <div className="form-group" style={{ flex: 2 }}><label>Notas</label><input type="text" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
                 </div>
               ) : s.tipo === 'excursion' ? (
