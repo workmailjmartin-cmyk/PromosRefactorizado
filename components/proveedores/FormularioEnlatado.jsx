@@ -113,10 +113,20 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   // PARADAS
   const agregarParada = () => { if (tempParada && !paradas.includes(tempParada)) { setParadas([...paradas, tempParada]); setTempParada(''); } };
   
- // TARIFARIO NUEVO (Complejo)
+ // FUNCION AUXILIAR PARA DIBUJAR LOS PUNTOS DE MILES
+  const formatNumber = (num) => {
+    if (num === '' || num === undefined || num === null) return '';
+    return Number(num).toLocaleString('es-AR');
+  };
+
+  // Variable maestra: La fecha del primer vuelo rige a todas las demás
+  const fechaReferenciaVuelo = vuelos.length > 0 && vuelos[0]?.fechaSalida ? vuelos[0].fechaSalida : '';
+
+  // TARIFARIO NUEVO (Complejo con separador de miles)
   const handleTarifaChange = (base, campo, valor) => {
-    // FILTRO ANTI-NEGATIVOS: Si es menor a 0, lo fuerza a 0.
-    const valorLimpio = valor === '' ? '' : Math.max(0, parseInt(valor) || 0);
+    // Magia: Elimina TODO lo que no sea número (letras, comas, signos menos)
+    const soloNumeros = valor.toString().replace(/\D/g, ''); 
+    const valorLimpio = soloNumeros === '' ? '' : parseInt(soloNumeros, 10);
     setTempSalida(prev => ({
       ...prev,
       [base]: { ...prev[base], [campo]: valorLimpio }
@@ -124,7 +134,13 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   };
 
   const agregarSalida = () => {
-    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor) {
+    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor !== '') {
+      
+      // Validación: Si hay un vuelo con fecha, la tarifa debe ser en esa misma fecha
+      if (fechaReferenciaVuelo && tempSalida.fecha !== fechaReferenciaVuelo) {
+        return alert(`La fecha de salida de la tarifa debe ser exactamente la misma que la del primer vuelo (${fechaReferenciaVuelo.split('-').reverse().join('/')}).`);
+      }
+
       // Magia para concatenar los dos hoteles si existe el segundo
       const hotelYRegimenCombinado = tempSalida.hotel2Nombre 
         ? `${tempSalida.hotelNombre} (${tempSalida.hotelRegimen}) + ${tempSalida.hotel2Nombre} (${tempSalida.hotel2Regimen})`
@@ -163,7 +179,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     let salidasActuales = [...salidas];
 
     // Autoguardado si había fila a medias
-    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.doble?.mayor) {
+    if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.doble?.mayor !== '') {
       const hotelYRegimenCombinado = tempSalida.hotel2Nombre 
         ? `${tempSalida.hotelNombre} (${tempSalida.hotelRegimen}) + ${tempSalida.hotel2Nombre} (${tempSalida.hotel2Regimen})`
         : `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
@@ -210,10 +226,9 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     }
   };
 
-
   // OTROS
   const agregarDiaItinerario = () => { if (tempDia.titulo) { setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); setTempDia({ titulo: '', descripcion: '' }); } };
-  const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, opcional: false, fechaHora: '', tarifa: '' }]); setServicioSeleccionado(''); } };
+  const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, hotel_a_hotel: false, opcional: false, fechaHora: '', tarifa: '' }]); setServicioSeleccionado(''); } };
   const actualizarServicio = (id, campo, valor) => setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
 
   const handleSubirFoto = async (e) => {
@@ -243,8 +258,9 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     // Validación Sección Vuelos
     if (esAereo) {
       if (vuelos.length === 0) return alert("Al ser un paquete aéreo, debés cargar al menos un vuelo.");
-      const vuelosIncompletos = vuelos.some(v => !v.aerolinea || !v.origen || !v.fechaSalida || !v.horaSalida || !v.destino || !v.fechaLlegada || !v.horaLlegada || !v.equipaje);
-      if (vuelosIncompletos) return alert("Por favor, completá todos los campos obligatorios de la Información de Vuelos.");
+      // Modificado para aceptar fechas opcionales, pero obligando aerolinea, origen, destino y equipaje
+      const vuelosIncompletos = vuelos.some(v => !v.aerolinea || !v.origen || !v.destino || !v.equipaje);
+      if (vuelosIncompletos) return alert("Por favor, completá Aerolínea, Origen, Destino y Equipaje en todos los vuelos (Las fechas y horas son opcionales).");
     }
     
     const paqueteFinal = {
@@ -365,14 +381,16 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Aerolínea *</label><input type="text" required value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida *</label><input type="text" required value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Salida *</label><input type="date" required value={v.fechaSalida} onChange={e => actualizarVuelo(v.id, 'fechaSalida', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Hora Salida *</label><input type="time" required value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
+                      {/* El Tramo 2 en adelante no puede ser antes que el Tramo 1 */}
+                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Salida</label><input type="date" min={idx > 0 && fechaReferenciaVuelo ? fechaReferenciaVuelo : undefined} value={v.fechaSalida} onChange={e => actualizarVuelo(v.id, 'fechaSalida', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Hora Salida</label><input type="time" value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px', borderTop: '1px dashed #bae6fd', paddingTop: '15px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido *</label><select required value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}><option value="" disabled>Seleccionar...</option>{OPCIONES_EQUIPAJE.map(o => { if(o.value) return <option key={o.value} value={o.value}>{o.label}</option> })}</select></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Llegada *</label><input type="text" required value={v.destino} onChange={e => actualizarVuelo(v.id, 'destino', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada *</label><input type="date" required value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada *</label><input type="time" required value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
+                      {/* Las llegadas no pueden ser antes del vuelo principal */}
+                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada</label><input type="date" min={fechaReferenciaVuelo ? fechaReferenciaVuelo : undefined} value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
+                      <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada</label><input type="time" value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
                     </div>
                     <div className="form-group" style={{ margin: 0, marginTop: '15px' }}><label>Observaciones del Vuelo</label><input type="text" placeholder="Ej: Vuelo directo." value={v.obs} onChange={e => actualizarVuelo(v.id, 'obs', e.target.value)} /></div>
                   </div>
@@ -389,7 +407,11 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           
           {/* DATOS DEL HOTEL 1 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
-            <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Fecha Salida *</label><input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Fecha Salida *</label>
+              <input type="date" value={tempSalida.fecha} onChange={e => setTempSalida({...tempSalida, fecha: e.target.value})} min={fechaReferenciaVuelo || undefined} max={fechaReferenciaVuelo || undefined} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} />
+              {fechaReferenciaVuelo && <div style={{fontSize: '0.7rem', color: '#0ea5e9', marginTop: '2px'}}>*Fijada por vuelo</div>}
+            </div>
             <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Nombre Hotel 1 *</label><input type="text" placeholder="Ej: Hilton Copacabana" value={tempSalida.hotelNombre} onChange={e => setTempSalida({...tempSalida, hotelNombre: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
             <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Estrellas</label><select value={tempSalida.hotelEstrellas || '3'} onChange={e => setTempSalida({...tempSalida, hotelEstrellas: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }}><option value="1">1 ⭐</option><option value="2">2 ⭐</option><option value="3">3 ⭐</option><option value="4">4 ⭐</option><option value="5">5 ⭐</option></select></div>
             <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Ubicación (Maps)</label><input type="url" placeholder="https://maps.app.goo.gl/..." value={tempSalida.hotelUbicacion || ''} onChange={e => setTempSalida({...tempSalida, hotelUbicacion: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }} /></div>
@@ -416,7 +438,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             </div>
           )}
 
-          {/* TARIFAS (Inputs) - DISEÑO 2x2 CON CAJAS AMPLIADAS */}
+          {/* TARIFAS (Inputs) - CON PUNTOS DE MILES */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '15px' }}>
             {[
               { key: 'doble', title: 'Base Doble *', campos: ['mayor', 'menor', 'child'] },
@@ -430,19 +452,19 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                   {base.campos.includes('mayor') && (
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '0.75rem', color: '#4b5563', fontWeight: 'bold' }}>Adulto</label>
-                      <input type="number" min="0" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={tempSalida[base.key].mayor} onChange={e => handleTarifaChange(base.key, 'mayor', e.target.value)} />
+                      <input type="text" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={formatNumber(tempSalida[base.key].mayor)} onChange={e => handleTarifaChange(base.key, 'mayor', e.target.value)} />
                     </div>
                   )}
                   {base.campos.includes('menor') && (
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '0.75rem', color: '#4b5563', fontWeight: 'bold' }}>Menor</label>
-                      <input type="number" min="0" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={tempSalida[base.key].menor} onChange={e => handleTarifaChange(base.key, 'menor', e.target.value)} />
+                      <input type="text" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={formatNumber(tempSalida[base.key].menor)} onChange={e => handleTarifaChange(base.key, 'menor', e.target.value)} />
                     </div>
                   )}
                   {base.campos.includes('child') && (
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '0.75rem', color: '#4b5563', fontWeight: 'bold' }}>Child(0-1)</label>
-                      <input type="number" min="0" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={tempSalida[base.key].child} onChange={e => handleTarifaChange(base.key, 'child', e.target.value)} />
+                      <input type="text" style={{ padding: '10px', width: '100%', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d' }} value={formatNumber(tempSalida[base.key].child)} onChange={e => handleTarifaChange(base.key, 'child', e.target.value)} />
                     </div>
                   )}
                 </div>
@@ -568,7 +590,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               ) : s.tipo === 'excursion' ? (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px' }}>
                   <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Nombre de la Excursión</label><input type="text" placeholder="Ej: Pan de Azúcar" value={s.detalle1} onChange={(e) => actualizarServicio(s.id, 'detalle1', e.target.value)} /></div>
-                  <div className="form-group" style={{ flex: '1 1 150px', margin: 0 }}><label>Fecha y Hora (Opcional)</label><input type="datetime-local" value={s.fechaHora || ''} onChange={(e) => actualizarServicio(s.id, 'fechaHora', e.target.value)} /></div>
+                  <div className="form-group" style={{ flex: '1 1 150px', margin: 0 }}><label>Fecha y Hora (Opcional)</label><input type="datetime-local" min={fechaReferenciaVuelo ? `${fechaReferenciaVuelo}T00:00` : undefined} value={s.fechaHora || ''} onChange={(e) => actualizarServicio(s.id, 'fechaHora', e.target.value)} /></div>
                   <div className="form-group" style={{ flex: '2 1 200px', margin: 0 }}><label>Notas / Observaciones</label><input type="text" placeholder="Ej: No incluye entrada" value={s.detalle2} onChange={(e) => actualizarServicio(s.id, 'detalle2', e.target.value)} /></div>
                 </div>
               ) : (
