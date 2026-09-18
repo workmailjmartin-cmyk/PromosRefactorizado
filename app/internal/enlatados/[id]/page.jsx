@@ -246,9 +246,36 @@ export default function DetallePaqueteInterno() {
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
   
-  const serviciosIncluidos = (paquete.servicios || []).filter(s => !s.opcional);
   const serviciosOpcionales = (paquete.servicios || []).filter(s => s.opcional);
   const vuelos = paquete.vuelos || []; 
+
+  // --- GENERACIÓN DE SERVICIOS INCLUIDOS AUTOMÁTICOS ---
+  // 1. Tomamos los servicios manuales (Traslados, Excursiones, Seguros)
+  const serviciosManuales = (paquete.servicios || []).filter(s => !s.opcional);
+
+  // 2. Extraemos el Alojamiento de la tarifa seleccionada
+  let servicioHotel = null;
+  if (tarifarioFiltrado.length > 0) {
+    const tarifaBase = tarifarioFiltrado[0];
+    servicioHotel = {
+      tipo: 'hotel',
+      detalle1: tarifaBase.hotelNombre || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[0] : 'Alojamiento'),
+      detalle2: tarifaBase.regimen || (tarifaBase.hotelRegimen ? tarifaBase.hotelRegimen.split(' - ')[1] : '')
+    };
+  }
+
+  // 3. Extraemos el Transporte Principal
+  let servicioTransporte = null;
+  if (paquete.transporte) {
+    if (paquete.transporte.includes('aereo')) {
+      servicioTransporte = { tipo: 'aereo', detalle1: 'Vuelos Incluidos', detalle2: 'Ver itinerario debajo' };
+    } else if (paquete.transporte.includes('bus')) {
+      servicioTransporte = { tipo: 'traslado', detalle1: 'Bus de Larga Distancia', detalle2: paquete.transporte.replace('-', ' ').toUpperCase() };
+    }
+  }
+
+  // 4. Unimos todo: Transporte -> Hotel -> Otros Servicios
+  const serviciosIncluidos = [servicioTransporte, servicioHotel, ...serviciosManuales].filter(Boolean); 
   
   const abrirLightbox = (index) => { setImagenActivaIndex(index); setLightboxAbierto(true); };
   const cerrarLightbox = () => setLightboxAbierto(false);
@@ -342,7 +369,8 @@ export default function DetallePaqueteInterno() {
                       <span style={{ fontSize: '1.2rem', width: '25px', textAlign: 'center' }}>{getServicioIcon(s.tipo)}</span>
                       <div style={{ flex: 1, borderLeft: '2px solid #e5e7eb', paddingLeft: '10px' }}>
                         <div style={{ color: '#11173d', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: '1' }}>{s.tipo}</div>
-                        <div style={{ color: '#6b7280', fontSize: '0.8rem', marginTop: '2px' }}>{s.detalle1}</div>
+                        <div style={{ color: '#4b5563', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '2px' }}>{s.detalle1}</div>
+                        {s.detalle2 && <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '1px' }}>{s.detalle2}</div>}
                       </div>
                     </div>
                   ))}
