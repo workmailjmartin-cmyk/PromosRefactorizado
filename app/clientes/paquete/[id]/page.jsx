@@ -5,7 +5,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Loader from '@/components/shared/Loader'; 
 
-// El cliente siempre ve el precio con el markup integrado
 const MARKUP_AGENCIA = 1.20; 
 
 const getServicioIcon = (tipo) => {
@@ -29,7 +28,6 @@ export default function DetallePaqueteCliente() {
   
   const [lightboxAbierto, setLightboxAbierto] = useState(false);
   const [imagenActivaIndex, setImagenActivaIndex] = useState(0);
-
   const [descAbierta, setDescAbierta] = useState(true);
 
   const cargarPaquete = async () => {
@@ -72,7 +70,6 @@ export default function DetallePaqueteCliente() {
   const serviciosOpcionales = (paquete.servicios || []).filter(s => s.opcional);
   const vuelos = paquete.vuelos || []; 
 
-  // --- GENERACIÓN DE SERVICIOS INCLUIDOS AUTOMÁTICOS ---
   const serviciosManuales = (paquete.servicios || []).filter(s => !s.opcional);
   let servicioHotel = null;
   if (tarifarioFiltrado.length > 0) {
@@ -102,7 +99,6 @@ export default function DetallePaqueteCliente() {
   const numeroAgencia = "5491112345678"; 
   const mensajeWsp = `Hola! Me interesa consultar por el viaje a ${paquete.destino} de ${paquete.dias} días. ¿Me pasan más info?`;
 
-  // --- MOTOR DE FINANCIACIÓN PARA CELDAS ---
   const CeldaCuotas = ({ valorBase }) => {
     if (!valorBase || valorBase === '-') return <span style={{ color: '#9ca3af' }}>-</span>;
     
