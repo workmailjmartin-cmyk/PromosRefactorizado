@@ -67,7 +67,10 @@ export default function ListadoEnlatadosCliente() {
     setLoading(false);
   };
 
-  useEffect(() => { cargarPaquetes(); }, []);
+  useEffect(() => {
+    document.title = 'Feliz Viaje - Financiación Exclusiva';
+    cargarPaquetes(); 
+  }, []);
 
   useEffect(() => {
     let result = [...paquetesOriginales];

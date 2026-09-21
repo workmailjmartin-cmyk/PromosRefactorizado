@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState,useEffect } from 'react';
 import Link from 'next/link';
 import HeaderB2C from '@/components/clientes/HeaderB2C';
 import FooterB2C from '@/components/clientes/FooterB2C';
@@ -32,6 +32,9 @@ export default function ClientesPage() {
   const [destinoDraft, setDestinoDraft] = useState('');
   const [filtros, setFiltros] = useState({ destino: '', salida: '', orden: 'reciente' });
   const [selectedPackage, setSelectedPackage] = useState(null);
+  useEffect(() => {
+    document.title = 'Feliz Viaje - Promociones';
+  }, []);
 
   const filteredPackages = useMemo(() => {
     const fDestino = normalizeText(filtros.destino);

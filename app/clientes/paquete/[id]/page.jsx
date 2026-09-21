@@ -38,6 +38,10 @@ export default function DetallePaqueteCliente() {
       if (docSnap.exists()) {
         const data = { id: docSnap.id, ...docSnap.data() };
         setPaquete(data);
+        
+        // 👇 ESTA ES LA LÍNEA NUEVA: Cambia el título de la pestaña dinámicamente
+        document.title = `Feliz Viaje - ${data.destino}`; 
+
         if (data.tarifario && data.tarifario.length > 0) {
           const fechasOrdenadas = [...new Set(data.tarifario.map(t => t.fecha))].sort();
           setFechaSeleccionada(fechasOrdenadas[0]);
