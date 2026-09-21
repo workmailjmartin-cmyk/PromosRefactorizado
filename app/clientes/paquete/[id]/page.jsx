@@ -182,41 +182,82 @@ export default function DetallePaqueteCliente() {
 
   return (
     <>
-      {/* HEADER EXCLUSIVO DEL PAQUETE (Imita la estructura de HeaderB2C) */}
-      <header className="header-b2c" style={{ position: 'relative', background: '#fff', borderBottom: '1px solid #e5e7eb', zIndex: 1000, position: 'sticky', top: 0 }}>
+      {/* HEADER EXCLUSIVO DEL PAQUETE CON MEDIA QUERIES INYECTADAS */}
+      <style>{`
+        .header-paquete-cliente {
+          background: #fff;
+          border-bottom: 1px solid #e5e7eb;
+          padding: 15px 5%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .titulo-paquete-cliente {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          margin: 0;
+          color: #ef5a1a;
+          font-size: 1.8rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .links-paquete-cliente {
+          display: flex;
+          gap: 15px;
+          font-size: 0.95rem;
+          font-weight: bold;
+          color: #11173d;
+        }
+
+        /* --- MODO CELULAR --- */
+        @media (max-width: 768px) {
+          .header-paquete-cliente {
+            flex-direction: column;
+            padding: 15px;
+            gap: 10px;
+            position: relative; /* Sacamos el sticky en mobile para que no ocupe media pantalla */
+          }
+          .titulo-paquete-cliente {
+            position: relative;
+            left: 0;
+            top: 0;
+            transform: none;
+            text-align: center;
+            white-space: normal;
+            font-size: 1.5rem;
+            line-height: 1.2;
+          }
+          .links-paquete-cliente {
+            font-size: 0.8rem;
+            justify-content: center;
+          }
+        }
+      `}</style>
+
+      <header className="header-paquete-cliente">
         
-        <div className="logo-container">
+        <div style={{ flex: '1 1 auto' }}>
           <a href="/clientes/enlatados">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt="Feliz Viaje"
-              className="logo-img"
-              style={{ maxHeight: '70px', width: 'auto', cursor: 'pointer' }}
-            />
+            <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '60px', width: 'auto', cursor: 'pointer' }} />
           </a>
         </div>
 
-        <h1
-          className="titulo-promos"
-          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', margin: 0, whiteSpace: 'nowrap', textTransform: 'uppercase' }}
-        >
+        <h1 className="titulo-paquete-cliente">
           {paquete.destino}
         </h1>
 
-        <div className="header-spacer header-links-container">
-          <a
-            href="https://www.google.com/maps/d/u/0/viewer?ll=-29.80567022174473%2C-62.01399203410176&z=6&mid=1sIKByAEAd5L0_TuVSCfG9puc2pFPv1I"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="header-link-item"
-          >
-            📍 + 25 Sucursales
-          </a>
-          <span className="header-link-separator">|</span>
-          <a href="/clientes#footer-servicios" className="header-link-item">
-            🧳 Conocé nuestros servicios
-          </a>
+        <div className="links-paquete-cliente" style={{ flex: '1 1 auto', justifyContent: 'flex-end' }}>
+          <span style={{ whiteSpace: 'nowrap' }}>📍 + 25 Sucursales</span>
+          <span style={{ color: '#d1d5db' }}>|</span>
+          <span style={{ whiteSpace: 'nowrap' }}>💼 Conocé nuestros servicios</span>
         </div>
       </header>
 
