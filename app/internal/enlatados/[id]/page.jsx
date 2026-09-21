@@ -297,31 +297,77 @@ export default function DetallePaqueteInterno() {
 
   return (
     <>
-      {/* HEADER EXCLUSIVO DEL PAQUETE INTERNO */}
-      <header className="header-b2c" style={{ position: 'relative', background: '#fff', borderBottom: '1px solid #e5e7eb', zIndex: 1000, position: 'sticky', top: 0 }}>
-        
-        <div className="logo-container">
-          {/* LOGO: Vuelve al panel de gestión interno */}
+      {/* HEADER EXCLUSIVO DEL PAQUETE INTERNO CON MEDIA QUERIES */}
+      <style>{`
+        .header-paquete-interno {
+          background: #fff;
+          border-bottom: 1px solid #e5e7eb;
+          padding: 15px 5%;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          position: sticky;
+          top: 0;
+          z-index: 1000;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .titulo-paquete-interno {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          margin: 0;
+          color: #11173d;
+          font-size: 1.8rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          white-space: nowrap;
+        }
+        .etiqueta-panel {
+          font-size: 0.9rem;
+          font-weight: bold;
+          color: #11173d;
+          background: #e0f2fe;
+          padding: 6px 14px;
+          border-radius: 20px;
+          border: 1px solid #bae6fd;
+        }
+
+        /* --- MODO CELULAR --- */
+        @media (max-width: 768px) {
+          .header-paquete-interno {
+            flex-direction: column;
+            padding: 15px;
+            gap: 12px;
+            position: relative; /* Sacamos el sticky en mobile */
+          }
+          .titulo-paquete-interno {
+            position: relative;
+            left: 0;
+            top: 0;
+            transform: none;
+            text-align: center;
+            white-space: normal;
+            font-size: 1.5rem;
+            line-height: 1.2;
+          }
+        }
+      `}</style>
+
+      <header className="header-paquete-interno">
+        <div style={{ flex: '1 1 auto' }}>
           <a href="/internal/enlatados">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.png"
-              alt="Feliz Viaje"
-              className="logo-img"
-              style={{ maxHeight: '70px', width: 'auto', cursor: 'pointer' }}
-            />
+            <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '60px', width: 'auto', cursor: 'pointer' }} />
           </a>
         </div>
 
-        <h1
-          className="titulo-promos"
-          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', margin: 0, whiteSpace: 'nowrap', textTransform: 'uppercase' }}
-        >
+        <h1 className="titulo-paquete-interno">
           {paquete.destino}
         </h1>
 
-        <div className="header-spacer header-links-container">
-          <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#11173d', background: '#e0f2fe', padding: '4px 12px', borderRadius: '20px' }}>
+        <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'flex-end' }}>
+          <span className="etiqueta-panel">
             🔒 Panel Interno
           </span>
         </div>
@@ -343,8 +389,7 @@ export default function DetallePaqueteInterno() {
           
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
             
-            <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-              {paquete.imagenes && paquete.imagenes.length > 0 ? (
+            <div style={{ flex: '1 1 400px', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '15px' }}>              {paquete.imagenes && paquete.imagenes.length > 0 ? (
                 <>
                   <div onClick={() => abrirLightbox(0)} style={{ height: '400px', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer' }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -366,7 +411,7 @@ export default function DetallePaqueteInterno() {
               )}
             </div>
 
-            <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: '1 1 300px', minWidth: '280px', display: 'flex', flexDirection: 'column' }}>
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '15px', letterSpacing: '0.5px', alignSelf: 'flex-start' }}>
