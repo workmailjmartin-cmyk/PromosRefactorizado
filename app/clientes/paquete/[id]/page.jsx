@@ -177,345 +177,371 @@ export default function DetallePaqueteCliente() {
   };
 
   return (
-    <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '40px', position: 'relative' }}>
+    <>
+      {/* HEADER EXCLUSIVO DEL PAQUETE (Reemplaza al genérico) */}
+      <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '10px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 1000, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', gap: '15px' }}>
+        
+        {/* LOGO: Vuelve a la lista de enlatados financiados */}
+        <a href="/clientes/enlatados" style={{ flex: '1 1 200px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '60px', width: 'auto', cursor: 'pointer' }} />
+        </a>
+
+        {/* TÍTULO CENTRAL: Muestra el nombre del destino dinámicamente */}
+        <div style={{ flex: '2 1 300px', textAlign: 'center' }}>
+          <h1 style={{ margin: 0, color: '#ef5a1a', fontSize: '1.8rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+            {paquete.destino}
+          </h1>
+        </div>
+
+        {/* INFO DERECHA: Textos institucionales */}
+        <div style={{ flex: '1 1 200px', display: 'flex', gap: '15px', fontSize: '0.9rem', fontWeight: 'bold', color: '#11173d', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+          <span style={{ whiteSpace: 'nowrap' }}>📍 + 25 Sucursales</span>
+          <span style={{ color: '#d1d5db' }}>|</span>
+          <span style={{ whiteSpace: 'nowrap' }}>💼 Conocé nuestros servicios</span>
+        </div>
+      </header>
       
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
-        <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {paquete.imagenes && paquete.imagenes.length > 0 ? (
-            <>
-              <div onClick={() => abrirLightbox(0)} style={{ height: '400px', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={paquete.imagenes[0]} alt="Portada" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e=>e.currentTarget.style.transform='scale(1.03)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'} />
-              </div>
-              {paquete.imagenes.length > 1 && (
-                <div style={{ display: 'flex', gap: '15px' }}>
-                  {paquete.imagenes.slice(1).map((img, idx) => (
-                    <div key={idx + 1} onClick={() => abrirLightbox(idx + 1)} style={{ flex: 1, height: '110px', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={img} alt={`Miniatura ${idx+1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='1'} onMouseOut={e=>e.currentTarget.style.opacity='0.85'} />
+      <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '40px 20px' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '40px', position: 'relative' }}>
+        
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
+          <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {paquete.imagenes && paquete.imagenes.length > 0 ? (
+              <>
+                <div onClick={() => abrirLightbox(0)} style={{ height: '400px', borderRadius: '20px', overflow: 'hidden', cursor: 'pointer' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={paquete.imagenes[0]} alt="Portada" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} onMouseOver={e=>e.currentTarget.style.transform='scale(1.03)'} onMouseOut={e=>e.currentTarget.style.transform='scale(1)'} />
+                </div>
+                {paquete.imagenes.length > 1 && (
+                  <div style={{ display: 'flex', gap: '15px' }}>
+                    {paquete.imagenes.slice(1).map((img, idx) => (
+                      <div key={idx + 1} onClick={() => abrirLightbox(idx + 1)} style={{ flex: 1, height: '110px', borderRadius: '12px', overflow: 'hidden', cursor: 'pointer' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img} alt={`Miniatura ${idx+1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85, transition: 'opacity 0.2s' }} onMouseOver={e=>e.currentTarget.style.opacity='1'} onMouseOut={e=>e.currentTarget.style.opacity='0.85'} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ height: '400px', background: '#f3f4f6', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin imágenes cargadas</div>
+            )}
+          </div>
+
+          <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '0.5px', alignSelf: 'flex-start' }}>
+              {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
+            </div>
+            <h1 style={{ margin: '0 0 10px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
+              {paquete.destino}
+            </h1>
+            <p style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1.1rem', fontWeight: 'bold' }}>
+              <span style={{ color: '#ef5a1a', marginRight: '5px' }}>🌙</span>
+              {paquete.dias} Días / {paquete.noches} Noches
+            </p>
+
+            <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '15px', marginBottom: '20px', flex: 1 }}>
+              <h4 style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1rem', fontWeight: '900' }}>Servicios Incluidos</h4>
+              {serviciosIncluidos.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {serviciosIncluidos.map((s, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '1.2rem', width: '25px', textAlign: 'center' }}>{getServicioIcon(s.tipo)}</span>
+                      <div style={{ flex: 1, borderLeft: '2px solid #e5e7eb', paddingLeft: '10px' }}>
+                        <div style={{ color: '#11173d', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: '1' }}>{s.tipo}</div>
+                        <div style={{ color: '#4b5563', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '2px' }}>{s.detalle1}</div>
+                        {s.detalle2 && <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '1px' }}>{s.detalle2}</div>}
+                      </div>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.8rem', margin: 0 }}>Consultá los servicios incluidos.</p>
               )}
-            </>
-          ) : (
-            <div style={{ height: '400px', background: '#f3f4f6', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af' }}>Sin imágenes cargadas</div>
-          )}
+            </div>
+
+            <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', textAlign: 'right' }}>
+              <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
+                <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
+                {paquete.moneda || 'USD'} ${formatearPrecio(precioDesde)}
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
+                <a 
+                  href={`https://wa.me/${numeroAgencia}?text=${encodeURIComponent(mensajeWsp)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ width: '100%', background: '#25D366', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: '10px', fontWeight: 'bold', textDecoration: 'none', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s', boxSizing: 'border-box' }}
+                >
+                  💬 Consultar por WhatsApp
+                </a>
+
+                <button 
+                  onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
+                  style={{ width: '100%', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s', boxSizing: 'border-box' }}
+                >
+                  🗓️ Ver Planes de Pago
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div style={{ flex: '3 1 280px', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'inline-block', background: '#11173d', color: '#fff', padding: '6px 14px', borderRadius: '25px', fontSize: '0.75rem', fontWeight: '800', textTransform: 'uppercase', marginBottom: '20px', letterSpacing: '0.5px', alignSelf: 'flex-start' }}>
-            {paquete.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Salida desde {paquete.transporte.includes('aereo') ? paquete.origenProvincia || paquete.origenPrincipal : paquete.origenPrincipal}
-          </div>
-          <h1 style={{ margin: '0 0 10px 0', fontSize: '2.4rem', color: '#11173d', fontWeight: 900, lineHeight: '1.1', letterSpacing: '-0.5px' }}>
-            {paquete.destino}
-          </h1>
-          <p style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1.1rem', fontWeight: 'bold' }}>
-            <span style={{ color: '#ef5a1a', marginRight: '5px' }}>🌙</span>
-            {paquete.dias} Días / {paquete.noches} Noches
-          </p>
+          {paquete.descripcionViaje && (
+            <div style={{ marginBottom: '40px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
+              <div 
+                onClick={() => setDescAbierta(!descAbierta)} 
+                style={{ padding: '15px 20px', background: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: descAbierta ? '1px solid #e5e7eb' : 'none' }}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#11173d', fontWeight: 900 }}>📝 Descripción General</h3>
+                <span style={{ fontSize: '1.2rem', color: '#6b7280', transition: 'transform 0.3s', transform: descAbierta ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+              </div>
+              {descAbierta && (
+                <div style={{ padding: '20px', color: '#4b5563', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontSize: '1rem' }}>
+                  {paquete.descripcionViaje}
+                </div>
+              )}
+            </div>
+          )}
 
-          <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', padding: '15px', marginBottom: '20px', flex: 1 }}>
-            <h4 style={{ margin: '0 0 15px 0', color: '#11173d', fontSize: '1rem', fontWeight: '900' }}>Servicios Incluidos</h4>
-            {serviciosIncluidos.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {serviciosIncluidos.map((s, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '1.2rem', width: '25px', textAlign: 'center' }}>{getServicioIcon(s.tipo)}</span>
-                    <div style={{ flex: 1, borderLeft: '2px solid #e5e7eb', paddingLeft: '10px' }}>
-                      <div style={{ color: '#11173d', fontSize: '0.85rem', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: '1' }}>{s.tipo}</div>
-                      <div style={{ color: '#4b5563', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '2px' }}>{s.detalle1}</div>
-                      {s.detalle2 && <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: '1px' }}>{s.detalle2}</div>}
-                    </div>
+        <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '50px', marginBottom: '50px' }}>
+          
+          {(vuelos.length > 0 || serviciosOpcionales.length > 0) && (
+            <div style={{ flex: '1 1 300px' }}>
+              {vuelos.length > 0 && (
+                <div style={{ marginBottom: '40px' }}>
+                  <h3 style={{ color: '#0369a1', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    ✈️ Itinerario de Vuelos
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                    {vuelos.map((v, idx) => {
+                      const fechaSalidaArg = v.fechaSalida ? new Date(`${v.fechaSalida}T12:00:00Z`).toLocaleDateString('es-AR') : '';
+                      const fechaLlegadaArg = v.fechaLlegada ? new Date(`${v.fechaLlegada}T12:00:00Z`).toLocaleDateString('es-AR') : '';
+                      return (
+                        <div key={idx} style={{ padding: '15px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px dashed #7dd3fc', paddingBottom: '10px' }}>
+                            <strong style={{ color: '#0369a1' }}>Tramo {idx + 1}: {v.aerolinea}</strong>
+                            <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 'bold', background: '#e0f2fe', padding: '2px 8px', borderRadius: '12px' }}>{v.equipaje}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaSalida}</div>
+                              <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaSalidaArg}</div>
+                              <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.origen}</div>
+                            </div>
+                            <div style={{ color: '#bae6fd', fontSize: '2rem' }}>⟶</div>
+                            <div style={{ flex: 1, textAlign: 'right' }}>
+                              <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaLlegada}</div>
+                              <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaLlegadaArg}</div>
+                              <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {serviciosOpcionales.length > 0 && (
+                <div>
+                  <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {serviciosOpcionales.map((s, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
+                          <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
+                            {s.detalle1}
+                          </div>
+                        </div>
+                        {s.tarifa && (
+                          <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
+                            + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div style={{ flex: (vuelos.length > 0 || serviciosOpcionales.length > 0) ? '1 1 300px' : '1 1 100%' }}>
+            <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Itinerario Resumido</h3>
+            {paquete.itinerario && paquete.itinerario.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {paquete.itinerario.map((dia, idx) => (
+                  <div key={idx} style={{ paddingLeft: '20px', borderLeft: '3px solid #ef5a1a', position: 'relative' }}>
+                    <div style={{ position: 'absolute', left: '-8px', top: '4px', width: '13px', height: '13px', background: '#ef5a1a', borderRadius: '50%' }}></div>
+                    <h4 style={{ margin: '0 0 5px 0', color: '#11173d', fontSize: '1rem', fontWeight: 800 }}>Día {dia.dia}: {dia.titulo}</h4>
+                    <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>{dia.descripcion}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.8rem', margin: 0 }}>Consultá los servicios incluidos.</p>
+              <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.9rem' }}>A consultar.</p>
             )}
-          </div>
-
-          <div style={{ background: '#f9fafb', padding: '20px', borderRadius: '16px', textAlign: 'right' }}>
-            <div style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '8px' }}>
-              <span style={{ fontSize: '1rem', color: '#6b7280', fontWeight: 'bold' }}>desde</span>
-              {paquete.moneda || 'USD'} ${formatearPrecio(precioDesde)}
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '15px' }}>
-              <a 
-                href={`https://wa.me/${numeroAgencia}?text=${encodeURIComponent(mensajeWsp)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ width: '100%', background: '#25D366', color: '#fff', textAlign: 'center', padding: '12px', borderRadius: '10px', fontWeight: 'bold', textDecoration: 'none', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s', boxSizing: 'border-box' }}
-              >
-                💬 Consultar por WhatsApp
-              </a>
-
-              <button 
-                onClick={() => document.getElementById('seccion-tarifas').scrollIntoView({ behavior: 'smooth' })}
-                style={{ width: '100%', padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s', boxSizing: 'border-box' }}
-              >
-                🗓️ Ver Planes de Pago
-              </button>
-            </div>
           </div>
         </div>
-      </div>
 
-        {paquete.descripcionViaje && (
-          <div style={{ marginBottom: '40px', border: '1px solid #e5e7eb', borderRadius: '12px', background: '#fff', overflow: 'hidden', boxShadow: '0 2px 5px rgba(0,0,0,0.02)' }}>
-            <div 
-              onClick={() => setDescAbierta(!descAbierta)} 
-              style={{ padding: '15px 20px', background: '#f9fafb', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: descAbierta ? '1px solid #e5e7eb' : 'none' }}
-            >
-              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#11173d', fontWeight: 900 }}>📝 Descripción General</h3>
-              <span style={{ fontSize: '1.2rem', color: '#6b7280', transition: 'transform 0.3s', transform: descAbierta ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
-            </div>
-            {descAbierta && (
-              <div style={{ padding: '20px', color: '#4b5563', lineHeight: '1.7', whiteSpace: 'pre-wrap', fontSize: '1rem' }}>
-                {paquete.descripcionViaje}
-              </div>
+        <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
+
+        <div id="seccion-tarifas">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '25px' }}>
+            <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>
+              Planes de Pago por Fecha
+            </h3>
+            <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
+              Tarifas en {paquete.moneda || 'USD'}
+            </span>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '40px' }}>
+            {fechasUnicasISO.length > 0 ? (
+              fechasUnicasISO.map((fecha) => {
+                const estaSeleccionada = fechaSeleccionada === fecha;
+                const partes = fecha.split('-');
+                const anio = partes[0];
+                const mesNum = partes[1];
+                const dia = partes[2];
+                
+                const mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                const mesNombre = mesesCortos[parseInt(mesNum, 10) - 1];
+
+                return (
+                  <div
+                    key={fecha}
+                    onClick={() => setFechaSeleccionada(fecha)}
+                    style={{
+                      width: '85px', padding: '10px 0', borderRadius: '12px', cursor: 'pointer',
+                      background: estaSeleccionada ? '#11173d' : '#fff',
+                      border: estaSeleccionada ? '2px solid #11173d' : '2px solid #e5e7eb',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: estaSeleccionada ? '0 6px 12px rgba(17,23,61,0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      transform: estaSeleccionada ? 'translateY(-3px)' : 'translateY(0)'
+                    }}
+                  >
+                    <div style={{ color: estaSeleccionada ? '#fff' : '#ef5a1a', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>{mesNombre}</div>
+                    <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1', marginBottom: '4px' }}>{dia}</div>
+                    <div style={{ color: estaSeleccionada ? '#9ca3af' : '#6b7280', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>{anio}</div>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: estaSeleccionada ? '#ef5a1a' : 'transparent', marginTop: '4px' }}></div>
+                  </div>
+                );
+              })
+            ) : (
+              <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>A consultar.</p>
             )}
           </div>
-        )}
 
-      <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
+          {tarifarioFiltrado.length > 0 && (
+            <div className="table-responsive-container" style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff', maxWidth: '100%' }}>
+              <table style={{ minWidth: '900px', width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ background: '#11173d', color: '#fff' }}>
+                    <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '18%', position: 'sticky', left: 0, background: '#11173d', zIndex: 2 }}>Alojamiento</th>
+                    <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '12%' }}>Régimen</th>
+                    <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Doble</th>
+                    <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Triple</th>
+                    <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Cuádruple</th>
+                    <th style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '7%' }}>Single</th>
+                  </tr>
+                  <tr style={{ background: '#f3f4f6', color: '#4b5563', fontSize: '0.75rem' }}>
+                    <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                    <th style={{ padding: '8px 2px' }}>Menor</th>
+                    <th style={{ padding: '8px 2px' }}>Child</th>
+                    <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                    <th style={{ padding: '8px 2px' }}>Menor</th>
+                    <th style={{ padding: '8px 2px' }}>Child</th>
+                    <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                    <th style={{ padding: '8px 2px' }}>Menor</th>
+                    <th style={{ padding: '8px 2px' }}>Child</th>
+                    <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                  </tr>
+                </thead>
+                <tbody style={{ textAlign: 'center' }}>
+                  {tarifarioFiltrado.map((fila, idx) => {
+                    const doble = typeof fila.doble === 'object' ? fila.doble : { mayor: fila.doble };
+                    const triple = typeof fila.triple === 'object' ? fila.triple : { mayor: fila.triple };
+                    const cuadruple = typeof fila.cuadruple === 'object' ? fila.cuadruple : { mayor: fila.cuadruple };
+                    const single = typeof fila.single === 'object' ? fila.single : { mayor: fila.single };
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '50px', marginBottom: '50px' }}>
-        
-        {(vuelos.length > 0 || serviciosOpcionales.length > 0) && (
-          <div style={{ flex: '1 1 300px' }}>
-            {vuelos.length > 0 && (
-              <div style={{ marginBottom: '40px' }}>
-                <h3 style={{ color: '#0369a1', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  ✈️ Itinerario de Vuelos
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                  {vuelos.map((v, idx) => {
-                    const fechaSalidaArg = v.fechaSalida ? new Date(`${v.fechaSalida}T12:00:00Z`).toLocaleDateString('es-AR') : '';
-                    const fechaLlegadaArg = v.fechaLlegada ? new Date(`${v.fechaLlegada}T12:00:00Z`).toLocaleDateString('es-AR') : '';
+                    const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
+                    const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
+                    const estrellas = fila.hotelEstrellas ? '⭐'.repeat(parseInt(fila.hotelEstrellas)) : '';
+                    const estrellas2 = fila.hotel2Estrellas ? '⭐'.repeat(parseInt(fila.hotel2Estrellas)) : '';
+
                     return (
-                      <div key={idx} style={{ padding: '15px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px dashed #7dd3fc', paddingBottom: '10px' }}>
-                          <strong style={{ color: '#0369a1' }}>Tramo {idx + 1}: {v.aerolinea}</strong>
-                          <span style={{ fontSize: '0.85rem', color: '#0284c7', fontWeight: 'bold', background: '#e0f2fe', padding: '2px 8px', borderRadius: '12px' }}>{v.equipaje}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaSalida}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaSalidaArg}</div>
-                            <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.origen}</div>
-                          </div>
-                          <div style={{ color: '#bae6fd', fontSize: '2rem' }}>⟶</div>
-                          <div style={{ flex: 1, textAlign: 'right' }}>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '900', color: '#11173d' }}>{v.horaLlegada}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold' }}>{fechaLlegadaArg}</div>
-                            <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {serviciosOpcionales.length > 0 && (
-              <div>
-                <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '20px' }}>Opcionales Recomendados</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {serviciosOpcionales.map((s, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '15px', padding: '15px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '1.5rem', lineHeight: '1' }}>{getServicioIcon(s.tipo)}</span>
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ color: '#11173d', fontSize: '0.95rem', textTransform: 'uppercase' }}>{s.tipo}</strong>
-                        <div style={{ color: '#4b5563', fontSize: '0.9rem', fontWeight: '500' }}>
-                          {s.detalle1}
-                        </div>
-                      </div>
-                      {s.tarifa && (
-                        <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
-                          + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div style={{ flex: (vuelos.length > 0 || serviciosOpcionales.length > 0) ? '1 1 300px' : '1 1 100%' }}>
-          <h3 style={{ color: '#11173d', fontSize: '1.4rem', fontWeight: 900, marginBottom: '25px' }}>Itinerario Resumido</h3>
-          {paquete.itinerario && paquete.itinerario.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {paquete.itinerario.map((dia, idx) => (
-                <div key={idx} style={{ paddingLeft: '20px', borderLeft: '3px solid #ef5a1a', position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '-8px', top: '4px', width: '13px', height: '13px', background: '#ef5a1a', borderRadius: '50%' }}></div>
-                  <h4 style={{ margin: '0 0 5px 0', color: '#11173d', fontSize: '1rem', fontWeight: 800 }}>Día {dia.dia}: {dia.titulo}</h4>
-                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.9rem', lineHeight: '1.5' }}>{dia.descripcion}</p>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p style={{ color: '#9ca3af', fontStyle: 'italic', fontSize: '0.9rem' }}>A consultar.</p>
-          )}
-        </div>
-      </div>
-
-      <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '40px 0' }} />
-
-      <div id="seccion-tarifas">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '25px' }}>
-          <h3 style={{ color: '#11173d', fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>
-            Planes de Pago por Fecha
-          </h3>
-          <span style={{ background: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>
-            Tarifas en {paquete.moneda || 'USD'}
-          </span>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', marginBottom: '40px' }}>
-          {fechasUnicasISO.length > 0 ? (
-            fechasUnicasISO.map((fecha) => {
-              const estaSeleccionada = fechaSeleccionada === fecha;
-              const partes = fecha.split('-');
-              const anio = partes[0];
-              const mesNum = partes[1];
-              const dia = partes[2];
-              
-              const mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-              const mesNombre = mesesCortos[parseInt(mesNum, 10) - 1];
-
-              return (
-                <div
-                  key={fecha}
-                  onClick={() => setFechaSeleccionada(fecha)}
-                  style={{
-                    width: '85px', padding: '10px 0', borderRadius: '12px', cursor: 'pointer',
-                    background: estaSeleccionada ? '#11173d' : '#fff',
-                    border: estaSeleccionada ? '2px solid #11173d' : '2px solid #e5e7eb',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: estaSeleccionada ? '0 6px 12px rgba(17,23,61,0.15)' : '0 2px 4px rgba(0,0,0,0.02)',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    transform: estaSeleccionada ? 'translateY(-3px)' : 'translateY(0)'
-                  }}
-                >
-                  <div style={{ color: estaSeleccionada ? '#fff' : '#ef5a1a', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>{mesNombre}</div>
-                  <div style={{ color: estaSeleccionada ? '#fff' : '#11173d', fontSize: '1.8rem', fontWeight: '900', lineHeight: '1', marginBottom: '4px' }}>{dia}</div>
-                  <div style={{ color: estaSeleccionada ? '#9ca3af' : '#6b7280', fontSize: '0.75rem', fontWeight: 'bold', letterSpacing: '1px' }}>{anio}</div>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: estaSeleccionada ? '#ef5a1a' : 'transparent', marginTop: '4px' }}></div>
-                </div>
-              );
-            })
-          ) : (
-             <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>A consultar.</p>
-          )}
-        </div>
-
-        {tarifarioFiltrado.length > 0 && (
-          <div className="table-responsive-container" style={{ overflowX: 'auto', borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff', maxWidth: '100%' }}>
-            <table style={{ minWidth: '900px', width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-              <thead>
-                <tr style={{ background: '#11173d', color: '#fff' }}>
-                  <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '18%', position: 'sticky', left: 0, background: '#11173d', zIndex: 2 }}>Alojamiento</th>
-                  <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '12%' }}>Régimen</th>
-                  <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Doble</th>
-                  <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Triple</th>
-                  <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Cuádruple</th>
-                  <th style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '7%' }}>Single</th>
-                </tr>
-                <tr style={{ background: '#f3f4f6', color: '#4b5563', fontSize: '0.75rem' }}>
-                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                  <th style={{ padding: '8px 2px' }}>Menor</th>
-                  <th style={{ padding: '8px 2px' }}>Child</th>
-                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                  <th style={{ padding: '8px 2px' }}>Menor</th>
-                  <th style={{ padding: '8px 2px' }}>Child</th>
-                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                  <th style={{ padding: '8px 2px' }}>Menor</th>
-                  <th style={{ padding: '8px 2px' }}>Child</th>
-                  <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                </tr>
-              </thead>
-              <tbody style={{ textAlign: 'center' }}>
-                {tarifarioFiltrado.map((fila, idx) => {
-                  const doble = typeof fila.doble === 'object' ? fila.doble : { mayor: fila.doble };
-                  const triple = typeof fila.triple === 'object' ? fila.triple : { mayor: fila.triple };
-                  const cuadruple = typeof fila.cuadruple === 'object' ? fila.cuadruple : { mayor: fila.cuadruple };
-                  const single = typeof fila.single === 'object' ? fila.single : { mayor: fila.single };
-
-                  const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
-                  const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
-                  const estrellas = fila.hotelEstrellas ? '⭐'.repeat(parseInt(fila.hotelEstrellas)) : '';
-                  const estrellas2 = fila.hotel2Estrellas ? '⭐'.repeat(parseInt(fila.hotel2Estrellas)) : '';
-
-                  return (
-                    <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
-                      
-                      <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle', position: 'sticky', left: 0, background: '#fff', zIndex: 1, borderRight: '1px solid #e5e7eb' }}>
-                        <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
-                        {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
-                        {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                      <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
                         
-                        {fila.hotel2Nombre && (
-                           <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #e5e7eb' }}>
-                             <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
-                             <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{fila.hotel2Nombre}</div>
-                             {estrellas2 && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas2}</div>}
-                             {fila.hotel2Ubicacion && (<a href={fila.hotel2Ubicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
-                           </div>
-                        )}
-                      </td>
-                      
-                      <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>
-                        <div>{tipoRegimen}</div>
-                        {fila.hotel2Nombre && (
-                          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed transparent' }}>
-                             <div style={{ fontSize: '0.7rem', color: 'transparent', marginBottom: '2px' }}>+</div>
-                             <div>{fila.hotel2Regimen}</div>
-                          </div>
-                        )}
-                      </td>
-                      
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={doble.mayor} /></td>
-                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={doble.menor} /></td>
-                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={doble.child} /></td>
-                      
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={triple.mayor} /></td>
-                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={triple.menor} /></td>
-                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={triple.child} /></td>
-                      
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={cuadruple.mayor} /></td>
-                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={cuadruple.menor} /></td>
-                      <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={cuadruple.child} /></td>
-                      
-                      <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={single.mayor} /></td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+                        <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle', position: 'sticky', left: 0, background: '#fff', zIndex: 1, borderRight: '1px solid #e5e7eb' }}>
+                          <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
+                          {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
+                          {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                          
+                          {fila.hotel2Nombre && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #e5e7eb' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
+                              <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{fila.hotel2Nombre}</div>
+                              {estrellas2 && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas2}</div>}
+                              {fila.hotel2Ubicacion && (<a href={fila.hotel2Ubicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                            </div>
+                          )}
+                        </td>
+                        
+                        <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>
+                          <div>{tipoRegimen}</div>
+                          {fila.hotel2Nombre && (
+                            <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed transparent' }}>
+                              <div style={{ fontSize: '0.7rem', color: 'transparent', marginBottom: '2px' }}>+</div>
+                              <div>{fila.hotel2Regimen}</div>
+                            </div>
+                          )}
+                        </td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={doble.mayor} /></td>
+                        <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={doble.menor} /></td>
+                        <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={doble.child} /></td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={triple.mayor} /></td>
+                        <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={triple.menor} /></td>
+                        <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={triple.child} /></td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={cuadruple.mayor} /></td>
+                        <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={cuadruple.menor} /></td>
+                        <td style={{ padding: '15px 2px' }}><CeldaCuotas valorBase={cuadruple.child} /></td>
+                        
+                        <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><CeldaCuotas valorBase={single.mayor} /></td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
+            * Todas las tarifas y cuotas están expresadas por persona.
+          </div>
+        </div>
+
+        {lightboxAbierto && paquete.imagenes && (
+          <div onClick={cerrarLightbox} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+            <button onClick={cerrarLightbox} style={{ position: 'absolute', top: '30px', right: '40px', background: 'none', border: 'none', color: '#fff', fontSize: '2.5rem', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+            <button onClick={antImagen} style={{ position: 'absolute', left: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>‹</button>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={paquete.imagenes[imagenActivaIndex]} alt="Zoom" style={{ maxWidth: '85%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px' }} />
+            <button onClick={sigImagen} style={{ position: 'absolute', right: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>›</button>
           </div>
         )}
-        <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
-          * Todas las tarifas y cuotas están expresadas por persona.
-        </div>
-      </div>
 
-      {lightboxAbierto && paquete.imagenes && (
-        <div onClick={cerrarLightbox} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
-          <button onClick={cerrarLightbox} style={{ position: 'absolute', top: '30px', right: '40px', background: 'none', border: 'none', color: '#fff', fontSize: '2.5rem', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-          <button onClick={antImagen} style={{ position: 'absolute', left: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>‹</button>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={paquete.imagenes[imagenActivaIndex]} alt="Zoom" style={{ maxWidth: '85%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px' }} />
-          <button onClick={sigImagen} style={{ position: 'absolute', right: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>›</button>
-        </div>
-      )}
-
-      </div> 
-    </div>   
+        </div> 
+      </div>   
+    </>
   );
 }
