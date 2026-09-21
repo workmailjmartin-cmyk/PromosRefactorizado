@@ -178,7 +178,7 @@ export default function ListadoEnlatadosCliente() {
                       </div>
                     </div>
                     <div style={{ background: '#f9fafb', padding: '15px 20px', borderTop: '1px solid #eee', display: 'flex' }}>
-                      <a href={`/clientes/paquete/${pkg.id}`} style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '14px', borderRadius: '10px', fontSize: '1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#ef5a1a'} onMouseOut={e=>e.currentTarget.style.background='#11173d'}>
+                      <a href={`/clientes/paquete/${pkg.id}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '14px', borderRadius: '10px', fontSize: '1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#ef5a1a'} onMouseOut={e=>e.currentTarget.style.background='#11173d'}>
                         Ver Fechas y Tarifas
                       </a>
                     </div>

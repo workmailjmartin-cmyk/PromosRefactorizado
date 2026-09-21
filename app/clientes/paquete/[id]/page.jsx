@@ -147,12 +147,15 @@ export default function DetallePaqueteCliente() {
     }
 
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.2' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: '1.3' }}>
         {sena > 0 ? (
           <>
             <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Seña: ${formatearPrecio(sena)}</span>
             {cuotasDisponibles > 0 ? (
-               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>+ {cuotasDisponibles} cuotas de ${formatearPrecio(valorCuota)}</span>
+               <>
+                 <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>+ {cuotasDisponibles} cuotas</span>
+                 <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>de ${formatearPrecio(valorCuota)}</span>
+               </>
             ) : (
                <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>+ Saldo ${formatearPrecio(venta - sena)}</span>
             )}
@@ -160,7 +163,10 @@ export default function DetallePaqueteCliente() {
         ) : (
           <>
             {cuotasDisponibles > 0 ? (
-               <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>{cuotasDisponibles} cuotas de ${formatearPrecio(valorCuota)}</span>
+               <>
+                 <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>{cuotasDisponibles} cuotas</span>
+                 <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>de ${formatearPrecio(valorCuota)}</span>
+               </>
             ) : (
                <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#11173d', whiteSpace: 'nowrap' }}>${formatearPrecio(venta)}</span>
             )}
@@ -171,7 +177,8 @@ export default function DetallePaqueteCliente() {
   };
 
   return (
-    <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
+    <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '40px 20px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '40px', position: 'relative' }}>
       
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
         <div style={{ flex: '7 1 500px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -508,6 +515,7 @@ export default function DetallePaqueteCliente() {
         </div>
       )}
 
-    </div>
+      </div> 
+    </div>   
   );
 }
