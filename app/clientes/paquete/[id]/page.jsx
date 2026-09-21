@@ -178,30 +178,30 @@ export default function DetallePaqueteCliente() {
 
   return (
     <>
-      {/* HEADER EXCLUSIVO DEL PAQUETE (Reemplaza al genérico) */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '10px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 1000, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', gap: '15px' }}>
+      {/* HEADER EXCLUSIVO DEL PAQUETE */}
+      <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '18px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 1000, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', gap: '15px' }}>
         
         {/* LOGO: Vuelve a la lista de enlatados financiados */}
         <a href="/clientes/enlatados" style={{ flex: '1 1 200px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '60px', width: 'auto', cursor: 'pointer' }} />
+          <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '70px', width: 'auto', cursor: 'pointer' }} />
         </a>
 
         {/* TÍTULO CENTRAL: Muestra el nombre del destino dinámicamente */}
         <div style={{ flex: '2 1 300px', textAlign: 'center' }}>
-          <h1 style={{ margin: 0, color: '#ef5a1a', fontSize: '1.8rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
+          <h1 style={{ margin: 0, color: '#ef5a1a', fontSize: '2rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
             {paquete.destino}
           </h1>
         </div>
 
         {/* INFO DERECHA: Textos institucionales */}
-        <div style={{ flex: '1 1 200px', display: 'flex', gap: '15px', fontSize: '0.9rem', fontWeight: 'bold', color: '#11173d', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        <div style={{ flex: '1 1 200px', display: 'flex', gap: '15px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <span style={{ whiteSpace: 'nowrap' }}>📍 + 25 Sucursales</span>
           <span style={{ color: '#d1d5db' }}>|</span>
           <span style={{ whiteSpace: 'nowrap' }}>💼 Conocé nuestros servicios</span>
         </div>
       </header>
-      
+
       <div style={{ background: '#f3f4f6', minHeight: '100vh', padding: '40px 20px' }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '40px', position: 'relative' }}>
         
