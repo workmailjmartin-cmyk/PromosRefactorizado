@@ -378,7 +378,7 @@ export default function DetallePaqueteInterno() {
         </div>
       </header>
       <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
-        <div className="caja-blanca" style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', position: 'relative', width: '100%', overflowX: 'hidden' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', width: '100%' }}>
         
         {/* SWITCH DE VISTA CLIENTE / STAFF */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
@@ -391,7 +391,7 @@ export default function DetallePaqueteInterno() {
         </div>
 
         {/* ---------------- COMIENZO DEL FOLLETO (Se ve igual para todos) ---------------- */}
-        <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '30px', position: 'relative' }}>
+        <div className="caja-blanca" style={{ background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '40px', position: 'relative', boxSizing: 'border-box', width: '100%', overflowX: 'hidden' }}>
           
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '30px', marginBottom: '40px' }}>
             
