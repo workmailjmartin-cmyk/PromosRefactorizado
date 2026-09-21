@@ -157,19 +157,19 @@ export default function DetallePaqueteCliente() {
             <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold', whiteSpace: 'nowrap' }}>Seña: ${formatearPrecio(sena)}</span>
             {cuotasDisponibles > 0 ? (
                <>
-                 <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>+ {cuotasDisponibles} cuotas</span>
-                 <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>de ${formatearPrecio(valorCuota)}</span>
+                 <span style={{ fontSize: '0.85rem', color: '#ef5a1a', fontWeight: '900', whiteSpace: 'nowrap' }}>+ {cuotasDisponibles} cuotas</span>
+                 <span style={{ fontSize: '0.85rem', color: '#ef5a1a', fontWeight: '900', whiteSpace: 'nowrap' }}>de ${formatearPrecio(valorCuota)}</span>
                </>
             ) : (
-               <span style={{ fontSize: '0.85rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>+ Saldo ${formatearPrecio(venta - sena)}</span>
+               <span style={{ fontSize: '0.85rem', color: '#ef5a1a', fontWeight: '900', whiteSpace: 'nowrap' }}>+ Saldo ${formatearPrecio(venta - sena)}</span>
             )}
           </>
         ) : (
           <>
             {cuotasDisponibles > 0 ? (
                <>
-                 <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>{cuotasDisponibles} cuotas</span>
-                 <span style={{ fontSize: '0.9rem', color: '#0ea5e9', fontWeight: '900', whiteSpace: 'nowrap' }}>de ${formatearPrecio(valorCuota)}</span>
+                 <span style={{ fontSize: '0.9rem', color: '#ef5a1a', fontWeight: '900', whiteSpace: 'nowrap' }}>{cuotasDisponibles} cuotas</span>
+                 <span style={{ fontSize: '0.9rem', color: '#ef5a1a', fontWeight: '900', whiteSpace: 'nowrap' }}>de ${formatearPrecio(valorCuota)}</span>
                </>
             ) : (
                <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#11173d', whiteSpace: 'nowrap' }}>${formatearPrecio(venta)}</span>

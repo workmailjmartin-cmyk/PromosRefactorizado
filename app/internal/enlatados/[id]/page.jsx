@@ -375,14 +375,14 @@ export default function DetallePaqueteInterno() {
           </span>
         </div>
       </header>
-      <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh' }}>
-        <div className="caja-blanca" style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', position: 'relative' }}>
+      <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
+        <div className="caja-blanca" style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', position: 'relative', width: '100%', overflowX: 'hidden' }}>
         
         {/* SWITCH DE VISTA CLIENTE / STAFF */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px', flexWrap: 'wrap' }}>
           <button 
             onClick={() => { setVistaCliente(!vistaCliente); setTooltipActivo(null); }}
-            style={{ background: vistaCliente ? '#10b981' : '#11173d', color: '#fff', padding: '8px 20px', borderRadius: '25px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}
+            style={{ background: vistaCliente ? '#10b981' : '#11173d', color: '#fff', padding: '8px 20px', borderRadius: '25px', border: 'none', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 5px rgba(0,0,0,0.1)', maxWidth: '100%', whiteSpace: 'nowrap' }}
           >
             {vistaCliente ? '👀 MODO CLIENTE' : '🏢 MODO STAFF'}
           </button>
@@ -649,10 +649,8 @@ export default function DetallePaqueteInterno() {
 
             {tarifarioFiltrado.length > 0 && (
             <>
-              {/* Contenedor sin overflow oculto para que el globo pueda sobresalir */}
               <div style={{ borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
-                {/* Contenedor interno para el scroll horizontal en celulares */}
-                <div className="tabla-responsive" style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '200px', marginBottom: '-200px', WebkitOverflowScrolling: 'touch' }}>
+                <div className="tabla-responsive" style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', maxWidth: '100%' }}>
                   <table style={{ minWidth: '1050px', width: '100%', tableLayout: 'auto', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                     <thead>
                       <tr style={{ background: '#11173d', color: '#fff' }}>
