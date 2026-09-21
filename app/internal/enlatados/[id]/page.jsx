@@ -351,6 +351,9 @@ export default function DetallePaqueteInterno() {
             font-size: 1.5rem;
             line-height: 1.2;
           }
+          .contenedor-gris { padding: 15px 10px !important; overflow-x: hidden; }
+          .caja-blanca { padding: 20px 15px !important; }
+          .tabla-responsive { max-width: 100vw; }
         }
       `}</style>
 
@@ -372,7 +375,8 @@ export default function DetallePaqueteInterno() {
           </span>
         </div>
       </header>
-      <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+      <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh', padding: '40px 20px', boxSizing: 'border-box' }}>
+        <div className="caja-blanca" style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '40px', position: 'relative', boxSizing: 'border-box' }}>
         
         {/* SWITCH DE VISTA CLIENTE / STAFF */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
@@ -644,125 +648,126 @@ export default function DetallePaqueteInterno() {
             </div>
 
             {tarifarioFiltrado.length > 0 && (
-              <>
+            <>
               {/* Contenedor sin overflow oculto para que el globo pueda sobresalir */}
               <div style={{ borderRadius: '16px', border: '1px solid #e5e7eb', background: '#fff' }}>
                 {/* Contenedor interno para el scroll horizontal en celulares */}
-                <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '200px', marginBottom: '-200px' }}>
-                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr style={{ background: '#11173d', color: '#fff' }}>
-                      <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '18%' }}>Alojamiento</th>
-                      <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', width: '12%' }}>Régimen</th>
-                      <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Doble</th>
-                      <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Triple</th>
-                      <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Cuádruple</th>
-                      <th style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '7%' }}>Single</th>
-                    </tr>
-                    <tr style={{ background: '#f3f4f6', color: '#4b5563', fontSize: '0.75rem' }}>
-                      <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th><th style={{ padding: '8px 2px' }}>Menor</th><th style={{ padding: '8px 2px' }}>Child</th>
-                      <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th><th style={{ padding: '8px 2px' }}>Menor</th><th style={{ padding: '8px 2px' }}>Child</th>
-                      <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th><th style={{ padding: '8px 2px' }}>Menor</th><th style={{ padding: '8px 2px' }}>Child</th>
-                      <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
-                    </tr>
-                  </thead>
-                  <tbody style={{ textAlign: 'center' }}>
-                    {tarifarioFiltrado.map((fila, idx) => {
-                      const doble = typeof fila.doble === 'object' ? fila.doble : { mayor: fila.doble };
-                      const triple = typeof fila.triple === 'object' ? fila.triple : { mayor: fila.triple };
-                      const cuadruple = typeof fila.cuadruple === 'object' ? fila.cuadruple : { mayor: fila.cuadruple };
-                      const single = typeof fila.single === 'object' ? fila.single : { mayor: fila.single };
+                <div className="tabla-responsive" style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '200px', marginBottom: '-200px', WebkitOverflowScrolling: 'touch' }}>
+                  <table style={{ minWidth: '1050px', width: '100%', tableLayout: 'auto', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ background: '#11173d', color: '#fff' }}>
+                        <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', minWidth: '180px', width: '200px', position: 'sticky', left: 0, background: '#11173d', zIndex: 2 }}>Alojamiento</th>
+                        <th rowSpan="2" style={{ padding: '15px 10px', textAlign: 'left', minWidth: '110px' }}>Régimen</th>
+                        <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Doble</th>
+                        <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Triple</th>
+                        <th colSpan="3" style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '21%' }}>Base Cuádruple</th>
+                        <th style={{ padding: '10px 2px', textAlign: 'center', borderLeft: '1px solid #374151', width: '7%' }}>Single</th>
+                      </tr>
+                      <tr style={{ background: '#f3f4f6', color: '#4b5563', fontSize: '0.75rem' }}>
+                        <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th><th style={{ padding: '8px 2px' }}>Menor</th><th style={{ padding: '8px 2px' }}>Child</th>
+                        <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th><th style={{ padding: '8px 2px' }}>Menor</th><th style={{ padding: '8px 2px' }}>Child</th>
+                        <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th><th style={{ padding: '8px 2px' }}>Menor</th><th style={{ padding: '8px 2px' }}>Child</th>
+                        <th style={{ padding: '8px 2px', borderLeft: '1px solid #e5e7eb' }}>Adulto</th>
+                      </tr>
+                    </thead>
+                    <tbody style={{ textAlign: 'center' }}>
+                      {tarifarioFiltrado.map((fila, idx) => {
+                        const doble = typeof fila.doble === 'object' ? fila.doble : { mayor: fila.doble };
+                        const triple = typeof fila.triple === 'object' ? fila.triple : { mayor: fila.triple };
+                        const cuadruple = typeof fila.cuadruple === 'object' ? fila.cuadruple : { mayor: fila.cuadruple };
+                        const single = typeof fila.single === 'object' ? fila.single : { mayor: fila.single };
 
-                      const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
-                      const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
-                      const estrellas = fila.hotelEstrellas ? '⭐'.repeat(parseInt(fila.hotelEstrellas)) : '';
-                      
-                      const estrellas2 = fila.hotel2Estrellas ? '⭐'.repeat(parseInt(fila.hotel2Estrellas)) : '';
+                        const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
+                        const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
+                        const estrellas = fila.hotelEstrellas ? '⭐'.repeat(parseInt(fila.hotelEstrellas)) : '';
+                        
+                        const estrellas2 = fila.hotel2Estrellas ? '⭐'.repeat(parseInt(fila.hotel2Estrellas)) : '';
 
-                      return (
-                        <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
-                          <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle' }}>
-                            <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
-                            {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
-                            {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                        return (
+                          <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
+                            <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle', position: 'sticky', left: 0, background: '#fff', zIndex: 1, borderRight: '1px solid #e5e7eb' }}>
+                              <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
+                              {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
+                              {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                              
+                              {/* DIBUJO DEL HOTEL 2 COMBINADO */}
+                              {fila.hotel2Nombre && (
+                                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #e5e7eb' }}>
+                                  <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
+                                  <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{fila.hotel2Nombre}</div>
+                                  {estrellas2 && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas2}</div>}
+                                  {fila.hotel2Ubicacion && (<a href={fila.hotel2Ubicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
+                                </div>
+                              )}
+                            </td>
                             
-                            {/* DIBUJO DEL HOTEL 2 COMBINADO */}
-                            {fila.hotel2Nombre && (
-                              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #e5e7eb' }}>
-                                <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
-                                <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{fila.hotel2Nombre}</div>
-                                {estrellas2 && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas2}</div>}
-                                {fila.hotel2Ubicacion && (<a href={fila.hotel2Ubicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
-                              </div>
-                            )}
-                          </td>
-                          
-                          {/* REGIMEN (Combinado si hace falta) */}
-                          <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>
-                            <div>{tipoRegimen}</div>
-                            {fila.hotel2Nombre && (
-                              <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed transparent' }}>
-                                <div style={{ fontSize: '0.7rem', color: 'transparent', marginBottom: '2px' }}>+</div>
-                                <div>{fila.hotel2Regimen}</div>
-                              </div>
-                            )}
-                          </td>
-                          
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={doble.mayor} idUnico={`d-may-${idx}`} destacado={true} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.menor} idUnico={`d-men-${idx}`} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.child} idUnico={`d-chi-${idx}`} /></td>
-                          
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={triple.mayor} idUnico={`t-may-${idx}`} destacado={true} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.menor} idUnico={`t-men-${idx}`} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.child} idUnico={`t-chi-${idx}`} /></td>
-                          
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={cuadruple.mayor} idUnico={`c-may-${idx}`} destacado={true} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.menor} idUnico={`c-men-${idx}`} /></td>
-                          <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.child} idUnico={`c-chi-${idx}`} /></td>
-                          
-                          <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={single.mayor} idUnico={`s-may-${idx}`} destacado={true} /></td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-                </div> {/* Cierre del contenedor de scroll */}
-            </div> {/* Cierre del contenedor principal con borde */}
+                            {/* REGIMEN (Combinado si hace falta) */}
+                            <td style={{ padding: '15px 10px', textAlign: 'middle', fontWeight: '600', color: '#4b5563', wordWrap: 'break-word', verticalAlign: 'middle' }}>
+                              <div>{tipoRegimen}</div>
+                              {fila.hotel2Nombre && (
+                                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed transparent' }}>
+                                  <div style={{ fontSize: '0.7rem', color: 'transparent', marginBottom: '2px' }}>+</div>
+                                  <div>{fila.hotel2Regimen}</div>
+                                </div>
+                              )}
+                            </td>
+                            
+                            <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={doble.mayor} idUnico={`d-may-${idx}`} destacado={true} /></td>
+                            <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.menor} idUnico={`d-men-${idx}`} /></td>
+                            <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={doble.child} idUnico={`d-chi-${idx}`} /></td>
+                            
+                            <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={triple.mayor} idUnico={`t-may-${idx}`} destacado={true} /></td>
+                            <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.menor} idUnico={`t-men-${idx}`} /></td>
+                            <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={triple.child} idUnico={`t-chi-${idx}`} /></td>
+                            
+                            <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={cuadruple.mayor} idUnico={`c-may-${idx}`} destacado={true} /></td>
+                            <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.menor} idUnico={`c-men-${idx}`} /></td>
+                            <td style={{ padding: '15px 2px', color: '#6b7280' }}><PrecioClickable valor={cuadruple.child} idUnico={`c-chi-${idx}`} /></td>
+                            
+                            <td style={{ padding: '15px 2px', borderLeft: '1px solid #e5e7eb' }}><PrecioClickable valor={single.mayor} idUnico={`s-may-${idx}`} destacado={true} /></td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                  </div> {/* Cierre del contenedor de scroll */}
+              </div> {/* Cierre del contenedor principal con borde */}
 
-            {/* ACLARACIÓN DE TARIFAS POR PERSONA */}
-            <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
-              * Todas las tarifas están expresadas por persona.
-            </div>
-            <div style={{ marginTop: '15px', fontSize: '0.75rem', color: '#dc2626', fontWeight: 'bold', textTransform: 'uppercase', background: '#fef2f2', padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: 'fit-content', marginLeft: 'auto' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '14px', height: '14px', flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Disponibilidad sujeta a confirmación
-            </div>
-            </>
-          )}
-        </div>
-
-          {paquete.observaciones && (
-            <div style={{ marginTop: '40px', padding: '20px', background: '#fff5f0', borderRadius: '12px', borderLeft: '4px solid #ef5a1a' }}>
-              <h3 style={{ color: '#ef5a1a', fontSize: '1.1rem', margin: '0 0 10px 0', fontWeight: '900' }}>⚠️ Observaciones Importantes</h3>
-              <p style={{ margin: 0, color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{paquete.observaciones}</p>
-            </div>
-          )}
-
-        </div>
-
-        {/* LIGHTBOX GALERÍA */}
-        {lightboxAbierto && paquete.imagenes && (
-          <div onClick={cerrarLightbox} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
-            <button onClick={cerrarLightbox} style={{ position: 'absolute', top: '30px', right: '40px', background: 'none', border: 'none', color: '#fff', fontSize: '2.5rem', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
-            <button onClick={antImagen} style={{ position: 'absolute', left: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>‹</button>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={paquete.imagenes[imagenActivaIndex]} alt="Zoom" style={{ maxWidth: '85%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px' }} />
-            <button onClick={sigImagen} style={{ position: 'absolute', right: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>›</button>
+              {/* ACLARACIÓN DE TARIFAS POR PERSONA */}
+              <div style={{ textAlign: 'right', marginTop: '10px', fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold' }}>
+                * Todas las tarifas están expresadas por persona.
+              </div>
+              <div style={{ marginTop: '15px', fontSize: '0.75rem', color: '#dc2626', fontWeight: 'bold', textTransform: 'uppercase', background: '#fef2f2', padding: '8px', borderRadius: '6px', border: '1px solid #fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', width: 'fit-content', marginLeft: 'auto' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" style={{ width: '14px', height: '14px', flexShrink: 0 }} viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Disponibilidad sujeta a confirmación
+              </div>
+              </>
+            )}
           </div>
-        )}
 
+            {paquete.observaciones && (
+              <div style={{ marginTop: '40px', padding: '20px', background: '#fff5f0', borderRadius: '12px', borderLeft: '4px solid #ef5a1a' }}>
+                <h3 style={{ color: '#ef5a1a', fontSize: '1.1rem', margin: '0 0 10px 0', fontWeight: '900' }}>⚠️ Observaciones Importantes</h3>
+                <p style={{ margin: 0, color: '#4b5563', fontSize: '0.95rem', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>{paquete.observaciones}</p>
+              </div>
+            )}
+
+          </div>
+
+          {/* LIGHTBOX GALERÍA */}
+          {lightboxAbierto && paquete.imagenes && (
+            <div onClick={cerrarLightbox} style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.95)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+              <button onClick={cerrarLightbox} style={{ position: 'absolute', top: '30px', right: '40px', background: 'none', border: 'none', color: '#fff', fontSize: '2.5rem', cursor: 'pointer', fontWeight: 'bold' }}>✕</button>
+              <button onClick={antImagen} style={{ position: 'absolute', left: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>‹</button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={paquete.imagenes[imagenActivaIndex]} alt="Zoom" style={{ maxWidth: '85%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '12px' }} />
+              <button onClick={sigImagen} style={{ position: 'absolute', right: '40px', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: '2rem', width: '60px', height: '60px', borderRadius: '50%', cursor: 'pointer' }}>›</button>
+            </div>
+          )}
+
+        </div>
       </div>
     </>
   );
