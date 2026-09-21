@@ -317,7 +317,7 @@ export default function DetallePaqueteInterno() {
           top: 50%;
           transform: translate(-50%, -50%);
           margin: 0;
-          color: #11173d;
+          color: #ef5a1a;
           font-size: 1.8rem;
           font-weight: 900;
           text-transform: uppercase;
@@ -375,8 +375,8 @@ export default function DetallePaqueteInterno() {
           </span>
         </div>
       </header>
-      <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh', padding: '40px 20px', boxSizing: 'border-box' }}>
-        <div className="caja-blanca" style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', padding: '40px', position: 'relative', boxSizing: 'border-box' }}>
+      <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh' }}>
+        <div className="caja-blanca" style={{ maxWidth: '1200px', margin: '0 auto', background: '#fff', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 10px 25px rgba(0,0,0,0.03)', position: 'relative' }}>
         
         {/* SWITCH DE VISTA CLIENTE / STAFF */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
@@ -685,7 +685,7 @@ export default function DetallePaqueteInterno() {
 
                         return (
                           <tr key={idx} style={{ borderBottom: idx === tarifarioFiltrado.length - 1 ? 'none' : '1px solid #f3f4f6' }}>
-                            <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle', position: 'sticky', left: 0, background: '#fff', zIndex: 1, borderRight: '1px solid #e5e7eb' }}>
+                            <td style={{ padding: '15px 10px', textAlign: 'left', wordWrap: 'break-word', verticalAlign: 'middle', position: 'sticky', left: 0, background: '#fff', zIndex: 10, borderRight: '1px solid #e5e7eb' }}>
                               <div style={{ fontWeight: 'bold', color: '#11173d', lineHeight: '1.2' }}>{nombreAlojamiento}</div>
                               {estrellas && <div style={{ fontSize: '0.65rem', margin: '4px 0', letterSpacing: '1px' }}>{estrellas}</div>}
                               {fila.hotelUbicacion && (<a href={fila.hotelUbicacion} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '5px', fontSize: '0.65rem', background: '#e0f2fe', color: '#0369a1', padding: '3px 8px', borderRadius: '12px', textDecoration: 'none', fontWeight: 'bold' }}>📍 Ubicación</a>)}
