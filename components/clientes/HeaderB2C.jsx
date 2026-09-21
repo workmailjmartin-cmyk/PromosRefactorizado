@@ -1,6 +1,7 @@
 'use client';
 
-export default function HeaderB2C() {
+// Le agregamos la propiedad "titulo" con "Promociones" como valor por defecto
+export default function HeaderB2C({ titulo = 'Promociones' }) {
   const scrollToServicios = (e) => {
     e.preventDefault();
     document.getElementById('footer-servicios')?.scrollIntoView({ behavior: 'smooth' });
@@ -24,7 +25,7 @@ export default function HeaderB2C() {
         className="titulo-promos"
         style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', margin: 0, whiteSpace: 'nowrap' }}
       >
-        Promociones
+        {titulo} {/* <-- Acá inyectamos el texto dinámicamente */}
       </h1>
 
       <div className="header-spacer header-links-container">

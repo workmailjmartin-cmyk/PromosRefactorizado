@@ -100,7 +100,7 @@ export default function ListadoEnlatadosCliente() {
 
   return (
     <div id="app-container" style={{ display: 'block' }}>
-      <HeaderB2C />
+      <HeaderB2C titulo="Financiación Exclusiva" />
       
       {loading ? <Loader visible={true} text="Buscando ofertas..." /> : (
         <div className="container" style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
@@ -108,7 +108,7 @@ export default function ListadoEnlatadosCliente() {
           <div style={{ background: '#e0f2fe', border: '1px solid #7dd3fc', borderRadius: '12px', padding: '20px', marginBottom: '30px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
             <h2 style={{ margin: '0 0 10px 0', color: '#0284c7', fontSize: '1.4rem', fontWeight: '900' }}>Paquetes Pre-Comprados con Financiación Exclusiva</h2>
             <p style={{ margin: 0, color: '#0369a1', fontSize: '1rem', lineHeight: '1.5' }}>
-              Estas son ofertas de cupo limitado que te permiten financiar tu viaje en cómodas cuotas. 
+              Estas son ofertas de cupo limitado que te permiten financiar tu viaje en cuotas. 
               <br /><b>¿Buscás la tarifa más económica posible?</b> <a href={`https://wa.me/${WPP_NUMBER}`} target="_blank" rel="noopener noreferrer" style={{ color: '#ef5a1a', textDecoration: 'underline', fontWeight: 'bold' }}>Contactá a un asesor</a> para cotizar un paquete a medida.
             </p>
           </div>
