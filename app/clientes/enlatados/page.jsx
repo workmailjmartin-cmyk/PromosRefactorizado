@@ -131,7 +131,7 @@ export default function ListadoEnlatadosCliente() {
                 <option value="">Todos</option>
                 <option value="bus">Paquete Bus</option>
                 <option value="aereo">Paquete Aéreo</option>
-                <option value="charter">🛩️ Grupal Acompañado</option>
+                <option value="charter">✈️ Grupal Acompañado</option>
               </select>
             </div>
             <div style={{ flex: '1 1 130px' }}>

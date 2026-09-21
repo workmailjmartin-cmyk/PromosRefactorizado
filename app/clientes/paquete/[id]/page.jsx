@@ -178,27 +178,41 @@ export default function DetallePaqueteCliente() {
 
   return (
     <>
-      {/* HEADER EXCLUSIVO DEL PAQUETE */}
-      <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '18px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', position: 'sticky', top: 0, zIndex: 1000, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', gap: '15px' }}>
+      {/* HEADER EXCLUSIVO DEL PAQUETE (Imita la estructura de HeaderB2C) */}
+      <header className="header-b2c" style={{ position: 'relative', background: '#fff', borderBottom: '1px solid #e5e7eb', zIndex: 1000, position: 'sticky', top: 0 }}>
         
-        {/* LOGO: Vuelve a la lista de enlatados financiados */}
-        <a href="/clientes/enlatados" style={{ flex: '1 1 200px' }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '70px', width: 'auto', cursor: 'pointer' }} />
-        </a>
-
-        {/* TÍTULO CENTRAL: Muestra el nombre del destino dinámicamente */}
-        <div style={{ flex: '2 1 300px', textAlign: 'center' }}>
-          <h1 style={{ margin: 0, color: '#ef5a1a', fontSize: '2rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '-0.5px' }}>
-            {paquete.destino}
-          </h1>
+        <div className="logo-container">
+          <a href="/clientes/enlatados">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Feliz Viaje"
+              className="logo-img"
+              style={{ maxHeight: '70px', width: 'auto', cursor: 'pointer' }}
+            />
+          </a>
         </div>
 
-        {/* INFO DERECHA: Textos institucionales */}
-        <div style={{ flex: '1 1 200px', display: 'flex', gap: '15px', fontSize: '0.95rem', fontWeight: 'bold', color: '#11173d', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          <span style={{ whiteSpace: 'nowrap' }}>📍 + 25 Sucursales</span>
-          <span style={{ color: '#d1d5db' }}>|</span>
-          <span style={{ whiteSpace: 'nowrap' }}>💼 Conocé nuestros servicios</span>
+        <h1
+          className="titulo-promos"
+          style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', margin: 0, whiteSpace: 'nowrap', textTransform: 'uppercase' }}
+        >
+          {paquete.destino}
+        </h1>
+
+        <div className="header-spacer header-links-container">
+          <a
+            href="https://www.google.com/maps/d/u/0/viewer?ll=-29.80567022174473%2C-62.01399203410176&z=6&mid=1sIKByAEAd5L0_TuVSCfG9puc2pFPv1I"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="header-link-item"
+          >
+            📍 + 25 Sucursales
+          </a>
+          <span className="header-link-separator">|</span>
+          <a href="/clientes#footer-servicios" className="header-link-item">
+            🧳 Conocé nuestros servicios
+          </a>
         </div>
       </header>
 
