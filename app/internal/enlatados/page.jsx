@@ -1,15 +1,12 @@
 'use client';
 import { useState, useEffect } from 'react';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
-import { collection, getDocs, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore'; // IMPORTAMOS getDoc
 import { db } from '@/lib/firebase';
 import { useStaffAuth } from '@/hooks/useStaffAuth';
 import { useAlert } from '@/contexts/AlertContext'; 
 import Loader from '@/components/shared/Loader';
 
-const MARKUP_AGENCIA = 1.20; 
-
-// Función auxiliar para quitar tildes y pasar a minúsculas
 const normalizarTexto = (texto) => {
   if (!texto) return '';
   return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -26,7 +23,9 @@ export default function InternalEnlatadosDashboard() {
   const [paquetesFiltrados, setPaquetesFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- ESTADOS DE LOS FILTROS ---
+  // --- NUEVO: ESTADO PARA GUARDAR LA CONFIGURACIÓN ---
+  const [configPrecios, setConfigPrecios] = useState({ marca: 0, comision: 15 });
+
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroTransporte, setFiltroTransporte] = useState('');
   const [filtroSalida, setFiltroSalida] = useState('');
@@ -34,32 +33,61 @@ export default function InternalEnlatadosDashboard() {
   const [filtroMoneda, setFiltroMoneda] = useState('');
   const [filtroOrden, setFiltroOrden] = useState('recientes');
 
-  // Listas dinámicas para poblar los <select>
   const [opcionesSalidas, setOpcionesSalidas] = useState([]);
   const [opcionesProveedores, setOpcionesProveedores] = useState([]);
 
   const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
 
-  const obtenerPrecioFinal = (tarifario) => {
+  // --- NUEVO: FUNCIONES DE CÁLCULO DINÁMICO ---
+  const calcularNetoInterno = (costoRaw, config) => {
+    const costo = parseFloat(costoRaw) || 0;
+    return Math.round(costo * (1 + (config.marca / 100)));
+  };
+
+  const calcularPrecioVenta = (costoRaw, config) => {
+    const netoInterno = calcularNetoInterno(costoRaw, config);
+    return Math.round(netoInterno * (1 + (config.comision / 100)));
+  };
+
+  const obtenerPrecioFinal = (tarifario, configActual) => {
     if (!tarifario || tarifario.length === 0) return 0;
     const precios = tarifario.map(t => {
       if (typeof t.doble === 'object') return parseFloat(t.doble.mayor) || 0;
       return parseFloat(t.doble) || 0;
     }).filter(p => p > 0);
     if (precios.length === 0) return 0;
-    return Math.round(Math.min(...precios) * MARKUP_AGENCIA);
+    
+    // USAMOS EL NUEVO CÁLCULO EN LUGAR DE MARKUP_AGENCIA
+    const costoBase = Math.min(...precios);
+    return calcularPrecioVenta(costoBase, configActual); 
   };
 
-  const cargarPaquetes = async () => {
+  const cargarDatos = async () => {
     setLoading(true);
     try {
+      // 1. CARGAMOS LA CONFIGURACIÓN PRIMERO
+      let configActual = { marca: 0, comision: 15 };
+      try {
+        const configDoc = await getDoc(doc(db, 'metadata', 'config')); 
+        if (configDoc.exists()) {
+          const data = configDoc.data();
+          configActual = {
+            marca: parseFloat(data.porcentaje_marca || 0), 
+            comision: parseFloat(data.porcentaje_comision || 15) 
+          };
+          setConfigPrecios(configActual);
+        }
+      } catch(e) { console.error("Error cargando config de precios:", e); }
+
+      // 2. LUEGO CARGAMOS LOS PAQUETES
       const querySnapshot = await getDocs(collection(db, 'enlatados'));
       const data = querySnapshot.docs.map(doc => {
         const pkgData = doc.data();
         return { 
           id: doc.id, 
           ...pkgData,
-          precioFinalCalculado: obtenerPrecioFinal(pkgData.tarifario) // Precalculamos para ordenar más fácil
+          // Pasamos la configuración para que calcule correctamente
+          precioFinalCalculado: obtenerPrecioFinal(pkgData.tarifario, configActual) 
         };
       });
       data.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
@@ -67,7 +95,6 @@ export default function InternalEnlatadosDashboard() {
       setPaquetesOriginales(data);
       setPaquetesFiltrados(data);
 
-      // Extraer ciudades de salida únicas (Origen Principal + Paradas)
       const salidasSet = new Set();
       const provSet = new Set();
       
@@ -86,24 +113,19 @@ export default function InternalEnlatadosDashboard() {
     setLoading(false);
   };
 
-  useEffect(() => { cargarPaquetes(); }, []);
+  // LLamamos a cargarDatos que ahora trae config y paquetes juntos
+  useEffect(() => { cargarDatos(); }, []);
 
-  // --- LÓGICA DEL SÚPER BUSCADOR ---
   useEffect(() => {
     let result = [...paquetesOriginales];
 
-    // 1. Buscador de Texto (Destino) - Ignore Case & Accents
     if (filtroTexto.trim() !== '') {
       const termino = normalizarTexto(filtroTexto);
       result = result.filter(p => normalizarTexto(p.destino).includes(termino));
     }
-
-    // 2. Filtro Transporte
     if (filtroTransporte !== '') {
       result = result.filter(p => p.transporte && p.transporte.includes(filtroTransporte));
     }
-
-    // 3. Filtro Salida (Busca en origenPrincipal O en el array de paradas_ascenso)
     if (filtroSalida !== '') {
       result = result.filter(p => {
         const principalMatch = p.origenPrincipal && p.origenPrincipal.includes(filtroSalida);
@@ -111,18 +133,13 @@ export default function InternalEnlatadosDashboard() {
         return principalMatch || paradasMatch;
       });
     }
-
-    // 4. Filtro Proveedor
     if (filtroProveedor !== '') {
       result = result.filter(p => p.proveedor_nombre === filtroProveedor);
     }
-
-    // 5. Filtro Moneda
     if (filtroMoneda !== '') {
       result = result.filter(p => (p.moneda || 'USD') === filtroMoneda);
     }
 
-    // 6. Ordenamiento
     if (filtroOrden === 'recientes') {
       result.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
     } else if (filtroOrden === 'menor') {
@@ -134,7 +151,6 @@ export default function InternalEnlatadosDashboard() {
     setPaquetesFiltrados(result);
   }, [filtroTexto, filtroTransporte, filtroSalida, filtroProveedor, filtroMoneda, filtroOrden, paquetesOriginales]);
 
-  // (Mantuve igual tu función guardarEnFirebase, cancelarEdicion, formatearPrecio, etc.)
   const guardarEnFirebase = async (datos) => {
     if (!currentUser || !userData) {
       if(showAlert) showAlert('Error de sesión. Volvé a ingresar.', 'error');
@@ -154,11 +170,10 @@ export default function InternalEnlatadosDashboard() {
       }
       setMostrandoFormulario(false);
       setPaqueteAEditar(null);
-      cargarPaquetes(); 
+      cargarDatos(); 
     } catch (error) { if(showAlert) showAlert('Hubo un error al guardar.', 'error'); }
   };
 
-  const abrirParaEditar = (pkg) => { setPaqueteAEditar(pkg); setMostrandoFormulario(true); };
   const cancelarEdicion = () => { setPaqueteAEditar(null); setMostrandoFormulario(false); };
   const formatearPrecio = (valor) => { if (!valor) return '-'; return Number(valor).toLocaleString('es-AR'); };
 
@@ -170,12 +185,10 @@ export default function InternalEnlatadosDashboard() {
         <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #e5e7eb' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '20px' }}>
             
-            {/* TÍTULO PRINCIPAL (Sin la línea de cantidad) */}
             <h1 style={{ color: '#11173d', margin: 0, fontSize: '2.2rem', fontWeight: 800 }}>
               Gestión Central de Paquetes
             </h1>
             
-            {/* BOTÓN ACHICADO */}
             {esGestor && (
               <button 
                 onClick={() => { setPaqueteAEditar(null); setMostrandoFormulario(true); }} 
@@ -187,16 +200,13 @@ export default function InternalEnlatadosDashboard() {
             )}
           </div>
 
-          {/* BARRA DE FILTROS AVANZADA (Diseño Original Minimalista) */}
           <div style={{ background: '#fff', padding: '15px 25px', borderRadius: '12px', border: '1px solid #e5e7eb', display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'flex-end', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', marginBottom: '30px' }}>
             
-            {/* Buscador de Texto */}
             <div style={{ flex: '2 1 180px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Destino</label>
               <input type="text" placeholder="Ej: Rio de Janeiro..." value={filtroTexto} onChange={(e) => setFiltroTexto(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem' }} />
             </div>
 
-            {/* Filtro Ciudad/Parada de Salida */}
             <div style={{ flex: '1 1 160px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Salida desde</label>
               <select value={filtroSalida} onChange={(e) => setFiltroSalida(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
@@ -205,7 +215,6 @@ export default function InternalEnlatadosDashboard() {
               </select>
             </div>
 
-            {/* Filtro Proveedor */}
             <div style={{ flex: '1 1 160px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Proveedor</label>
               <select value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
@@ -214,7 +223,6 @@ export default function InternalEnlatadosDashboard() {
               </select>
             </div>
 
-            {/* Filtro Transporte */}
             <div style={{ flex: '1 1 130px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Transporte</label>
               <select value={filtroTransporte} onChange={(e) => setFiltroTransporte(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
@@ -225,7 +233,6 @@ export default function InternalEnlatadosDashboard() {
               </select>
             </div>
 
-            {/* Filtro Orden */}
             <div style={{ flex: '1 1 130px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', color: '#11173d', marginBottom: '8px' }}>Orden</label>
               <select value={filtroOrden} onChange={(e) => setFiltroOrden(e.target.value)} style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid #d1d5db', outline: 'none', fontSize: '0.9rem', background: '#fff' }}>
@@ -235,10 +242,9 @@ export default function InternalEnlatadosDashboard() {
               </select>
             </div>
 
-            {/* Botones */}
             <div style={{ display: 'flex', gap: '10px', flex: '0 0 auto' }}>
               <button 
-                onClick={() => {/* La búsqueda ya es en tiempo real, pero el botón queda por UX visual */}} 
+                onClick={() => {}} 
                 style={{ background: '#ef5a1a', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.9rem' }}
               >
                 Buscar
@@ -279,7 +285,6 @@ export default function InternalEnlatadosDashboard() {
                     </div>
                   </div>
 
-                  {/* CUERPO BLANCO DE LA TARJETA */}
                   <div style={{ padding: '20px 20px 12px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     <div style={{ fontSize: '0.8em', color: '#6b7280', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '5px' }}>
                       {pkg.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Desde {pkg.transporte.includes('aereo') ? pkg.origenProvincia || pkg.origenPrincipal : pkg.origenPrincipal}
@@ -287,9 +292,6 @@ export default function InternalEnlatadosDashboard() {
                     
                     <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: '#11173d', lineHeight: '1.2' }}>{pkg.destino}</h3>
                     
-                    {/* El proveedor fue eliminado de acá para limpiar la vista */}
-                    
-                    {/* Precio pegado al borde inferior */}
                     <div style={{ marginTop: 'auto', textAlign: 'right' }}>
                       <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '5px' }}>
                         <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 'normal' }}>desde</span>
@@ -298,7 +300,6 @@ export default function InternalEnlatadosDashboard() {
                     </div>
                   </div>
 
-                  {/* PIE GRIS DE LA TARJETA (Solo el botón de Ver Paquete) */}
                   <div style={{ background: '#f9fafb', padding: '15px 20px', borderTop: '1px solid #eee', display: 'flex' }}>
                     <a 
                       href={`/internal/enlatados/${pkg.id}`} 
@@ -308,8 +309,6 @@ export default function InternalEnlatadosDashboard() {
                     >
                        Ver Paquete
                     </a>
-                    
-                    {/* El botón de editar fue eliminado de acá. Se edita desde adentro. */}
                   </div>
                 </div>
               );

@@ -38,13 +38,21 @@ export default function DetallePaqueteInterno() {
   const [tooltipActivo, setTooltipActivo] = useState(null); 
   const [descAbierta, setDescAbierta] = useState(true);
 
-  // ESTADO PARA GUARDAR LA CONFIGURACIÓN EN TIEMPO REAL
-  const [configPrecios, setConfigPrecios] = useState({ marca: 0, comision: 20 });
+  // ESTADO PARA GUARDAR LA CONFIGURACIÓN (Con valores por defecto para evitar errores)
+  const [configPrecios, setConfigPrecios] = useState({ marca: 0, comision: 15 });
 
-  // FUNCIONES CALCULADORAS
-  const calcularNetoInterno = (costoRaw) => parseFloat(costoRaw) * (1 + (configPrecios.marca / 100));
-  const calcularPrecioVenta = (costoRaw) => Math.round(calcularNetoInterno(costoRaw) * (1 + (configPrecios.comision / 100)));
+  // FUNCIONES CALCULADORAS CORREGIDAS
+  // 1. Neto Interno = Costo Proveedor + % de Marca
+  const calcularNetoInterno = (costoRaw) => {
+    const costo = parseFloat(costoRaw) || 0;
+    return Math.round(costo * (1 + (configPrecios.marca / 100)));
+  };
 
+  // 2. Precio Venta = Neto Interno + % de Comisión
+  const calcularPrecioVenta = (costoRaw) => {
+    const netoInterno = calcularNetoInterno(costoRaw);
+    return Math.round(netoInterno * (1 + (configPrecios.comision / 100)));
+  };
   const formatearPrecio = (valor) => {
     if (!valor) return '-';
     return Number(valor).toLocaleString('es-AR');
@@ -80,9 +88,9 @@ export default function DetallePaqueteInterno() {
     if (!valor) return '-';
     
     // 3. CÁLCULOS BASE
-    const costoRaw = parseFloat(valor);
-    const costoNetoInterno = calcularNetoInterno(costoRaw);
-    const venta = calcularPrecioVenta(costoRaw);
+    const costoOriginalProveedor = parseFloat(valor) || 0;
+    const costoNetoInterno = calcularNetoInterno(costoOriginalProveedor); // Este es el que ve tu staff
+    const venta = calcularPrecioVenta(costoOriginalProveedor);
     const ganancia = venta - costoNetoInterno;
 
     // 4. VARIABLES DE FINANCIACIÓN
