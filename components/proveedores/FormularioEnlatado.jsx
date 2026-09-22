@@ -9,7 +9,7 @@ const TIPOS_SERVICIO_BASE = [
   { value: 'excursion', label: '🌲 Excursión' },
   { value: 'seguro', label: '🛡️ Asistencia / Seguro' },
   { value: 'butaca', label: '💺 Adicional Butaca' },
-  { value: 'coordinador', label: '🧍 Coordinador Permanente' } // <-- NUEVO SERVICIO AGREGADO
+  { value: 'coordinador', label: '🧍 Coordinador Permanente' }
 ];
 
 const OPCIONES_REGIMEN = [
@@ -31,7 +31,6 @@ const OPCIONES_EQUIPAJE = [
   { value: 'Mano + Carry On + Bodega', label: '🎒 + 🧳 + 💼 Completo' }
 ];
 
-// Estructura limpia para resetear el form de tarifas
 const tarifaVacia = {
   fecha: '', hotelNombre: '', hotelEstrellas: '3', hotelUbicacion: '', hotelRegimen: '',
   hotel2Nombre: '', hotel2Estrellas: '3', hotel2Ubicacion: '', hotel2Regimen: '',
@@ -41,10 +40,12 @@ const tarifaVacia = {
   single: { mayor: '' }
 };
 
-export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = null }) {
+// --- MODIFICADO: Agregamos onDelete, esGestor y userEmail a las propiedades ---
+export default function FormularioEnlatado({ onCancel, onSave, onDelete, paqueteAEditar = null, esGestor = false, userEmail = '' }) {
   const [loading, setLoading] = useState(false);
   
-  const [infoGeneral, setInfoGeneral] = useState({ destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD', financiacion: '' });
+  // Agregamos proveedor_nombre al estado general
+  const [infoGeneral, setInfoGeneral] = useState({ destino: '', tipo: 'Grupales', transporte: 'bus-mix', dias: '', noches: '', origenProvincia: '', origenAeropuerto: '', moneda: 'USD', financiacion: '', proveedor_nombre: '' });
   const [paradas, setParadas] = useState([]);
   const [tempParada, setTempParada] = useState('');
   const [vuelos, setVuelos] = useState([]);
@@ -63,8 +64,13 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const [observaciones, setObservaciones] = useState('');
   const [descripcionViaje, setDescripcionViaje] = useState('');
 
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, mensaje: '', accion: null });
+
   const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+  const openConfirm = (mensaje, accion) => setConfirmDialog({ isOpen: true, mensaje, accion });
+  const closeConfirm = () => setConfirmDialog({ isOpen: false, mensaje: '', accion: null });
 
   useEffect(() => {
     if (paqueteAEditar) {
@@ -72,7 +78,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         destino: paqueteAEditar.destino || '', tipo: paqueteAEditar.tipo || 'Grupales', transporte: paqueteAEditar.transporte || 'bus-mix',
         dias: paqueteAEditar.dias || '', noches: paqueteAEditar.noches || '', origenProvincia: paqueteAEditar.origenProvincia || '',
         origenAeropuerto: paqueteAEditar.origenAeropuerto || paqueteAEditar.origenPrincipal || '', moneda: paqueteAEditar.moneda || 'USD',
-        financiacion: paqueteAEditar.financiacion || ''
+        financiacion: paqueteAEditar.financiacion || '', proveedor_nombre: paqueteAEditar.proveedor_nombre || ''
       });
       setParadas(paqueteAEditar.paradas_ascenso || []);
       setVuelos(paqueteAEditar.vuelos || []);
@@ -133,7 +139,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const agregarSalida = () => {
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor !== '') {
       if (fechaReferenciaVuelo && tempSalida.fecha !== fechaReferenciaVuelo) {
-        return alert(`La fecha de salida de la tarifa debe ser exactamente la misma que la del primer vuelo (${fechaReferenciaVuelo.split('-').reverse().join('/')}).`);
+        return alert(`La fecha debe coincidir con el primer vuelo (${fechaReferenciaVuelo.split('-').reverse().join('/')}).`);
       }
 
       const hotelYRegimenCombinado = tempSalida.hotel2Nombre 
@@ -164,13 +170,12 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       setSalidas(nuevasSalidas);
       setTempSalida(tarifaVacia);
       setMostrarHotel2(false);
-    } else { alert("La Fecha, Nombre del Hotel 1, Régimen 1 y Precio Doble (Adulto) son obligatorios."); }
+    } else { 
+      alert("La Fecha, Nombre del Hotel 1, Régimen 1 y Precio Doble (Adulto) son obligatorios."); 
+    }
   };
 
-  const editarSalida = (id) => {
-    // 1. EL CARTEL CONFIRMA LA ACCIÓN
-    if (!window.confirm('¿Querés editar esta fila de tarifa?')) return;
-
+  const procesarEdicionSalida = (id) => {
     let salidasActuales = [...salidas];
 
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.doble?.mayor !== '') {
@@ -211,17 +216,18 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       nuevasSalidas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
       setSalidas(nuevasSalidas);
 
-      // 2. SCROLL SUAVE AUTOMÁTICO A LOS CAMPOS DE TARIFA
       setTimeout(() => {
         document.getElementById('seccion-tarifario-inputs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
     }
   };
 
+  const editarSalida = (id) => {
+    openConfirm('¿Querés editar esta fila de tarifa? Los datos subirán al formulario para modificarlos.', () => procesarEdicionSalida(id));
+  };
+
   const eliminarSalida = (id) => {
-    if (window.confirm('¿Estás seguro de que querés eliminar esta tarifa?')) {
-      setSalidas(salidas.filter(x => x.id !== id));
-    }
+    openConfirm('¿Estás seguro de que querés eliminar esta tarifa? Esta acción no se puede deshacer.', () => setSalidas(salidas.filter(x => x.id !== id)));
   };
 
   const agregarDiaItinerario = () => { 
@@ -236,27 +242,27 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     } 
   };
   
-  const editarDiaItinerario = (id) => {
-    // 1. EL CARTEL CONFIRMA LA ACCIÓN EN ITINERARIO
-    if (!window.confirm('¿Querés editar este día del itinerario?')) return;
-
+  const procesarEdicionItinerario = (id) => {
     const diaAEditar = itinerario.find(d => d.id === id);
     if (diaAEditar) {
       setTempDia({ titulo: diaAEditar.titulo, descripcion: diaAEditar.descripcion });
       setEditandoItinerarioId(id);
 
-      // 2. SCROLL SUAVE AUTOMÁTICO A LOS CAMPOS DE ITINERARIO
       setTimeout(() => {
         document.getElementById('seccion-itinerario-inputs')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
     }
   };
 
+  const editarDiaItinerario = (id) => {
+    openConfirm('¿Querés editar este día del itinerario?', () => procesarEdicionItinerario(id));
+  };
+
   const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, hotel_a_hotel: false, opcional: false, fechaHora: '', tarifa: '' }]); setServicioSeleccionado(''); } };
   const actualizarServicio = (id, campo, valor) => setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
 
   const handleSubirFoto = async (e) => {
-    if (imagenes.length >= 4) return alert("Máximo 4 imágenes permitidas.");
+    if (imagenes.length >= 4) { return alert("Máximo 4 imágenes permitidas."); }
     const file = e.target.files[0]; if (!file) return;
     setLoading(true);
     const data = new FormData(); data.append('file', file); data.append('upload_preset', UPLOAD_PRESET);
@@ -271,8 +277,9 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!infoGeneral.destino || !infoGeneral.noches || !infoGeneral.origenProvincia || !infoGeneral.origenAeropuerto || !infoGeneral.financiacion) {
-      return alert("Por favor, completá todos los campos obligatorios de la Sección 1 (Información del Viaje).");
+    // Validación incluye el proveedor si es Admin
+    if (!infoGeneral.destino || !infoGeneral.noches || !infoGeneral.origenProvincia || !infoGeneral.origenAeropuerto || !infoGeneral.financiacion || (esGestor && !infoGeneral.proveedor_nombre)) {
+      return alert("Por favor, completá todos los campos obligatorios de la Sección 1.");
     }
 
     if (salidas.length === 0) return alert("Tenés que agregar al menos una tarifa en la Sección 2.");
@@ -281,7 +288,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     if (esAereo) {
       if (vuelos.length === 0) return alert("Al ser un paquete aéreo, debés cargar al menos un vuelo.");
       const vuelosIncompletos = vuelos.some(v => !v.aerolinea || !v.origen || !v.destino || !v.equipaje);
-      if (vuelosIncompletos) return alert("Por favor, completá Aerolínea, Origen, Destino y Equipaje en todos los vuelos (Las fechas y horas son opcionales).");
+      if (vuelosIncompletos) return alert("Por favor, completá Aerolínea, Origen, Destino y Equipaje en todos los vuelos.");
     }
     
     const paqueteFinal = {
@@ -308,7 +315,16 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             <label>Título / Destino Principal *</label>
             <input type="text" required name="destino" placeholder="Ej: Cataratas Premium" value={infoGeneral.destino} onChange={handleInfoChange} />
           </div>
-          <div className="form-group">
+          
+          {/* --- NUEVO: Input de Proveedor solo para Administradores --- */}
+          {esGestor && (
+            <div className="form-group" style={{ flex: 1 }}>
+              <label>Proveedor Interno *</label>
+              <input type="text" required name="proveedor_nombre" placeholder="Nombre de la Mayorista" value={infoGeneral.proveedor_nombre} onChange={handleInfoChange} />
+            </div>
+          )}
+
+          <div className="form-group" style={{ flex: 1 }}>
             <label>Transporte Principal *</label>
             <select required name="transporte" value={infoGeneral.transporte} onChange={handleInfoChange}>
               <option value="bus-mix">🚌 Bus Mix</option>
@@ -418,7 +434,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 2 (AGREGADO EL ID 'seccion-tarifario-inputs' PARA EL SCROLL) */}
+        {/* SECCIÓN 2 */}
         <h3 id="seccion-tarifario-inputs" className="section-title" style={{ marginTop: '30px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
         <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
@@ -547,7 +563,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 3: (AGREGADO EL ID 'seccion-itinerario-inputs' PARA EL SCROLL) */}
+        {/* SECCIÓN 3: ITINERARIO */}
         <h3 id="seccion-itinerario-inputs" className="section-title" style={{ marginTop: '30px' }}>3. Itinerario Resumido</h3>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start', background: editandoItinerarioId ? '#f0fdf4' : '#f9fafb', padding: '15px', borderRadius: '8px', border: editandoItinerarioId ? '1px solid #86efac' : '1px solid #eee', transition: 'all 0.3s' }}>
           <div style={{ flex: 1 }}>
@@ -672,13 +688,42 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           <textarea rows="4" style={{ width: '100%', padding: '15px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical' }} value={observaciones} onChange={(e) => setObservaciones(e.target.value)}></textarea>
         </div>
 
-        <div style={{ textAlign: 'right', marginTop: '40px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
+        {/* --- MODIFICADO: BOTONES INFERIORES CON OPCIÓN DE ELIMINAR --- */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '40px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
+          
+          {/* Botón Eliminar solo visible para admins o dueños del paquete */}
+          {paqueteAEditar && (esGestor || userEmail === paqueteAEditar.proveedor_email) ? (
+            <button type="button" onClick={() => openConfirm('¿Estás seguro de que querés ELIMINAR este paquete por completo? Esta acción no se puede deshacer.', () => onDelete(paqueteAEditar.id))} style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5', padding: '12px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '1em', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#fee2e2'} onMouseOut={e=>e.currentTarget.style.background='#fef2f2'}>
+              🗑️ Eliminar Paquete
+            </button>
+          ) : <div></div>}
+
           <button type="submit" disabled={loading} className="btn btn-primario" style={{ padding: '15px 40px', fontSize: '1.1em' }}>
             {loading ? 'Guardando...' : paqueteAEditar ? '💾 Guardar Cambios' : '🚀 Publicar Paquete'}
           </button>
         </div>
 
       </form>
+
+      {/* --- CARTEL BONITO DE CONFIRMACIÓN --- */}
+      {confirmDialog.isOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(17, 23, 61, 0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: '#fff', padding: '30px', borderRadius: '16px', maxWidth: '400px', width: '90%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', textAlign: 'center', position: 'relative' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🤔</div>
+            <h3 style={{ margin: '0 0 10px 0', color: '#11173d', fontSize: '1.2rem', fontWeight: 900 }}>¿Estás seguro?</h3>
+            <p style={{ color: '#4b5563', fontSize: '0.95rem', marginBottom: '25px', lineHeight: '1.5' }}>{confirmDialog.mensaje}</p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button type="button" onClick={closeConfirm} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontWeight: 'bold', cursor: 'pointer', flex: 1, transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#f3f4f6'} onMouseOut={e=>e.currentTarget.style.background='#fff'}>
+                Cancelar
+              </button>
+              <button type="button" onClick={() => { confirmDialog.accion(); closeConfirm(); }} style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#ef5a1a', color: '#fff', fontWeight: 'bold', cursor: 'pointer', flex: 1, transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#ea580c'} onMouseOut={e=>e.currentTarget.style.background='#ef5a1a'}>
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
