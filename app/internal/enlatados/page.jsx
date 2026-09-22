@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
-import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore'; // IMPORTAMOS getDoc
+import { collection, getDocs, addDoc, updateDoc, doc, getDoc } from 'firebase/firestore'; 
 import { db } from '@/lib/firebase';
 import { useStaffAuth } from '@/hooks/useStaffAuth';
 import { useAlert } from '@/contexts/AlertContext'; 
@@ -66,15 +66,15 @@ export default function InternalEnlatadosDashboard() {
     setLoading(true);
     try {
       // 1. CARGAMOS LA CONFIGURACIÓN PRIMERO
-      // 1. CARGAMOS LA CONFIGURACIÓN PRIMERO
       let configActual = { marca: 0, comision: 15 };
       try {
         const configDoc = await getDoc(doc(db, 'configuracion', 'grupales')); 
         if (configDoc.exists()) {
           const data = configDoc.data();
+          // Manejo seguro de números: si existe la propiedad, usa el número aunque sea 0.
           configActual = {
-            marca: parseFloat(data.marcaGlobal || 0), 
-            comision: parseFloat(data.comisionGlobal || 15) 
+            marca: data.marcaGlobal !== undefined ? parseFloat(data.marcaGlobal) : 0, 
+            comision: data.comisionGlobal !== undefined ? parseFloat(data.comisionGlobal) : 15 
           };
           setConfigPrecios(configActual);
         }
@@ -82,10 +82,10 @@ export default function InternalEnlatadosDashboard() {
 
       // 2. LUEGO CARGAMOS LOS PAQUETES
       const querySnapshot = await getDocs(collection(db, 'enlatados'));
-      const data = querySnapshot.docs.map(doc => {
-        const pkgData = doc.data();
+      const data = querySnapshot.docs.map(docSnap => {
+        const pkgData = docSnap.data();
         return { 
-          id: doc.id, 
+          id: docSnap.id, 
           ...pkgData,
           // Pasamos la configuración para que calcule correctamente
           precioFinalCalculado: obtenerPrecioFinal(pkgData.tarifario, configActual) 
