@@ -400,7 +400,13 @@ export default function FormularioEnlatado({ onCancel, onSave, onDelete, paquete
           </div>
         )}
 
-        {vuelos.length === 0 ? (
+        {esAereo && (
+          <div style={{ background: '#f0f9ff', padding: '20px', borderRadius: '12px', border: '1px solid #bae6fd', marginBottom: '30px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+              <h3 style={{ margin: 0, color: '#0369a1', fontSize: '1.2rem' }}>✈️ Información de Vuelos</h3>
+              <button type="button" onClick={agregarVuelo} className="btn" style={{ background: '#0284c7', color: '#fff', fontSize: '0.9rem', padding: '8px 15px' }}>+ Agregar Tramo</button>
+            </div>
+            {vuelos.length === 0 ? (
               <p style={{ color: '#0284c7', fontStyle: 'italic', margin: 0 }}>Hacé clic en el botón Agregar Tramo para sumar vuelos.</p>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
@@ -409,7 +415,7 @@ export default function FormularioEnlatado({ onCancel, onSave, onDelete, paquete
                     <button type="button" onClick={() => eliminarVuelo(v.id)} style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}>✕</button>
                     <b style={{ display: 'block', marginBottom: '10px', color: '#0369a1' }}>Tramo {idx + 1}</b>
                     
-                    {/* FILA 1: SALIDA */}
+                    {/* FILA 1: SALIDA + EQUIPAJE ABAJO DE AEROLÍNEA */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Aerolínea *</label><input type="text" required value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida *</label><input type="text" required value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
@@ -417,15 +423,15 @@ export default function FormularioEnlatado({ onCancel, onSave, onDelete, paquete
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Salida</label><input type="time" value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
                     </div>
 
-                    {/* FILA 2: LLEGADA Y EQUIPAJE */}
+                    {/* FILA 2: LLEGADA + EQUIPAJE ABAJO DE AEROLÍNEA */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '15px', borderTop: '1px dashed #bae6fd', paddingTop: '15px' }}>
+                      <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido *</label><select required value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}><option value="" disabled>Seleccionar...</option>{OPCIONES_EQUIPAJE.map(o => { if(o.value) return <option key={o.value} value={o.value}>{o.label}</option> })}</select></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Llegada *</label><input type="text" required value={v.destino} onChange={e => actualizarVuelo(v.id, 'destino', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada</label><input type="date" min={fechaReferenciaVuelo ? fechaReferenciaVuelo : undefined} value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada</label><input type="time" value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido *</label><select required value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}><option value="" disabled>Seleccionar...</option>{OPCIONES_EQUIPAJE.map(o => { if(o.value) return <option key={o.value} value={o.value}>{o.label}</option> })}</select></div>
                     </div>
 
-                    {/* CHECKBOX DE CHARTER ORDENADO */}
+                    {/* CHECKBOX DE CHARTER */}
                     <div style={{ marginBottom: '15px', padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #bae6fd', display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <input 
                         type="checkbox" 
@@ -444,6 +450,8 @@ export default function FormularioEnlatado({ onCancel, onSave, onDelete, paquete
                 ))}
               </div>
             )}
+          </div>
+        )}
 
         {/* SECCIÓN 2 */}
         <h3 id="seccion-tarifario-inputs" className="section-title" style={{ marginTop: '30px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
