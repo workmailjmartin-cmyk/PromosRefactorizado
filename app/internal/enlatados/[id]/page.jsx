@@ -1,11 +1,12 @@
 'use client';
 import React, { useEffect, useState, useRef } from 'react';import { useParams } from 'next/navigation';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc,deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Loader from '@/components/shared/Loader'; 
 import { useStaffAuth } from '@/hooks/useStaffAuth';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
 import { useAlert } from '@/contexts/AlertContext';
+import { useRouter } from 'next/navigation';
 
 
 const getServicioIcon = (tipo) => {
@@ -27,6 +28,12 @@ export default function DetallePaqueteInterno() {
   const { showAlert } = useAlert(); 
   
   const [paquete, setPaquete] = useState(null);
+
+  const router = useRouter();
+  
+  // Verificamos si es administrador
+  const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
+  
   const [loading, setLoading] = useState(true);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   
@@ -210,15 +217,15 @@ export default function DetallePaqueteInterno() {
   const cargarPaquete = async () => {
     if (!params?.id) return;
     try {
-      // 1. Cargar Configuración de Precios en tiempo real
       // 1. CARGAR CONFIGURACIÓN ANTES DEL PAQUETE
       try {
         const configDoc = await getDoc(doc(db, 'configuracion', 'grupales')); 
         if (configDoc.exists()) {
           const data = configDoc.data();
           setConfigPrecios({
-            marca: parseFloat(data.marcaGlobal || 0), 
-            comision: parseFloat(data.comisionGlobal || 15) 
+            // Mejora de seguridad: Manejamos el 0 correctamente
+            marca: data.marcaGlobal !== undefined ? parseFloat(data.marcaGlobal) : 0, 
+            comision: data.comisionGlobal !== undefined ? parseFloat(data.comisionGlobal) : 15 
           });
         }
       } catch(e) { console.error("Error cargando config de precios:", e); }
@@ -254,6 +261,20 @@ export default function DetallePaqueteInterno() {
     }
   };
 
+  // --- NUEVO: Función para eliminar el paquete desde esta vista ---
+  const eliminarPaquete = async (idAEliminar) => {
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, 'enlatados', idAEliminar));
+      if (showAlert) showAlert('Paquete eliminado correctamente.', 'success');
+      // Redireccionamos a la vista general porque el paquete actual ya no existe
+      router.push('/internal/enlatados'); 
+    } catch (error) {
+      if (showAlert) showAlert('Error al eliminar el paquete.', 'error');
+    }
+    setLoading(false);
+  };
+
   if (loading) return <Loader visible={true} text="Cargando viaje..." />;
   if (!paquete) return <div style={{ padding: '50px', textAlign: 'center', color: 'red', fontWeight: 'bold' }}>❌ El paquete no existe.</div>;
 
@@ -261,7 +282,17 @@ export default function DetallePaqueteInterno() {
   const puedeEditar = userData?.rol === 'admin' || userData?.rol === 'editor';
 
   if (modoEdicion) {
-    return <FormularioEnlatado paqueteAEditar={paquete} onCancel={() => setModoEdicion(false)} onSave={guardarEdicion} />;
+    return (
+      <FormularioEnlatado 
+        paqueteAEditar={paquete} 
+        onCancel={() => setModoEdicion(false)} 
+        onSave={guardarEdicion}
+        // --- NUEVO: Pasamos las props necesarias para modo Gestor ---
+        onDelete={(id) => eliminarPaquete(id)}
+        esGestor={puedeEditar}
+        userEmail={currentUser?.email}
+      />
+    );
   }
 
   const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
