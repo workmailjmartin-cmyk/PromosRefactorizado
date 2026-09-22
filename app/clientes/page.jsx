@@ -111,9 +111,9 @@ export default function ClientesPage() {
               />
 
               {/* TÍTULO SEPARADOR */}
-              <div style={{ textAlign: 'center', marginBottom: '20px', marginTop: '30px' }}>
+              {/* <div style={{ textAlign: 'center', marginBottom: '20px', marginTop: '30px' }}>
                 <h2 style={{ fontSize: '1.8rem', color: '#11173d', margin: 0, fontWeight: 900 }}>Conocé todas nuestras promociones:</h2>
-              </div>
+              </div> */}
 
               {/* 3. TERCERO: LA GRILLA GENERAL DE PROMOCIONES */}
               <div id="grilla-paquetes" className="grilla-resultados">

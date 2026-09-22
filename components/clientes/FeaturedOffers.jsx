@@ -99,25 +99,63 @@ export default function FeaturedOffers({ vidriera, allPackages, bancoImagenes, o
   if (paquetesVidriera.length === 0) return null;
 
   return (
-    <div id="wrapper-ofertas-destacadas">
-      <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '20px' }}>
-        <h2 style={{ fontSize: '2.2em', fontWeight: 900, color: '#11173d', margin: '0 0 5px 0' }}>Ofertas Destacadas ✈️</h2>
-        <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1em' }}>Nuestras recomendaciones para vos</p>
+    <>
+      <style>{`
+        .carrusel-destacadas {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 20px;
+          margin-bottom: 50px;
+        }
+
+        /* --- CARROUSEL PARA CELULARES --- */
+        @media (max-width: 768px) {
+          .carrusel-destacadas {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding-bottom: 20px; 
+            margin: 0 -20px 30px -20px; /* Expande al borde del celular */
+            padding-left: 20px;
+            padding-right: 20px;
+            
+            scrollbar-width: none; /* Oculta scrollbar en Firefox */
+            -ms-overflow-style: none;  /* Oculta scrollbar en IE/Edge */
+          }
+          
+          /* Oculta scrollbar en Chrome/Safari */
+          .carrusel-destacadas::-webkit-scrollbar {
+            display: none;
+          }
+          
+          .carrusel-destacadas > div {
+            flex: 0 0 85%; /* Muestra el 85% de la tarjeta para indicar que hay más al costado */
+            scroll-snap-align: center;
+          }
+        }
+      `}</style>
+
+      <div id="wrapper-ofertas-destacadas">
+        <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '20px' }}>
+          <h2 style={{ fontSize: '2.2em', fontWeight: 900, color: '#11173d', margin: '0 0 5px 0' }}>Ofertas Destacadas ✈️</h2>
+          <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1em' }}>Nuestras recomendaciones para vos</p>
+        </div>
+        
+        {/* APLICAMOS LA NUEVA CLASE AL CONTENEDOR */}
+        <div id="grid-ofertas" className="carrusel-destacadas">
+          {paquetesVidriera.map(({ pkg, imagenIdFondo }) => (
+            <OfertaCard
+              key={pkg.id_paquete}
+              pkg={pkg}
+              imagenIdFondo={imagenIdFondo}
+              bancoImagenes={bancoImagenes}
+              onSelect={onSelect}
+            />
+          ))}
+        </div>
+        
       </div>
-      <div id="grid-ofertas" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '50px' }}>
-        {paquetesVidriera.map(({ pkg, imagenIdFondo }) => (
-          <OfertaCard
-            key={pkg.id_paquete}
-            pkg={pkg}
-            imagenIdFondo={imagenIdFondo}
-            bancoImagenes={bancoImagenes}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
-      <div style={{ textAlign: 'center', marginBottom: '25px', borderTop: '1px solid #eee', paddingTop: '30px' }}>
-        <h2 style={{ fontSize: '2em', fontWeight: 900, color: '#11173d', margin: 0 }}>Conoce todas nuestras promociones:</h2>
-      </div>
-    </div>
+    </>
   );
 }
