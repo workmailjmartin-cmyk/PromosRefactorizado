@@ -60,7 +60,7 @@ export default function PackageCard({ pkg, onSelect }) {
             <span>{summaryIcons}</span>
             {tieneCharter && (
               <span style={{ background: '#ef5a1a', color: '#fff', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.9em', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.3)' }}>
-                🛩️ Charter
+                ✈️ Charter
               </span>
             )}
           </div>

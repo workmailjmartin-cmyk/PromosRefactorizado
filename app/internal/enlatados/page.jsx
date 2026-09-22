@@ -247,7 +247,7 @@ export default function InternalEnlatadosDashboard() {
                 <option value="">Todos</option>
                 <option value="bus">Paquete Bus</option>
                 <option value="aereo">Paquete Aéreo</option>
-                <option value="charter">🛩️ Grupal Acompañado</option>
+                <option value="charter">✈️ Grupal Acompañado</option>
               </select>
             </div>
 
@@ -310,7 +310,7 @@ export default function InternalEnlatadosDashboard() {
 
                     {tieneCharter && (
                       <div style={{ position: 'absolute', bottom: '10px', left: '10px', background: '#ef5a1a', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '900', color: '#fff', display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 4px 6px rgba(0,0,0,0.2)', textTransform: 'uppercase' }}>
-                        🛩️ Vuelo Charter
+                        ✈️ Vuelo Charter
                       </div>
                     )}
                   </div>

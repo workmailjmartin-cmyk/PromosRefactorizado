@@ -70,7 +70,7 @@ export default function PackageCard({ pkg, onSelect, textoListon }) {
             {/* --- NUEVA ETIQUETA CHARTER AL LADO DE LAS NOCHES --- */}
             {tieneCharter && (
               <span style={{ background: '#ef5a1a', color: '#fff', padding: '4px 8px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.85em', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.3)' }}>
-                🛩️ Charter
+                ✈️ Charter
               </span>
             )}
             
