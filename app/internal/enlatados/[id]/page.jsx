@@ -210,17 +210,14 @@ export default function DetallePaqueteInterno() {
     if (!params?.id) return;
     try {
       // 1. Cargar Configuración de Precios en tiempo real
+      // 1. CARGAR CONFIGURACIÓN ANTES DEL PAQUETE
       try {
-        // ASUMO QUE TUS CONFIGURACIONES ESTÁN EN 'metadata/config'
-        // Si la colección se llama distinto, cambialo acá abajo:
-        const configDoc = await getDoc(doc(db, 'metadata', 'config')); 
+        const configDoc = await getDoc(doc(db, 'configuracion', 'grupales')); 
         if (configDoc.exists()) {
           const data = configDoc.data();
           setConfigPrecios({
-            // Cambiá "porcentaje_marca" por el nombre exacto de tu campo en Firebase
-            marca: parseFloat(data.porcentaje_marca || 0), 
-            // Cambiá "porcentaje_comision" por el nombre exacto de tu campo en Firebase
-            comision: parseFloat(data.porcentaje_comision || 15) 
+            marca: parseFloat(data.marcaGlobal || 0), 
+            comision: parseFloat(data.comisionGlobal || 15) 
           });
         }
       } catch(e) { console.error("Error cargando config de precios:", e); }
