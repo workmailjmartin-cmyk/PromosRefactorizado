@@ -54,6 +54,9 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   
   const [itinerario, setItinerario] = useState([]);
   const [tempDia, setTempDia] = useState({ titulo: '', descripcion: '' });
+  // --- NUEVO: Estado para saber si estamos editando un día del itinerario ---
+  const [editandoItinerarioId, setEditandoItinerarioId] = useState(null);
+
   const [servicios, setServicios] = useState([]);
   const [servicioSeleccionado, setServicioSeleccionado] = useState('');
   const [imagenes, setImagenes] = useState([]);
@@ -74,7 +77,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       setParadas(paqueteAEditar.paradas_ascenso || []);
       setVuelos(paqueteAEditar.vuelos || []);
       
-      // Adaptador para paquetes viejos (si doble era un string, lo convierte a objeto)
       const salidasAdaptadas = (paqueteAEditar.tarifario || []).map(t => {
         return {
           ...t,
@@ -114,18 +116,14 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   // PARADAS
   const agregarParada = () => { if (tempParada && !paradas.includes(tempParada)) { setParadas([...paradas, tempParada]); setTempParada(''); } };
   
- // FUNCION AUXILIAR PARA DIBUJAR LOS PUNTOS DE MILES
   const formatNumber = (num) => {
     if (num === '' || num === undefined || num === null) return '';
     return Number(num).toLocaleString('es-AR');
   };
 
-  // Variable maestra: La fecha del primer vuelo rige a todas las demás
   const fechaReferenciaVuelo = vuelos.length > 0 && vuelos[0]?.fechaSalida ? vuelos[0].fechaSalida : '';
 
-  // TARIFARIO NUEVO (Complejo con separador de miles)
   const handleTarifaChange = (base, campo, valor) => {
-    // Magia: Elimina TODO lo que no sea número (letras, comas, signos menos)
     const soloNumeros = valor.toString().replace(/\D/g, ''); 
     const valorLimpio = soloNumeros === '' ? '' : parseInt(soloNumeros, 10);
     setTempSalida(prev => ({
@@ -137,12 +135,10 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const agregarSalida = () => {
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor !== '') {
       
-      // Validación: Si hay un vuelo con fecha, la tarifa debe ser en esa misma fecha
       if (fechaReferenciaVuelo && tempSalida.fecha !== fechaReferenciaVuelo) {
         return alert(`La fecha de salida de la tarifa debe ser exactamente la misma que la del primer vuelo (${fechaReferenciaVuelo.split('-').reverse().join('/')}).`);
       }
 
-      // Magia para concatenar los dos hoteles si existe el segundo
       const hotelYRegimenCombinado = tempSalida.hotel2Nombre 
         ? `${tempSalida.hotelNombre} (${tempSalida.hotelRegimen}) + ${tempSalida.hotel2Nombre} (${tempSalida.hotel2Regimen})`
         : `${tempSalida.hotelNombre} - ${tempSalida.hotelRegimen}`;
@@ -170,7 +166,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       
       setSalidas(nuevasSalidas);
       setTempSalida(tarifaVacia);
-      setMostrarHotel2(false); // Ocultamos el hotel 2 al guardar
+      setMostrarHotel2(false);
     } else { alert("La Fecha, Nombre del Hotel 1, Régimen 1 y Precio Doble (Adulto) son obligatorios."); }
   };
 
@@ -179,7 +175,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
     let salidasActuales = [...salidas];
 
-    // Autoguardado si había fila a medias
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.doble?.mayor !== '') {
       const hotelYRegimenCombinado = tempSalida.hotel2Nombre 
         ? `${tempSalida.hotelNombre} (${tempSalida.hotelRegimen}) + ${tempSalida.hotel2Nombre} (${tempSalida.hotel2Regimen})`
@@ -212,7 +207,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         cuadruple: salidaAEditar.cuadruple,
         single: salidaAEditar.single
       });
-      // Si la fila a editar tiene un hotel 2, abrimos la caja automáticamente
       setMostrarHotel2(!!salidaAEditar.hotel2Nombre);
 
       const nuevasSalidas = salidasActuales.filter(s => s.id !== id);
@@ -227,8 +221,30 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     }
   };
 
-  // OTROS
-  const agregarDiaItinerario = () => { if (tempDia.titulo) { setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); setTempDia({ titulo: '', descripcion: '' }); } };
+  // --- MODIFICADO: Lógica de Itinerario con Edición ---
+  const agregarDiaItinerario = () => { 
+    if (tempDia.titulo) { 
+      if (editandoItinerarioId) {
+        // Modo Edición: Actualizamos el día existente
+        setItinerario(itinerario.map(d => d.id === editandoItinerarioId ? { ...d, titulo: tempDia.titulo, descripcion: tempDia.descripcion } : d));
+        setEditandoItinerarioId(null);
+      } else {
+        // Modo Creación: Agregamos uno nuevo
+        setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); 
+      }
+      setTempDia({ titulo: '', descripcion: '' }); 
+    } 
+  };
+  
+  // NUEVA FUNCION: Para subir el día al form
+  const editarDiaItinerario = (id) => {
+    const diaAEditar = itinerario.find(d => d.id === id);
+    if (diaAEditar) {
+      setTempDia({ titulo: diaAEditar.titulo, descripcion: diaAEditar.descripcion });
+      setEditandoItinerarioId(id);
+    }
+  };
+
   const agregarServicio = () => { if (servicioSeleccionado) { setServicios([...servicios, { id: Date.now(), tipo: servicioSeleccionado, detalle1: '', detalle2: '', in: false, out: false, hotel_a_hotel: false, opcional: false, fechaHora: '', tarifa: '' }]); setServicioSeleccionado(''); } };
   const actualizarServicio = (id, campo, valor) => setServicios(servicios.map(s => s.id === id ? { ...s, [campo]: valor } : s));
 
@@ -248,18 +264,16 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validación Sección 1: Información General
-    if (!infoGeneral.destino || !infoGeneral.dias || !infoGeneral.noches || !infoGeneral.origenProvincia || !infoGeneral.origenAeropuerto || !infoGeneral.financiacion) {
+    // --- MODIFICADO: Días ya no es obligatorio en la validación ---
+    if (!infoGeneral.destino || !infoGeneral.noches || !infoGeneral.origenProvincia || !infoGeneral.origenAeropuerto || !infoGeneral.financiacion) {
       return alert("Por favor, completá todos los campos obligatorios de la Sección 1 (Información del Viaje).");
     }
 
     if (salidas.length === 0) return alert("Tenés que agregar al menos una tarifa en la Sección 2.");
     if (imagenes.length === 0) return alert("Subí al menos 1 imagen de portada en la Sección 5.");
     
-    // Validación Sección Vuelos
     if (esAereo) {
       if (vuelos.length === 0) return alert("Al ser un paquete aéreo, debés cargar al menos un vuelo.");
-      // Modificado para aceptar fechas opcionales, pero obligando aerolinea, origen, destino y equipaje
       const vuelosIncompletos = vuelos.some(v => !v.aerolinea || !v.origen || !v.destino || !v.equipaje);
       if (vuelosIncompletos) return alert("Por favor, completá Aerolínea, Origen, Destino y Equipaje en todos los vuelos (Las fechas y horas son opcionales).");
     }
@@ -301,9 +315,10 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         </div>
         
         <div className="form-group-row" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+          {/* --- MODIFICADO: Días ya no es required --- */}
           <div className="form-group" style={{ flex: '1 1 80px' }}>
-            <label>Días *</label>
-            <input type="number" required name="dias" value={infoGeneral.dias} onChange={handleInfoChange} />
+            <label>Días</label>
+            <input type="number" name="dias" value={infoGeneral.dias} onChange={handleInfoChange} placeholder="Opcional" />
           </div>
           <div className="form-group" style={{ flex: '1 1 80px' }}>
             <label>Noches *</label>
@@ -341,7 +356,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         </div>
 
-        {/* CUADRO DE DESCRIPCIÓN DEL VIAJE */}
         <div className="form-group" style={{ marginTop: '15px', marginBottom: '20px' }}>
           <label style={{ fontWeight: 'bold', color: '#11173d' }}>Descripción General del Viaje</label>
           <textarea 
@@ -382,14 +396,12 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Aerolínea *</label><input type="text" required value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida *</label><input type="text" required value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
-                      {/* El Tramo 2 en adelante no puede ser antes que el Tramo 1 */}
                       <div className="form-group" style={{ margin: 0 }}><label>Fecha Salida</label><input type="date" min={idx > 0 && fechaReferenciaVuelo ? fechaReferenciaVuelo : undefined} value={v.fechaSalida} onChange={e => actualizarVuelo(v.id, 'fechaSalida', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Salida</label><input type="time" value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px', borderTop: '1px dashed #bae6fd', paddingTop: '15px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido *</label><select required value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}><option value="" disabled>Seleccionar...</option>{OPCIONES_EQUIPAJE.map(o => { if(o.value) return <option key={o.value} value={o.value}>{o.label}</option> })}</select></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Llegada *</label><input type="text" required value={v.destino} onChange={e => actualizarVuelo(v.id, 'destino', e.target.value)} /></div>
-                      {/* Las llegadas no pueden ser antes del vuelo principal */}
                       <div className="form-group" style={{ margin: 0 }}><label>Fecha Llegada</label><input type="date" min={fechaReferenciaVuelo ? fechaReferenciaVuelo : undefined} value={v.fechaLlegada} onChange={e => actualizarVuelo(v.id, 'fechaLlegada', e.target.value)} /></div>
                       <div className="form-group" style={{ margin: 0 }}><label>Hora Llegada</label><input type="time" value={v.horaLlegada} onChange={e => actualizarVuelo(v.id, 'horaLlegada', e.target.value)} /></div>
                     </div>
@@ -401,12 +413,10 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 2: TARIFARIO (MINIMALISTA) */}
+        {/* SECCIÓN 2 */}
         <h3 className="section-title" style={{ marginTop: '30px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
-        
         <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
-          {/* DATOS DEL HOTEL 1 */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Fecha Salida *</label>
@@ -419,7 +429,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             <div className="form-group" style={{ margin: 0 }}><label style={{ color: '#4b5563', fontSize: '0.85rem' }}>Régimen 1 *</label><select value={tempSalida.hotelRegimen} onChange={e => setTempSalida({...tempSalida, hotelRegimen: e.target.value})} style={{ border: '1px solid #d1d5db', borderRadius: '6px' }}>{OPCIONES_REGIMEN.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}</select></div>
           </div>
 
-          {/* BOTON PARA HOTEL 2 (COMBINADO) */}
           {!mostrarHotel2 ? (
             <div>
               <button type="button" onClick={() => setMostrarHotel2(true)} style={{ background: '#f3f4f6', color: '#374151', border: '1px dashed #9ca3af', padding: '6px 15px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold', cursor: 'pointer' }}>+ Combinar con 2do Hotel</button>
@@ -439,7 +448,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
             </div>
           )}
 
-          {/* TARIFAS (Inputs) - CON PUNTOS DE MILES */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px', marginTop: '15px' }}>
             {[
               { key: 'doble', title: 'Base Doble *', campos: ['mayor', 'menor', 'child'] },
@@ -478,7 +486,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         </div>
 
-        {/* TABLA RESUMEN MINIMALISTA */}
         {salidas.length > 0 && (
           <div style={{ overflowX: 'auto', marginTop: '20px', borderRadius: '12px', border: '1px solid #e5e7eb', background: '#fff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
             <table style={{ width: '100%', tableLayout: 'auto', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
@@ -502,19 +509,13 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               </thead>
               <tbody style={{ textAlign: 'center', color: '#4b5563' }}>
                 {salidas.map(s => {
-                  // Función helper para que el cero o vacío se vea como un guión elegante
                   const formatPrecio = (val) => (!val || val === '0' || val === 0) ? <span style={{color: '#d1d5db'}}>-</span> : <span style={{fontWeight: 'bold', color: '#11173d'}}>${val}</span>;
-                  
                   return (
                     <tr key={s.id} style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#f8fafc'} onMouseOut={e=>e.currentTarget.style.background='transparent'}>
                       <td style={{ padding: '15px', textAlign: 'left', lineHeight: '1.4' }}>
                         <div style={{ display: 'inline-block', background: '#e0f2fe', color: '#0284c7', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 'bold', marginBottom: '5px' }}>{s.fecha}</div>
-                        
-                        {/* HOTEL 1 */}
                         <div style={{ fontWeight: 'bold', color: '#11173d', fontSize: '0.9rem' }}>{s.hotelNombre}</div>
                         <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: s.hotel2Nombre ? '8px' : '0' }}>{s.regimen}</div>
-                        
-                        {/* HOTEL 2 (Si existe) */}
                         {s.hotel2Nombre && (
                           <>
                             <div style={{ fontSize: '0.7rem', color: '#0ea5e9', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '2px' }}>+ Combinado con:</div>
@@ -523,12 +524,10 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
                           </>
                         )}
                       </td>
-                      
                       <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.doble.mayor)}</td><td>{formatPrecio(s.doble.menor)}</td><td>{formatPrecio(s.doble.child)}</td>
                       <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.triple.mayor)}</td><td>{formatPrecio(s.triple.menor)}</td><td>{formatPrecio(s.triple.child)}</td>
                       <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.cuadruple.mayor)}</td><td>{formatPrecio(s.cuadruple.menor)}</td><td>{formatPrecio(s.cuadruple.child)}</td>
                       <td style={{ borderLeft: '1px solid #f3f4f6' }}>{formatPrecio(s.single.mayor)}</td>
-                      
                       <td style={{ padding: '15px' }}>
                         <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
                           <button type="button" onClick={() => editarSalida(s.id)} style={{ color: '#0ea5e9', border: 'none', background: 'none', cursor: 'pointer', fontSize: '1.2rem', transition: 'transform 0.1s' }} title="Editar">✏️</button>
@@ -543,17 +542,46 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 3 */}
+        {/* SECCIÓN 3: ITINERARIO CON EDICIÓN */}
         <h3 className="section-title" style={{ marginTop: '30px' }}>3. Itinerario Resumido</h3>
-        <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start', background: '#f9fafb', padding: '15px', borderRadius: '8px', border: '1px solid #eee' }}>
-          <div style={{ flex: 1 }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}>Título del Día (Ej: Día 1 - Viaje)</label><input type="text" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} value={tempDia.titulo} onChange={e => setTempDia({...tempDia, titulo: e.target.value})} /></div>
-          <div style={{ flex: 2 }}><label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem' }}>Descripción de actividades</label><textarea rows="1" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical', minHeight: '42px' }} value={tempDia.descripcion} onChange={e => setTempDia({...tempDia, descripcion: e.target.value})}></textarea></div>
-          <div style={{ paddingTop: '25px' }}><button type="button" className="btn btn-secundario" onClick={agregarDiaItinerario} style={{ background: '#11173d', color: 'white', height: '42px', padding: '0 20px' }}>+ Día</button></div>
+        <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start', background: editandoItinerarioId ? '#f0fdf4' : '#f9fafb', padding: '15px', borderRadius: '8px', border: editandoItinerarioId ? '1px solid #86efac' : '1px solid #eee', transition: 'all 0.3s' }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem', color: editandoItinerarioId ? '#166534' : 'inherit' }}>
+              {editandoItinerarioId ? 'Editando Título' : 'Título del Día (Ej: Día 1 - Viaje)'}
+            </label>
+            <input type="text" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }} value={tempDia.titulo} onChange={e => setTempDia({...tempDia, titulo: e.target.value})} />
+          </div>
+          <div style={{ flex: 2 }}>
+            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem', color: editandoItinerarioId ? '#166534' : 'inherit' }}>
+              Descripción de actividades
+            </label>
+            <textarea rows="1" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd', resize: 'vertical', minHeight: '42px' }} value={tempDia.descripcion} onChange={e => setTempDia({...tempDia, descripcion: e.target.value})}></textarea>
+          </div>
+          <div style={{ paddingTop: '25px', display: 'flex', gap: '10px' }}>
+            <button type="button" className="btn btn-secundario" onClick={agregarDiaItinerario} style={{ background: editandoItinerarioId ? '#22c55e' : '#11173d', color: 'white', height: '42px', padding: '0 20px', fontWeight: 'bold' }}>
+              {editandoItinerarioId ? '✓ Guardar Cambios' : '+ Día'}
+            </button>
+            {editandoItinerarioId && (
+              <button type="button" onClick={() => { setEditandoItinerarioId(null); setTempDia({ titulo: '', descripcion: '' }); }} style={{ background: '#f3f4f6', color: '#6b7280', border: '1px solid #d1d5db', height: '42px', padding: '0 15px', borderRadius: '6px', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+            )}
+          </div>
         </div>
         
         {itinerario.length > 0 && (
           <div style={{ marginTop: '15px', padding: '15px', background: '#fff', borderRadius: '8px', borderLeft: '4px solid #ef5a1a', border: '1px solid #eee' }}>
-            {itinerario.map(d => (<div key={d.id} style={{ marginBottom: '10px' }}><b style={{ color: '#11173d' }}>Día {d.dia}: {d.titulo}</b> <button type="button" onClick={() => setItinerario(itinerario.filter(x => x.id !== d.id))} style={{ color: 'red', fontSize: '0.8rem', marginLeft: '10px', border: 'none', background: 'none', cursor: 'pointer' }}>Borrar</button><p style={{ margin: '5px 0 0 0', fontSize: '0.9em', color: '#666' }}>{d.descripcion}</p></div>))}
+            {itinerario.map(d => (
+              <div key={d.id} style={{ marginBottom: '15px', borderBottom: '1px dashed #f3f4f6', paddingBottom: '10px' }}>
+                <b style={{ color: '#11173d' }}>Día {d.dia}: {d.titulo}</b> 
+                
+                {/* --- NUEVO: Botón Editar --- */}
+                <button type="button" onClick={() => editarDiaItinerario(d.id)} style={{ color: '#0ea5e9', fontSize: '0.85rem', marginLeft: '15px', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Editar</button>
+                <button type="button" onClick={() => setItinerario(itinerario.filter(x => x.id !== d.id))} style={{ color: 'red', fontSize: '0.85rem', marginLeft: '10px', border: 'none', background: 'none', cursor: 'pointer' }}>Borrar</button>
+                
+                <p style={{ margin: '5px 0 0 0', fontSize: '0.9em', color: '#666' }}>{d.descripcion}</p>
+              </div>
+            ))}
           </div>
         )}
 
