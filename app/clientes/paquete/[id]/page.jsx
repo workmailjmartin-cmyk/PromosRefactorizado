@@ -39,13 +39,16 @@ export default function DetallePaqueteCliente() {
     if (!params?.id) return;
     try {
       // 3. NUEVO: CARGAR CONFIGURACIÓN ANTES DEL PAQUETE
+      // 1. CARGAR CONFIGURACIÓN ANTES DEL PAQUETE
       try {
-        const configDoc = await getDoc(doc(db, 'metadata', 'config')); 
+        // Apuntamos a la colección y documento correctos según tu base de datos
+        const configDoc = await getDoc(doc(db, 'configuracion', 'grupales')); 
         if (configDoc.exists()) {
           const data = configDoc.data();
+          // Leemos los campos con sus nombres exactos
           setConfigPrecios({
-            marca: parseFloat(data.porcentaje_marca || 0), 
-            comision: parseFloat(data.porcentaje_comision || 15) 
+            marca: parseFloat(data.marcaGlobal || 0), 
+            comision: parseFloat(data.comisionGlobal || 15) 
           });
         }
       } catch(e) { console.error("Error cargando config de precios:", e); }

@@ -66,14 +66,15 @@ export default function InternalEnlatadosDashboard() {
     setLoading(true);
     try {
       // 1. CARGAMOS LA CONFIGURACIÓN PRIMERO
+      // 1. CARGAMOS LA CONFIGURACIÓN PRIMERO
       let configActual = { marca: 0, comision: 15 };
       try {
-        const configDoc = await getDoc(doc(db, 'metadata', 'config')); 
+        const configDoc = await getDoc(doc(db, 'configuracion', 'grupales')); 
         if (configDoc.exists()) {
           const data = configDoc.data();
           configActual = {
-            marca: parseFloat(data.porcentaje_marca || 0), 
-            comision: parseFloat(data.porcentaje_comision || 15) 
+            marca: parseFloat(data.marcaGlobal || 0), 
+            comision: parseFloat(data.comisionGlobal || 15) 
           };
           setConfigPrecios(configActual);
         }
