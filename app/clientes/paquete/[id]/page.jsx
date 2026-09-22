@@ -148,16 +148,30 @@ export default function DetallePaqueteCliente() {
         exigeContado = true;
       } else {
         const tipoFinanciacion = paquete?.financiacion || 'sena_30';
-        if (tipoFinanciacion === 'sena_30') sena = Math.round(venta * 0.30);
-        else if (tipoFinanciacion === 'financiado_100') sena = 0;
         
-        const saldoAFinanciar = venta - sena;
+        // Calculamos la seña inicial "teórica"
+        let senaTeorica = 0;
+        if (tipoFinanciacion === 'sena_30') senaTeorica = Math.round(venta * 0.30);
+        else if (tipoFinanciacion === 'financiado_100') senaTeorica = 0;
+        
+        const saldoAFinanciarTeorico = venta - senaTeorica;
         const diffTimeHastaTope = fechaTope.getTime() - hoy.getTime();
         const diasHastaTope = Math.ceil(diffTimeHastaTope / (1000 * 60 * 60 * 24));
         
         if (diasHastaTope >= 30) {
           cuotasDisponibles = Math.floor(diasHastaTope / 30);
-          valorCuota = Math.round(saldoAFinanciar / cuotasDisponibles);
+          
+          // Calculamos el valor de la cuota y lo redondeamos hacia abajo para que la gente vea cuotas redondas
+          valorCuota = Math.floor(saldoAFinanciarTeorico / cuotasDisponibles);
+          
+          // Calculamos cuánto suman realmente todas las cuotas
+          const totalFinanciadoReal = valorCuota * cuotasDisponibles;
+          
+          // La seña real absorbe CUALQUIER diferencia para llegar al precio final
+          sena = venta - totalFinanciadoReal;
+        } else {
+            // Si no hay tiempo para cuotas, la seña es la teórica y hay saldo
+            sena = senaTeorica;
         }
       }
     }

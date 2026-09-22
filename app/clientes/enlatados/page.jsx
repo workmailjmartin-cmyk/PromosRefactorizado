@@ -4,11 +4,11 @@ import HeaderB2C from '@/components/clientes/HeaderB2C';
 import FooterB2C from '@/components/clientes/FooterB2C';
 import WhatsAppFloatButton from '@/components/shared/WhatsAppFloatButton';
 import Loader from '@/components/shared/Loader';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore'; // Aseguramos importar doc y getDoc
 import { db } from '@/lib/firebase';
 import { WPP_NUMBER } from '@/lib/constants';
 
-const MARKUP_AGENCIA = 1.20; 
+// ELIMINADO: const MARKUP_AGENCIA = 1.20;
 
 const normalizarTexto = (texto) => {
   if (!texto) return '';
@@ -20,6 +20,9 @@ export default function ListadoEnlatadosCliente() {
   const [paquetesFiltrados, setPaquetesFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // NUEVO: Estado para guardar la configuración de precios
+  const [configPrecios, setConfigPrecios] = useState({ marca: 0, comision: 15 });
+
   // Filtros
   const [filtroTexto, setFiltroTexto] = useState('');
   const [filtroTransporte, setFiltroTransporte] = useState('');
@@ -27,26 +30,55 @@ export default function ListadoEnlatadosCliente() {
   const [filtroOrden, setFiltroOrden] = useState('recientes');
   const [opcionesSalidas, setOpcionesSalidas] = useState([]);
 
-  const obtenerPrecioFinal = (tarifario) => {
+  // NUEVO: Funciones de cálculo dinámico
+  const calcularNetoInterno = (costoRaw, config) => {
+    const costo = parseFloat(costoRaw) || 0;
+    return Math.round(costo * (1 + (config.marca / 100)));
+  };
+
+  const calcularPrecioVenta = (costoRaw, config) => {
+    const netoInterno = calcularNetoInterno(costoRaw, config);
+    return Math.round(netoInterno * (1 + (config.comision / 100)));
+  };
+
+  const obtenerPrecioFinal = (tarifario, configActual) => {
     if (!tarifario || tarifario.length === 0) return 0;
     const precios = tarifario.map(t => {
       if (typeof t.doble === 'object') return parseFloat(t.doble.mayor) || 0;
       return parseFloat(t.doble) || 0;
     }).filter(p => p > 0);
     if (precios.length === 0) return 0;
-    return Math.round(Math.min(...precios) * MARKUP_AGENCIA);
+    
+    // Usamos el cálculo con la configuración de Firebase
+    const costoBase = Math.min(...precios);
+    return calcularPrecioVenta(costoBase, configActual);
   };
 
   const cargarPaquetes = async () => {
     setLoading(true);
     try {
+      // 1. CARGAMOS LA CONFIGURACIÓN DE MÁRGENES
+      let configActual = { marca: 0, comision: 15 };
+      try {
+        const configDoc = await getDoc(doc(db, 'configuracion', 'grupales')); 
+        if (configDoc.exists()) {
+          const data = configDoc.data();
+          configActual = {
+            marca: parseFloat(data.marcaGlobal || 0), 
+            comision: parseFloat(data.comisionGlobal || 15) 
+          };
+          setConfigPrecios(configActual);
+        }
+      } catch(e) { console.error("Error cargando config de precios:", e); }
+
+      // 2. CARGAMOS LOS PAQUETES Y APLICAMOS EL CÁLCULO
       const querySnapshot = await getDocs(collection(db, 'enlatados'));
-      const data = querySnapshot.docs.map(doc => {
-        const pkgData = doc.data();
+      const data = querySnapshot.docs.map(docSnap => {
+        const pkgData = docSnap.data();
         return { 
-          id: doc.id, 
+          id: docSnap.id, 
           ...pkgData,
-          precioFinalCalculado: obtenerPrecioFinal(pkgData.tarifario)
+          precioFinalCalculado: obtenerPrecioFinal(pkgData.tarifario, configActual)
         };
       }).filter(p => p.estado !== 'inactivo'); 
       

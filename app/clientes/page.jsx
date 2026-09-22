@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState,useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import HeaderB2C from '@/components/clientes/HeaderB2C';
 import FooterB2C from '@/components/clientes/FooterB2C';
@@ -32,6 +32,7 @@ export default function ClientesPage() {
   const [destinoDraft, setDestinoDraft] = useState('');
   const [filtros, setFiltros] = useState({ destino: '', salida: '', orden: 'reciente' });
   const [selectedPackage, setSelectedPackage] = useState(null);
+
   useEffect(() => {
     document.title = 'Feliz Viaje - Promociones';
   }, []);
@@ -82,24 +83,12 @@ export default function ClientesPage() {
         </div>
 
         <div id="view-search" className="view active">
-          <FilterBar
-            destinoDraft={destinoDraft}
-            onDestinoDraftChange={setDestinoDraft}
-            salida={filtros.salida}
-            onSalidaChange={handleSalidaChange}
-            orden={filtros.orden}
-            onOrdenChange={handleOrdenChange}
-            salidasDisponibles={salidasDisponibles}
-            salidasCargadas={salidasCargadas}
-            onBuscar={handleBuscar}
-            onLimpiar={handleLimpiar}
-          />
-
           {authError && <p style={{ textAlign: 'center' }}>Error al conectar con el servidor.</p>}
           {!authError && dataError && <p style={{ textAlign: 'center' }}>No se pudieron cargar las promociones.</p>}
 
           {!authError && !dataError && (
             <>
+              {/* 1. PRIMERO: OFERTAS DESTACADAS */}
               <FeaturedOffers
                 vidriera={vidriera}
                 allPackages={allPackages}
@@ -107,6 +96,26 @@ export default function ClientesPage() {
                 onSelect={setSelectedPackage}
               />
 
+              {/* 2. SEGUNDO: EL BUSCADOR/FILTROS */}
+              <FilterBar
+                destinoDraft={destinoDraft}
+                onDestinoDraftChange={setDestinoDraft}
+                salida={filtros.salida}
+                onSalidaChange={handleSalidaChange}
+                orden={filtros.orden}
+                onOrdenChange={handleOrdenChange}
+                salidasDisponibles={salidasDisponibles}
+                salidasCargadas={salidasCargadas}
+                onBuscar={handleBuscar}
+                onLimpiar={handleLimpiar}
+              />
+
+              {/* TÍTULO SEPARADOR */}
+              <div style={{ textAlign: 'center', marginBottom: '20px', marginTop: '30px' }}>
+                <h2 style={{ fontSize: '1.8rem', color: '#11173d', margin: 0, fontWeight: 900 }}>Conocé todas nuestras promociones:</h2>
+              </div>
+
+              {/* 3. TERCERO: LA GRILLA GENERAL DE PROMOCIONES */}
               <div id="grilla-paquetes" className="grilla-resultados">
                 {filteredPackages.length === 0 ? (
                   <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#666' }}>
