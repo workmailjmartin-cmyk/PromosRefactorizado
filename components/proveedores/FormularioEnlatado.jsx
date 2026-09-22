@@ -441,7 +441,7 @@ export default function FormularioEnlatado({ onCancel, onSave, onDelete, paquete
                         style={{ width: '18px', height: '18px', accentColor: '#0ea5e9' }}
                       />
                       <label htmlFor={`charter-${v.id}`} style={{ fontWeight: 'bold', color: '#0369a1', cursor: 'pointer', margin: 0 }}>
-                        🛩️ Marcar este vuelo como Charter Exclusivo
+                        ✈️ Marcar este vuelo como Charter Exclusivo
                       </label>
                     </div>
 
