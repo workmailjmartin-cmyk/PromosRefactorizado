@@ -7,7 +7,6 @@ import { useStaffAuth } from '@/hooks/useStaffAuth';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
 import { useAlert } from '@/contexts/AlertContext';
 
-const MARKUP_AGENCIA = 1.20; 
 
 const getServicioIcon = (tipo) => {
   const t = tipo?.toLowerCase() || '';
@@ -38,6 +37,13 @@ export default function DetallePaqueteInterno() {
   const [vistaCliente, setVistaCliente] = useState(false);
   const [tooltipActivo, setTooltipActivo] = useState(null); 
   const [descAbierta, setDescAbierta] = useState(true);
+
+  // ESTADO PARA GUARDAR LA CONFIGURACIÓN EN TIEMPO REAL
+  const [configPrecios, setConfigPrecios] = useState({ marca: 0, comision: 20 });
+
+  // FUNCIONES CALCULADORAS
+  const calcularNetoInterno = (costoRaw) => parseFloat(costoRaw) * (1 + (configPrecios.marca / 100));
+  const calcularPrecioVenta = (costoRaw) => Math.round(calcularNetoInterno(costoRaw) * (1 + (configPrecios.comision / 100)));
 
   const formatearPrecio = (valor) => {
     if (!valor) return '-';
@@ -74,9 +80,10 @@ export default function DetallePaqueteInterno() {
     if (!valor) return '-';
     
     // 3. CÁLCULOS BASE
-    const costo = parseFloat(valor);
-    const venta = Math.round(costo * MARKUP_AGENCIA);
-    const ganancia = venta - costo;
+    const costoRaw = parseFloat(valor);
+    const costoNetoInterno = calcularNetoInterno(costoRaw);
+    const venta = calcularPrecioVenta(costoRaw);
+    const ganancia = venta - costoNetoInterno;
 
     // 4. VARIABLES DE FINANCIACIÓN
     let sena = 0;
@@ -143,7 +150,7 @@ export default function DetallePaqueteInterno() {
                 <div style={{ borderBottom: '1px solid #374151', paddingBottom: '10px', marginBottom: '10px' }}>
                   <div style={{ fontSize: '0.7rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '5px' }}>Uso Interno</div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                    <span style={{color: '#d1d5db'}}>Costo Neto:</span> <b>${formatearPrecio(costo)}</b>
+                    <span style={{color: '#d1d5db'}}>Costo Neto:</span> <b>${formatearPrecio(costoNetoInterno)}</b>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{color: '#4ade80'}}>Ganancia:</span> <b style={{color: '#4ade80'}}>${formatearPrecio(ganancia)}</b>
@@ -194,6 +201,23 @@ export default function DetallePaqueteInterno() {
   const cargarPaquete = async () => {
     if (!params?.id) return;
     try {
+      // 1. Cargar Configuración de Precios en tiempo real
+      try {
+        // ASUMO QUE TUS CONFIGURACIONES ESTÁN EN 'metadata/config'
+        // Si la colección se llama distinto, cambialo acá abajo:
+        const configDoc = await getDoc(doc(db, 'metadata', 'config')); 
+        if (configDoc.exists()) {
+          const data = configDoc.data();
+          setConfigPrecios({
+            // Cambiá "porcentaje_marca" por el nombre exacto de tu campo en Firebase
+            marca: parseFloat(data.porcentaje_marca || 0), 
+            // Cambiá "porcentaje_comision" por el nombre exacto de tu campo en Firebase
+            comision: parseFloat(data.porcentaje_comision || 15) 
+          });
+        }
+      } catch(e) { console.error("Error cargando config de precios:", e); }
+
+      // 2. Cargar el Paquete
       const docRef = doc(db, 'enlatados', params.id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -243,7 +267,7 @@ export default function DetallePaqueteInterno() {
   }).filter(p => p > 0) || [];
   
   const costoRealBase = preciosDobleReales.length > 0 ? Math.min(...preciosDobleReales) : 0;
-  const precioVentaBase = Math.round(costoRealBase * MARKUP_AGENCIA);
+  const precioVentaBase = calcularPrecioVenta(costoRealBase);
   
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
@@ -574,7 +598,7 @@ export default function DetallePaqueteInterno() {
                           </div>
                           {s.tarifa && (
                             <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
-                              + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
+                              + {paquete.moneda || 'USD'} ${formatearPrecio(calcularPrecioVenta(s.tarifa))}
                             </div>
                           )}
                         </div>

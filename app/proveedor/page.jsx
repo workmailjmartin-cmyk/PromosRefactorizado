@@ -6,7 +6,6 @@ import { db } from '@/lib/firebase';
 import { useStaffAuth } from '@/hooks/useStaffAuth';
 import { useAlert } from '@/contexts/AlertContext'; // <-- Importamos TU sistema de alertas
 
-const MARKUP_AGENCIA = 1.20; 
 
 export default function ProveedorDashboard() {
   const [mostrandoFormulario, setMostrandoFormulario] = useState(false);
@@ -100,8 +99,6 @@ export default function ProveedorDashboard() {
 
   const obtenerPrecioDesde = (tarifario) => {
     if (!tarifario || tarifario.length === 0) return 0;
-    
-    // Acá inyectamos la lógica para leer el objeto nuevo (o el string viejo) de la Base Doble
     const precios = tarifario.map(t => {
       if (typeof t.doble === 'object') {
         return parseFloat(t.doble.mayor) || 0;
@@ -110,7 +107,8 @@ export default function ProveedorDashboard() {
     }).filter(p => p > 0);
 
     if (precios.length === 0) return 0;
-    return Math.round(Math.min(...precios) * MARKUP_AGENCIA);
+  
+    return Math.round(Math.min(...precios));
   };
 
   return (

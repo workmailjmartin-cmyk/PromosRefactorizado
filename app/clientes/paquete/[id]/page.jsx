@@ -5,8 +5,6 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Loader from '@/components/shared/Loader'; 
 
-const MARKUP_AGENCIA = 1.20; 
-
 const getServicioIcon = (tipo) => {
   const t = tipo?.toLowerCase() || '';
   if (t.includes('aereo')) return '✈️';
@@ -26,20 +24,38 @@ export default function DetallePaqueteCliente() {
   const [loading, setLoading] = useState(true);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(null);
   
+  // 1. NUEVO: ESTADO PARA GUARDAR LA CONFIGURACIÓN EN TIEMPO REAL
+  const [configPrecios, setConfigPrecios] = useState({ marca: 0, comision: 20 });
+  
   const [lightboxAbierto, setLightboxAbierto] = useState(false);
   const [imagenActivaIndex, setImagenActivaIndex] = useState(0);
   const [descAbierta, setDescAbierta] = useState(true);
 
+  // 2. NUEVAS FUNCIONES DE CÁLCULO
+  const calcularNetoInterno = (costoRaw) => parseFloat(costoRaw) * (1 + (configPrecios.marca / 100));
+  const calcularPrecioVenta = (costoRaw) => Math.round(calcularNetoInterno(costoRaw) * (1 + (configPrecios.comision / 100)));
+
   const cargarPaquete = async () => {
     if (!params?.id) return;
     try {
+      // 3. NUEVO: CARGAR CONFIGURACIÓN ANTES DEL PAQUETE
+      try {
+        const configDoc = await getDoc(doc(db, 'metadata', 'config')); 
+        if (configDoc.exists()) {
+          const data = configDoc.data();
+          setConfigPrecios({
+            marca: parseFloat(data.porcentaje_marca || 0), 
+            comision: parseFloat(data.porcentaje_comision || 15) 
+          });
+        }
+      } catch(e) { console.error("Error cargando config de precios:", e); }
+
       const docRef = doc(db, 'enlatados', params.id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = { id: docSnap.id, ...docSnap.data() };
         setPaquete(data);
         
-        // 👇 ESTA ES LA LÍNEA NUEVA: Cambia el título de la pestaña dinámicamente
         document.title = `Feliz Viaje - ${data.destino}`; 
 
         if (data.tarifario && data.tarifario.length > 0) {
@@ -61,12 +77,13 @@ export default function DetallePaqueteCliente() {
     return Number(valor).toLocaleString('es-AR');
   };
 
-  const aplicarMarkup = (valor) => valor ? Math.round(parseFloat(valor) * MARKUP_AGENCIA) : '-';
+  // 4. NUEVO: ACTUALIZAR EL CÁLCULO DEL "PRECIO DESDE"
   const preciosDoble = paquete.tarifario?.map(t => {
     if (typeof t.doble === 'object') return parseFloat(t.doble.mayor) || 0;
     return parseFloat(t.doble) || 0;
   }).filter(p => p > 0) || [];
-  const precioDesde = preciosDoble.length > 0 ? Math.round(Math.min(...preciosDoble) * MARKUP_AGENCIA) : 0;
+  
+  const precioDesde = preciosDoble.length > 0 ? calcularPrecioVenta(Math.min(...preciosDoble)) : 0;
   
   const fechasUnicasISO = [...new Set(paquete.tarifario?.map(t => t.fecha) || [])].sort();
   const tarifarioFiltrado = paquete.tarifario?.filter(t => t.fecha === fechaSeleccionada) || [];
@@ -101,14 +118,15 @@ export default function DetallePaqueteCliente() {
   const antImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev === 0 ? paquete.imagenes.length - 1 : prev - 1)); };
 
   const numeroAgencia = "5491112345678"; 
-  // Intentamos obtener la URL actual para el link, si no existe (SSR) mandamos una genérica
   const linkPaquete = typeof window !== 'undefined' ? window.location.href : '';
   const mensajeWsp = `Hola! Me interesa consultar por este paquete a ${paquete.destino} que vi en la web:\n${linkPaquete}\n\n¿Me pasan más info?`;
 
   const CeldaCuotas = ({ valorBase }) => {
     if (!valorBase || valorBase === '-') return <span style={{ color: '#9ca3af' }}>-</span>;
     
-    const venta = Math.round(parseFloat(valorBase) * MARKUP_AGENCIA);
+    // 5. NUEVO: APLICAR CÁLCULO A CADA CELDA DE LA TABLA
+    const venta = calcularPrecioVenta(valorBase);
+    
     let sena = 0;
     let cuotasDisponibles = 0;
     let valorCuota = 0;
@@ -182,7 +200,6 @@ export default function DetallePaqueteCliente() {
 
   return (
     <>
-      {/* HEADER EXCLUSIVO DEL PAQUETE CON MEDIA QUERIES INYECTADAS */}
       <style>{`
         .header-paquete-cliente {
           background: #fff;
@@ -398,6 +415,7 @@ export default function DetallePaqueteCliente() {
                               <div style={{ fontSize: '0.9rem', color: '#0369a1', marginTop: '4px' }}>{v.destino}</div>
                             </div>
                           </div>
+                          {v.obs && <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#4b5563', fontStyle: 'italic' }}>* {v.obs}</div>}
                         </div>
                       );
                     })}
@@ -420,7 +438,8 @@ export default function DetallePaqueteCliente() {
                         </div>
                         {s.tarifa && (
                           <div style={{ background: '#fef3c7', color: '#b45309', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #fde68a' }}>
-                            + {paquete.moneda || 'USD'} ${formatearPrecio(Math.round(parseFloat(s.tarifa) * MARKUP_AGENCIA))}
+                            {/* 6. NUEVO: APLICAR CÁLCULO AL PRECIO DE LOS OPCIONALES */}
+                            + {paquete.moneda || 'USD'} ${formatearPrecio(calcularPrecioVenta(s.tarifa))}
                           </div>
                         )}
                       </div>
@@ -529,7 +548,7 @@ export default function DetallePaqueteCliente() {
                     const doble = typeof fila.doble === 'object' ? fila.doble : { mayor: fila.doble };
                     const triple = typeof fila.triple === 'object' ? fila.triple : { mayor: fila.triple };
                     const cuadruple = typeof fila.cuadruple === 'object' ? fila.cuadruple : { mayor: fila.cuadruple };
-                    const single = typeof fila.single === 'object' ? fila.single : { mayor: fila.single };
+                    const single = typeof fila.single === 'object' ? fila.single : { mayor: single.single }; // FIXED SINGLE
 
                     const nombreAlojamiento = fila.hotelNombre || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[0] : 'Hotel');
                     const tipoRegimen = fila.regimen || (fila.hotelRegimen ? fila.hotelRegimen.split(' - ')[1] : '');
