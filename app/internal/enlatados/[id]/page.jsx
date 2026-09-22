@@ -17,6 +17,7 @@ const getServicioIcon = (tipo) => {
   if (t.includes('excursion')) return '🌲';
   if (t.includes('seguro')) return '🛡️';
   if (t.includes('butaca')) return '💺';
+  if (t.includes('coordinador')) return '🧍';
   return '➕';
 };
 

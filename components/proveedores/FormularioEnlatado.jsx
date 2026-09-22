@@ -8,7 +8,8 @@ const TIPOS_SERVICIO_BASE = [
   { value: 'traslado', label: '🚕 Traslado' },
   { value: 'excursion', label: '🌲 Excursión' },
   { value: 'seguro', label: '🛡️ Asistencia / Seguro' },
-  { value: 'butaca', label: '💺 Adicional Butaca' }
+  { value: 'butaca', label: '💺 Adicional Butaca' },
+  { value: 'coordinador', label: '🧍 Coordinador Permanente' } // <-- NUEVO SERVICIO AGREGADO
 ];
 
 const OPCIONES_REGIMEN = [
@@ -54,7 +55,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   
   const [itinerario, setItinerario] = useState([]);
   const [tempDia, setTempDia] = useState({ titulo: '', descripcion: '' });
-  // --- NUEVO: Estado para saber si estamos editando un día del itinerario ---
   const [editandoItinerarioId, setEditandoItinerarioId] = useState(null);
 
   const [servicios, setServicios] = useState([]);
@@ -105,7 +105,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     else setInfoGeneral(prev => ({ ...prev, [name]: value }));
   };
 
-  // VUELOS
   const agregarVuelo = () => {
     const origenInicial = vuelos.length === 0 ? infoGeneral.origenAeropuerto : '';
     setVuelos([...vuelos, { id: Date.now(), aerolinea: '', origen: origenInicial, fechaSalida: '', horaSalida: '', destino: '', fechaLlegada: '', horaLlegada: '', equipaje: '', obs: '' }]);
@@ -113,7 +112,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const actualizarVuelo = (id, campo, valor) => setVuelos(vuelos.map(v => v.id === id ? { ...v, [campo]: valor } : v));
   const eliminarVuelo = (id) => setVuelos(vuelos.filter(v => v.id !== id));
   
-  // PARADAS
   const agregarParada = () => { if (tempParada && !paradas.includes(tempParada)) { setParadas([...paradas, tempParada]); setTempParada(''); } };
   
   const formatNumber = (num) => {
@@ -134,7 +132,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
 
   const agregarSalida = () => {
     if (tempSalida.fecha && tempSalida.hotelNombre && tempSalida.hotelRegimen && tempSalida.doble.mayor !== '') {
-      
       if (fechaReferenciaVuelo && tempSalida.fecha !== fechaReferenciaVuelo) {
         return alert(`La fecha de salida de la tarifa debe ser exactamente la misma que la del primer vuelo (${fechaReferenciaVuelo.split('-').reverse().join('/')}).`);
       }
@@ -171,6 +168,7 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   };
 
   const editarSalida = (id) => {
+    // 1. EL CARTEL CONFIRMA LA ACCIÓN
     if (!window.confirm('¿Querés editar esta fila de tarifa?')) return;
 
     let salidasActuales = [...salidas];
@@ -212,6 +210,11 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
       const nuevasSalidas = salidasActuales.filter(s => s.id !== id);
       nuevasSalidas.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
       setSalidas(nuevasSalidas);
+
+      // 2. SCROLL SUAVE AUTOMÁTICO A LOS CAMPOS DE TARIFA
+      setTimeout(() => {
+        document.getElementById('seccion-tarifario-inputs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     }
   };
 
@@ -221,27 +224,31 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
     }
   };
 
-  // --- MODIFICADO: Lógica de Itinerario con Edición ---
   const agregarDiaItinerario = () => { 
     if (tempDia.titulo) { 
       if (editandoItinerarioId) {
-        // Modo Edición: Actualizamos el día existente
         setItinerario(itinerario.map(d => d.id === editandoItinerarioId ? { ...d, titulo: tempDia.titulo, descripcion: tempDia.descripcion } : d));
         setEditandoItinerarioId(null);
       } else {
-        // Modo Creación: Agregamos uno nuevo
         setItinerario([...itinerario, { id: Date.now(), dia: itinerario.length + 1, ...tempDia }]); 
       }
       setTempDia({ titulo: '', descripcion: '' }); 
     } 
   };
   
-  // NUEVA FUNCION: Para subir el día al form
   const editarDiaItinerario = (id) => {
+    // 1. EL CARTEL CONFIRMA LA ACCIÓN EN ITINERARIO
+    if (!window.confirm('¿Querés editar este día del itinerario?')) return;
+
     const diaAEditar = itinerario.find(d => d.id === id);
     if (diaAEditar) {
       setTempDia({ titulo: diaAEditar.titulo, descripcion: diaAEditar.descripcion });
       setEditandoItinerarioId(id);
+
+      // 2. SCROLL SUAVE AUTOMÁTICO A LOS CAMPOS DE ITINERARIO
+      setTimeout(() => {
+        document.getElementById('seccion-itinerario-inputs')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     }
   };
 
@@ -264,7 +271,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // --- MODIFICADO: Días ya no es obligatorio en la validación ---
     if (!infoGeneral.destino || !infoGeneral.noches || !infoGeneral.origenProvincia || !infoGeneral.origenAeropuerto || !infoGeneral.financiacion) {
       return alert("Por favor, completá todos los campos obligatorios de la Sección 1 (Información del Viaje).");
     }
@@ -315,7 +321,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
         </div>
         
         <div className="form-group-row" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-          {/* --- MODIFICADO: Días ya no es required --- */}
           <div className="form-group" style={{ flex: '1 1 80px' }}>
             <label>Días</label>
             <input type="number" name="dias" value={infoGeneral.dias} onChange={handleInfoChange} placeholder="Opcional" />
@@ -413,8 +418,8 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 2 */}
-        <h3 className="section-title" style={{ marginTop: '30px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
+        {/* SECCIÓN 2 (AGREGADO EL ID 'seccion-tarifario-inputs' PARA EL SCROLL) */}
+        <h3 id="seccion-tarifario-inputs" className="section-title" style={{ marginTop: '30px', borderBottom: '2px solid #f3f4f6', paddingBottom: '10px' }}>2. Tarifario Neto ({infoGeneral.moneda})</h3>
         <div style={{ background: '#fff', padding: '25px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 2px 10px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
@@ -542,8 +547,8 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
           </div>
         )}
 
-        {/* SECCIÓN 3: ITINERARIO CON EDICIÓN */}
-        <h3 className="section-title" style={{ marginTop: '30px' }}>3. Itinerario Resumido</h3>
+        {/* SECCIÓN 3: (AGREGADO EL ID 'seccion-itinerario-inputs' PARA EL SCROLL) */}
+        <h3 id="seccion-itinerario-inputs" className="section-title" style={{ marginTop: '30px' }}>3. Itinerario Resumido</h3>
         <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-start', background: editandoItinerarioId ? '#f0fdf4' : '#f9fafb', padding: '15px', borderRadius: '8px', border: editandoItinerarioId ? '1px solid #86efac' : '1px solid #eee', transition: 'all 0.3s' }}>
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '0.9rem', color: editandoItinerarioId ? '#166534' : 'inherit' }}>
@@ -575,7 +580,6 @@ export default function FormularioEnlatado({ onCancel, onSave, paqueteAEditar = 
               <div key={d.id} style={{ marginBottom: '15px', borderBottom: '1px dashed #f3f4f6', paddingBottom: '10px' }}>
                 <b style={{ color: '#11173d' }}>Día {d.dia}: {d.titulo}</b> 
                 
-                {/* --- NUEVO: Botón Editar --- */}
                 <button type="button" onClick={() => editarDiaItinerario(d.id)} style={{ color: '#0ea5e9', fontSize: '0.85rem', marginLeft: '15px', border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Editar</button>
                 <button type="button" onClick={() => setItinerario(itinerario.filter(x => x.id !== d.id))} style={{ color: 'red', fontSize: '0.85rem', marginLeft: '10px', border: 'none', background: 'none', cursor: 'pointer' }}>Borrar</button>
                 
