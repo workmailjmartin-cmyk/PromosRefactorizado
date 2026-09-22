@@ -230,7 +230,7 @@ export default function InternalEnlatadosDashboard() {
                 <option value="">Todos</option>
                 <option value="bus">Paquete Bus</option>
                 <option value="aereo">Paquete Aéreo</option>
-                <option value="charter">🛩️ Grupal Acompañado</option>
+                <option value="charter">✈️ Grupal Acompañado</option>
               </select>
             </div>
 
@@ -284,6 +284,14 @@ export default function InternalEnlatadosDashboard() {
                     <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.9)', padding: '4px 10px', borderRadius: '20px', fontSize: '0.8em', fontWeight: 'bold', color: '#11173d' }}>
                       🌙 {pkg.noches} Noches
                     </div>
+
+                    {/* --- 2. ETIQUETA CHARTER FLOTANTE SOBRE LA IMAGEN --- */}
+                    {tieneCharter && (
+                      <div style={{ position: 'absolute', bottom: '10px', left: '10px', background: '#ef5a1a', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '900', color: '#fff', display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 4px 6px rgba(0,0,0,0.2)', textTransform: 'uppercase' }}>
+                        🛩️ Vuelo Charter
+                      </div>
+                    )}
+                    
                   </div>
 
                   <div style={{ padding: '20px 20px 12px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>

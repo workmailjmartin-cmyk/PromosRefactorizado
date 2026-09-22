@@ -16,7 +16,7 @@ export default function PackageCard({ pkg, onSelect }) {
   const tieneAereo = Array.isArray(servicios) && servicios.some((s) => s.tipo === 'aereo');
   const esCircuito = Array.isArray(servicios) && servicios.some((s) => s.tipo === 'circuito');
   const fechaMostrar = !pkg.fecha_salida && esCircuito && !tieneAereo ? 'Múltiples Salidas' : formatDateAR(pkg.fecha_salida);
-
+  const tieneCharter = pkg.vuelos && pkg.vuelos.some(v => v.esCharter);
   let lugarSalida = pkg.salida;
   if (!tieneAereo) {
     const crucero = Array.isArray(servicios) && servicios.find((s) => s.tipo === 'crucero');
@@ -55,7 +55,15 @@ export default function PackageCard({ pkg, onSelect }) {
         </div>
 
         <div className="card-body">
-          <div style={{ fontSize: '0.85em', color: '#555', display: 'flex', flexWrap: 'wrap', lineHeight: 1.4 }}>{summaryIcons}</div>
+          {/* --- ACÁ AGREGAMOS EL GAP, ALIGN-ITEMS Y LA ETIQUETA CHARTER --- */}
+          <div style={{ fontSize: '0.85em', color: '#555', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', lineHeight: 1.4 }}>
+            <span>{summaryIcons}</span>
+            {tieneCharter && (
+              <span style={{ background: '#ef5a1a', color: '#fff', padding: '3px 8px', borderRadius: '10px', fontWeight: 'bold', fontSize: '0.9em', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.3)' }}>
+                🛩️ Charter
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>

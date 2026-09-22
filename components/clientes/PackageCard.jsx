@@ -10,7 +10,7 @@ export default function PackageCard({ pkg, onSelect, textoListon }) {
   const tieneAereo = Array.isArray(servicios) && servicios.some((s) => s.tipo === 'aereo');
   const esCircuito = Array.isArray(servicios) && servicios.some((s) => s.tipo === 'circuito');
   const fechaMostrar = !pkg.fecha_salida && esCircuito && !tieneAereo ? 'Múltiples Salidas' : formatDateAR(pkg.fecha_salida);
-
+  const tieneCharter = pkg.vuelos && pkg.vuelos.some(v => v.esCharter);
   const noches = getNoches(pkg);
   let lugarSalida = pkg.salida;
   if (!tieneAereo) {
@@ -60,11 +60,20 @@ export default function PackageCard({ pkg, onSelect, textoListon }) {
         <div className="card-body">
           <div style={{ fontSize: '0.85em', color: '#555', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px', lineHeight: 1.4 }}>
             <span>{summaryIcons}</span>
+            
             {noches > 0 && (
               <span style={{ background: '#eef2f5', color: '#11173d', padding: '4px 8px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.85em', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                 🌙 {noches}
               </span>
             )}
+
+            {/* --- NUEVA ETIQUETA CHARTER AL LADO DE LAS NOCHES --- */}
+            {tieneCharter && (
+              <span style={{ background: '#ef5a1a', color: '#fff', padding: '4px 8px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.85em', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.3)' }}>
+                🛩️ Charter
+              </span>
+            )}
+            
           </div>
         </div>
 

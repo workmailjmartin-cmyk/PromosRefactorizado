@@ -414,11 +414,18 @@ export default function FormularioEnlatado({ onCancel, onSave, onDelete, paquete
                   <div key={v.id} style={{ background: '#fff', padding: '15px', borderRadius: '8px', border: '1px solid #e0f2fe', position: 'relative' }}>
                     <button type="button" onClick={() => eliminarVuelo(v.id)} style={{ position: 'absolute', right: '10px', top: '10px', background: 'none', border: 'none', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer' }}>✕</button>
                     <b style={{ display: 'block', marginBottom: '10px', color: '#0369a1' }}>Tramo {idx + 1}</b>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px' }}>
-                      <div className="form-group" style={{ margin: 0 }}><label>Aerolínea *</label><input type="text" required value={v.aerolinea} onChange={e => actualizarVuelo(v.id, 'aerolinea', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Aeropuerto Salida *</label><input type="text" required value={v.origen} onChange={e => actualizarVuelo(v.id, 'origen', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Fecha Salida</label><input type="date" min={idx > 0 && fechaReferenciaVuelo ? fechaReferenciaVuelo : undefined} value={v.fechaSalida} onChange={e => actualizarVuelo(v.id, 'fechaSalida', e.target.value)} /></div>
-                      <div className="form-group" style={{ margin: 0 }}><label>Hora Salida</label><input type="time" value={v.horaSalida} onChange={e => actualizarVuelo(v.id, 'horaSalida', e.target.value)} /></div>
+                    {/* --- NUEVO: CHECKBOX CHARTER --- */}
+                    <div style={{ marginBottom: '15px', padding: '10px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #bae6fd', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <input 
+                        type="checkbox" 
+                        id={`charter-${v.id}`}
+                        checked={v.esCharter || false} 
+                        onChange={e => actualizarVuelo(v.id, 'esCharter', e.target.checked)} 
+                        style={{ width: '18px', height: '18px', accentColor: '#0ea5e9' }}
+                      />
+                      <label htmlFor={`charter-${v.id}`} style={{ fontWeight: 'bold', color: '#0369a1', cursor: 'pointer', margin: 0 }}>
+                        🛩️ Marcar este vuelo como Charter Exclusivo
+                      </label>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '15px', marginBottom: '10px', borderTop: '1px dashed #bae6fd', paddingTop: '15px' }}>
                       <div className="form-group" style={{ margin: 0 }}><label>Equipaje Incluido *</label><select required value={v.equipaje} onChange={e => actualizarVuelo(v.id, 'equipaje', e.target.value)}><option value="" disabled>Seleccionar...</option>{OPCIONES_EQUIPAJE.map(o => { if(o.value) return <option key={o.value} value={o.value}>{o.label}</option> })}</select></div>

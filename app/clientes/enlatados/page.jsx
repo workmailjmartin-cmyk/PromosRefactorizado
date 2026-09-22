@@ -29,7 +29,7 @@ export default function ListadoEnlatadosCliente() {
   const [filtroSalida, setFiltroSalida] = useState('');
   const [filtroOrden, setFiltroOrden] = useState('recientes');
   const [opcionesSalidas, setOpcionesSalidas] = useState([]);
-
+  
   // NUEVO: Funciones de cálculo dinámico
   const calcularNetoInterno = (costoRaw, config) => {
     const costo = parseFloat(costoRaw) || 0;
