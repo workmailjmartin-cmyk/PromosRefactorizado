@@ -432,32 +432,37 @@ export default function DetallePaqueteInterno() {
         }
       `}</style>
 
-      <header className="header-paquete-interno" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 40px', borderBottom: '1px solid #eee', background: '#fff', minHeight: '80px' }}>
+      <header className="header-paquete-interno" style={{ background: '#fff', borderBottom: '1px solid #eee', width: '100%', display: 'flex', justifyContent: 'center' }}>
         
-        {/* LADO IZQUIERDO: Logo igual al de la vista general */}
-        <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-          <a href="/" title="Volver al Panel de Paquetes">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img 
-              src="/logo.png" 
-              alt="Feliz Viaje" 
-              style={{ maxHeight: '55px', width: 'auto', cursor: 'pointer', objectFit: 'contain' }} 
-            />
-          </a>
-        </div>
+        {/* CONTENEDOR CENTRAL: Mantiene el logo y el título alineados con la tarjeta de abajo */}
+        <div style={{ width: '100%', maxWidth: '1300px', padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '90px' }}>
+          
+          {/* LADO IZQUIERDO: Logo grande y posicionado correctamente */}
+          <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-start' }}>
+            <a href="/" title="Volver al Panel de Paquetes">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img 
+                src="/logo.png" 
+                alt="Feliz Viaje" 
+                style={{ height: '80px', width: 'auto', cursor: 'pointer', objectFit: 'contain' }} 
+              />
+            </a>
+          </div>
 
-        {/* CENTRO: Título del Paquete */}
-        <div style={{ flex: '2', textAlign: 'center' }}>
-          <h1 className="titulo-paquete-interno" style={{ margin: 0, fontSize: '1.5rem', color: '#ef5a1a', textTransform: 'uppercase', fontWeight: '900' }}>
-            {paquete.destino}
-          </h1>
-        </div>
+          {/* CENTRO: Título del Paquete */}
+          <div style={{ flex: '2', textAlign: 'center' }}>
+            <h1 className="titulo-paquete-interno" style={{ margin: 0, fontSize: '1.6rem', color: '#ef5a1a', textTransform: 'uppercase', fontWeight: '900' }}>
+              {paquete.destino}
+            </h1>
+          </div>
 
-        {/* LADO DERECHO: Etiqueta Panel Interno */}
-        <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-          <span className="etiqueta-panel" style={{ background: '#e0f2fe', color: '#0369a1', padding: '8px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #bae6fd' }}>
-            🔒 Panel Interno
-          </span>
+          {/* LADO DERECHO: Etiqueta Panel Interno */}
+          <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end' }}>
+            <span className="etiqueta-panel" style={{ background: '#e0f2fe', color: '#0369a1', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #bae6fd' }}>
+              🔒 Panel Interno
+            </span>
+          </div>
+          
         </div>
       </header>
       <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
