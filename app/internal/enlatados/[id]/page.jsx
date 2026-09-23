@@ -432,30 +432,29 @@ export default function DetallePaqueteInterno() {
         }
       `}</style>
 
-      <header className="header-paquete-interno" style={{ display: 'flex', alignItems: 'center', padding: '15px 30px', borderBottom: '1px solid #eee', background: '#fff' }}>
+      <header className="header-paquete-interno" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 40px', borderBottom: '1px solid #eee', background: '#fff', minHeight: '80px' }}>
         
-        {/* LADO IZQUIERDO: Logo más grande que vuelve a la lista interna */}
-        <div style={{ flex: '1 1 20%', display: 'flex', alignItems: 'center' }}>
-          {/* Cambiamos el link de "/" a "/internal/enlatados" */}
+        {/* LADO IZQUIERDO: Logo igual al de la vista general */}
+        <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
           <a href="/" title="Volver al Panel de Paquetes">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img 
               src="/logo.png" 
               alt="Feliz Viaje" 
-              style={{ height: '80px', width: 'auto', cursor: 'pointer', objectFit: 'contain' }} 
+              style={{ maxHeight: '55px', width: 'auto', cursor: 'pointer', objectFit: 'contain' }} 
             />
           </a>
         </div>
 
         {/* CENTRO: Título del Paquete */}
-        <div style={{ flex: '1 1 60%', textAlign: 'center' }}>
-          <h1 className="titulo-paquete-interno" style={{ margin: 0, fontSize: '1.8rem', color: '#ef5a1a', textTransform: 'uppercase', fontWeight: '900' }}>
+        <div style={{ flex: '2', textAlign: 'center' }}>
+          <h1 className="titulo-paquete-interno" style={{ margin: 0, fontSize: '1.5rem', color: '#ef5a1a', textTransform: 'uppercase', fontWeight: '900' }}>
             {paquete.destino}
           </h1>
         </div>
 
         {/* LADO DERECHO: Etiqueta Panel Interno */}
-        <div style={{ flex: '1 1 20%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
           <span className="etiqueta-panel" style={{ background: '#e0f2fe', color: '#0369a1', padding: '8px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #bae6fd' }}>
             🔒 Panel Interno
           </span>
