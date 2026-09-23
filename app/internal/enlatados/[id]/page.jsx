@@ -432,20 +432,31 @@ export default function DetallePaqueteInterno() {
         }
       `}</style>
 
-      <header className="header-paquete-interno">
-        <div className="logo">
-          <a href="/">
+      <header className="header-paquete-interno" style={{ display: 'flex', alignItems: 'center', padding: '15px 30px', borderBottom: '1px solid #eee', background: '#fff' }}>
+        
+        {/* LADO IZQUIERDO: Logo más grande que vuelve a la lista interna */}
+        <div style={{ flex: '1 1 20%', display: 'flex', alignItems: 'center' }}>
+          {/* Cambiamos el link de "/" a "/internal/enlatados" */}
+          <a href="/" title="Volver al Panel de Paquetes">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '60px', width: 'auto', cursor: 'pointer' }} />
+            <img 
+              src="/logo.png" 
+              alt="Feliz Viaje" 
+              style={{ height: '80px', width: 'auto', cursor: 'pointer', objectFit: 'contain' }} 
+            />
           </a>
         </div>
 
-        <h1 className="titulo-paquete-interno">
-          {paquete.destino}
-        </h1>
+        {/* CENTRO: Título del Paquete */}
+        <div style={{ flex: '1 1 60%', textAlign: 'center' }}>
+          <h1 className="titulo-paquete-interno" style={{ margin: 0, fontSize: '1.8rem', color: '#ef5a1a', textTransform: 'uppercase', fontWeight: '900' }}>
+            {paquete.destino}
+          </h1>
+        </div>
 
-        <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'flex-end' }}>
-          <span className="etiqueta-panel">
+        {/* LADO DERECHO: Etiqueta Panel Interno */}
+        <div style={{ flex: '1 1 20%', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+          <span className="etiqueta-panel" style={{ background: '#e0f2fe', color: '#0369a1', padding: '8px 15px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #bae6fd' }}>
             🔒 Panel Interno
           </span>
         </div>
