@@ -433,8 +433,8 @@ export default function DetallePaqueteInterno() {
       `}</style>
 
       <header className="header-paquete-interno">
-        <div style={{ flex: '1 1 auto' }}>
-          <a href="/internal/enlatados">
+        <div className="logo">
+          <a href="/">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '60px', width: 'auto', cursor: 'pointer' }} />
           </a>
