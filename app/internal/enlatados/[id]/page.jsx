@@ -118,24 +118,36 @@ export default function DetallePaqueteInterno() {
       const diffTime = fechaSalida.getTime() - hoy.getTime();
       const diasFaltantesParaViaje = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-      if (diasFaltantesParaViaje <= 30) {
-        exigeContado = true;
-      } else {
-        const tipoFinanciacion = paquete?.financiacion || 'sena_30';
-        if (tipoFinanciacion === 'sena_30') sena = Math.round(venta * 0.30);
-        else if (tipoFinanciacion === 'financiado_100') sena = 0;
-        
-        const saldoAFinanciar = venta - sena;
-        fechaLimitePago = fechaTope.toLocaleDateString('es-AR');
-        
-        const diffTimeHastaTope = fechaTope.getTime() - hoy.getTime();
-        const diasHastaTope = Math.ceil(diffTimeHastaTope / (1000 * 60 * 60 * 24));
-        
-        if (diasHastaTope >= 30) {
-          cuotasDisponibles = Math.floor(diasHastaTope / 30);
-          valorCuota = Math.round(saldoAFinanciar / cuotasDisponibles);
+      // Buscá este bloque y reemplazalo:
+        if (diasFaltantesParaViaje <= 30) {
+          exigeContado = true;
+        } else {
+          const tipoFinanciacion = paquete?.financiacion || 'sena_30';
+          
+          // Calculamos la seña inicial "teórica"
+          let senaTeorica = 0;
+          if (tipoFinanciacion === 'sena_30') senaTeorica = Math.round(venta * 0.30);
+          else if (tipoFinanciacion === 'financiado_100') senaTeorica = 0;
+          
+          const saldoAFinanciarTeorico = venta - senaTeorica;
+          const diffTimeHastaTope = fechaTope.getTime() - hoy.getTime();
+          const diasHastaTope = Math.ceil(diffTimeHastaTope / (1000 * 60 * 60 * 24));
+          
+          if (diasHastaTope >= 30) {
+            cuotasDisponibles = Math.floor(diasHastaTope / 30);
+            
+            // Calculamos el valor de la cuota y lo redondeamos hacia abajo
+            valorCuota = Math.floor(saldoAFinanciarTeorico / cuotasDisponibles);
+            
+            // Calculamos cuánto suman realmente todas las cuotas
+            const totalFinanciadoReal = valorCuota * cuotasDisponibles;
+            
+            // La seña absorbe los dólares sobrantes (ej: los $3) para llegar al precio final exacto
+            sena = venta - totalFinanciadoReal;
+          } else {
+              sena = senaTeorica;
+          }
         }
-      }
     }
 
     return (
