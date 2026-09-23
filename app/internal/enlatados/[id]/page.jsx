@@ -432,37 +432,22 @@ export default function DetallePaqueteInterno() {
         }
       `}</style>
 
-      <header className="header-paquete-interno" style={{ background: '#fff', borderBottom: '1px solid #eee', width: '100%', display: 'flex', justifyContent: 'center' }}>
-        
-        {/* CONTENEDOR CENTRAL: Mantiene el logo y el título alineados con la tarjeta de abajo */}
-        <div style={{ width: '100%', maxWidth: '1300px', padding: '15px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: '90px' }}>
-          
-          {/* LADO IZQUIERDO: Logo grande y posicionado correctamente */}
-          <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-start' }}>
-            <a href="/" title="Volver al Panel de Paquetes">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img 
-                src="/logo.png" 
-                alt="Feliz Viaje" 
-                style={{ height: '80px', width: 'auto', cursor: 'pointer', objectFit: 'contain' }} 
-              />
-            </a>
-          </div>
+      <header className="header-paquete-interno">
+        <div style={{ flex: '1 1 auto' }}>
+          <a href="/">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Feliz Viaje" style={{ maxHeight: '60px', width: 'auto', cursor: 'pointer' }} />
+          </a>
+        </div>
 
-          {/* CENTRO: Título del Paquete */}
-          <div style={{ flex: '2', textAlign: 'center' }}>
-            <h1 className="titulo-paquete-interno" style={{ margin: 0, fontSize: '1.6rem', color: '#ef5a1a', textTransform: 'uppercase', fontWeight: '900' }}>
-              {paquete.destino}
-            </h1>
-          </div>
+        <h1 className="titulo-paquete-interno">
+          {paquete.destino}
+        </h1>
 
-          {/* LADO DERECHO: Etiqueta Panel Interno */}
-          <div style={{ flex: '1', display: 'flex', justifyContent: 'flex-end' }}>
-            <span className="etiqueta-panel" style={{ background: '#e0f2fe', color: '#0369a1', padding: '8px 20px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem', border: '1px solid #bae6fd' }}>
-              🔒 Panel Interno
-            </span>
-          </div>
-          
+        <div style={{ flex: '1 1 auto', display: 'flex', justifyContent: 'flex-end' }}>
+          <span className="etiqueta-panel">
+            🔒 Panel Interno
+          </span>
         </div>
       </header>
       <div className="contenedor-gris" style={{ background: '#f3f4f6', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>

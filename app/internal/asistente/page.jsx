@@ -82,31 +82,48 @@ export default function AsistenteIA() {
 
   const crearNuevoChat = async () => {
     if (chats.length >= MAX_CHATS) {
-      if(showAlert) showAlert(`Límite alcanzado: Máximo ${MAX_CHATS} cotizaciones.`, 'error');
-      return;
+      if(showAlert) showAlert(`Límite alcanzado: Máximo ${MAX_CHATS} cotizaciones. Eliminá una para continuar.`, 'error');
+      return null;
     }
-    const { data } = await supabase
-      .from('chats')
-      .insert([{ user_id: currentUser.uid, title: 'Nueva Cotización' }])
-      .select();
 
-    if (data) {
-      setChats([data[0], ...chats]);
-      setChatActivoId(data[0].id);
-      setMensajes([]);
-      setSidebarAbierta(false);
+    try {
+      const { data, error } = await supabase
+        .from('chats')
+        .insert([{ user_id: currentUser.uid, title: 'Nueva Cotización' }])
+        .select();
+
+      if (error) {
+        console.error("Error creando chat:", error);
+        return null;
+      }
+
+      if (data && data.length > 0) {
+        const nuevo = data[0];
+        setChats(prev => [nuevo, ...prev]);
+        setChatActivoId(nuevo.id);
+        setMensajes([]);
+        setSidebarAbierta(false);
+        return nuevo.id; // 👈 Retorna el ID para usarlo de inmediato
+      }
+    } catch (err) {
+      console.error(err);
+      return null;
     }
+    return null;
   };
 
   const archivarChat = async (e, id) => {
     e.stopPropagation();
-    if (!confirm('¿Eliminar esta cotización?')) return;
+    if (!confirm('¿Eliminar definitivamente esta cotización?')) return;
     
-    await supabase.from('chats').update({ status: 'archived' }).eq('id', id);
+    // BORRADO REAL: Al borrar el chat, Supabase borra todos sus mensajes automáticamente por el CASCADE
+    const { error } = await supabase.from('chats').delete().eq('id', id);
     
-    const restantes = chats.filter(c => c.id !== id);
-    setChats(restantes);
-    if (chatActivoId === id) setChatActivoId(restantes.length > 0 ? restantes[0].id : null);
+    if (!error) {
+      const restantes = chats.filter(c => c.id !== id);
+      setChats(restantes);
+      if (chatActivoId === id) setChatActivoId(restantes.length > 0 ? restantes[0].id : null);
+    }
   };
 
   const handleImagenUpload = (e) => {
@@ -120,19 +137,18 @@ export default function AsistenteIA() {
   };
 
   const enviarMensaje = async () => {
-    // 1. SEGURO ANTI-NULOS: Verificamos que haya texto y un chat activo
     if (!inputTexto.trim() && !imagenAdjunta) return;
-    
-    if (!chatActivoId) {
-      if(showAlert) showAlert('No hay un chat activo. Por favor, hacé clic en "Nueva Cotización".', 'error');
-      // Intentamos forzar la creación de uno si no había
-      crearNuevoChat();
-      return; 
+
+    // 🔥 SI NO HAY CHAT SELECCIONADO, LO CREA AUTOMÁTICAMENTE ACÁ
+    let idChat = chatActivoId;
+    if (!idChat) {
+      idChat = await crearNuevoChat();
+      if (!idChat) return; // Si llegó al límite de 5 chats, frena acá
     }
 
     if (mensajes.length >= MAX_TURNOS) {
-       if(showAlert) showAlert('Contexto máximo alcanzado. Iniciá una nueva cotización.', 'error');
-       return;
+      if(showAlert) showAlert('Contexto máximo alcanzado. Iniciá una nueva cotización.', 'error');
+      return;
     }
 
     setIsLoading(true);
@@ -149,30 +165,41 @@ export default function AsistenteIA() {
       }
     }
 
+    const textoAEnviar = inputTexto;
     const msjUsuario = {
-      chat_id: chatActivoId,
+      chat_id: idChat, // 👈 Usamos el ID nuevo o existente
       role: 'user',
-      content: inputTexto,
+      content: textoAEnviar,
       image_url: urlImagenSubida
     };
 
-    const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
-    
-    if (dbMsgUser) setMensajes(prev => [...prev, dbMsgUser[0]]);
-    
+    // Limpiamos los inputs de inmediato para una experiencia ágil
     setInputTexto('');
     setImagenAdjunta(null);
     setImagenPrevia(null);
 
+    // Guardamos en Supabase el mensaje del usuario
+    const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
+    if (dbMsgUser) setMensajes(prev => [...prev, dbMsgUser[0]]);
+
+    // Si es el primer mensaje, le ponemos título al chat con las primeras palabras
+    if (mensajes.length === 0) {
+      const tituloGenerado = textoAEnviar.slice(0, 28) + (textoAEnviar.length > 28 ? '...' : '');
+      await supabase.from('chats').update({ title: tituloGenerado }).eq('id', idChat);
+      setChats(prev => prev.map(c => c.id === idChat ? { ...c, title: tituloGenerado } : c));
+    }
+
+    // Disparamos n8n
     try {
       const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia'; 
       fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          chat_id: msjUsuario.chat_id, 
+          chat_id: idChat, 
           text: msjUsuario.content,
-          user_id: currentUser.uid // 👈 ACÁ MANDAMOS TU USUARIO DE FIREBASE COMO PEDISTE
+          user_id: currentUser.uid,
+          image_url: urlImagenSubida
         })
       });
     } catch (error) {
