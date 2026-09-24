@@ -303,6 +303,57 @@ export default function InternalPanel() {
             transform: scale(0.9) !important;
             transform-origin: bottom right;
           }
+
+          /* ================= MODAL DEL PAQUETE EN MOBILE ================= */
+          @media (max-width: 768px) {
+            /* Obliga al contenedor interno del modal a apilarse en 1 sola columna */
+            [class*="modal"] [class*="grid"], 
+            [class*="modal"] [class*="flex"]:not([class*="header"]):not([class*="actions"]),
+            .modal-body, 
+            [class*="detail"] > div {
+              display: flex !important;
+              flex-direction: column !important;
+              width: 100% !important;
+              gap: 16px !important;
+            }
+
+            /* La columna de la izquierda (Itinerario / Lo que incluye) ocupa el 100% arriba */
+            [class*="itinerario"], [class*="servicios"], [class*="left-col"] {
+              width: 100% !important;
+              border-right: none !important;
+              border-bottom: 1px solid #e5e7eb !important;
+              padding-bottom: 16px !important;
+            }
+
+            /* La columna de la derecha (Resumen y Costos) ocupa el 100% abajo */
+            [class*="resumen"], [class*="costos"], [class*="right-col"] {
+              width: 100% !important;
+              padding-top: 8px !important;
+            }
+          }
+          
+          /* Carrusel táctil con efecto imán (Snap) */
+          .tareas-semana-scroll {
+            display: flex !important;
+            overflow-x: auto !important;
+            scroll-snap-type: x mandatory !important;
+            -webkit-overflow-scrolling: touch !important;
+            gap: 12px !important;
+            padding: 8px 12px 16px 12px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+          }
+
+          .tareas-semana-scroll > div {
+            scroll-snap-align: center !important;
+            flex: 0 0 150px !important; /* Ancho fijo ideal por día en el celu */
+          }
+
+          /* Ocultar barra de scroll antiestética */
+          .tareas-semana-scroll::-webkit-scrollbar {
+            display: none;
+          }
+
         }
       `}} />
     </div>

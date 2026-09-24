@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { PROVINCIAS } from '@/lib/internal/constants';
 import WeeklyPlanner from './WeeklyPlanner';
 import PackageCard from './PackageCard';
@@ -25,6 +25,26 @@ export default function SearchView({
   onStartEditing,
   onActionBusy,
 }) {
+  useEffect(() => {
+    // Le damos 350ms a React para que termine de dibujar las tarjetas
+    const timer = setTimeout(() => {
+      // Busca la tarjeta por clase naranja O por estilo de borde naranja
+      const diaHoyElemento = document.querySelector(
+        '[class*="orange"], [class*="today"], [style*="#ef5a1a"], [style*="orange"], [style*="border: 2px solid"]'
+      );
+
+      if (diaHoyElemento) {
+        diaHoyElemento.scrollIntoView({
+          behavior: 'smooth',
+          inline: 'center', // Lo centra perfecto en la pantalla del celular
+          block: 'nearest'
+        });
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   const [destinoDraft, setDestinoDraft] = useState('');
   const [promoDraft, setPromoDraft] = useState('');
   const [filtros, setFiltros] = useState({ destino: '', creador: '', promo: '', salida: '', orden: 'reciente' });
