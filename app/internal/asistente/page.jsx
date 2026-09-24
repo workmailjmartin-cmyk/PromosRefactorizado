@@ -7,28 +7,43 @@ import remarkGfm from 'remark-gfm';
 import { supabase } from '@/lib/supabase';
 
 const MAX_CHATS = 5;
-const MAX_TURNOS = 6;
+const MAX_TURNOS = 8; // Aumentado ligeramente para permitir intercambios fluidos
 
 export default function AsistenteIA() {
   const { currentUser } = useStaffAuth();
   const { showAlert } = useAlert();
+  
   const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
 
   const [chats, setChats] = useState([]);
   const [chatActivoId, setChatActivoId] = useState(null);
   const [mensajes, setMensajes] = useState([]);
 
   const [inputTexto, setInputTexto] = useState('');
-  const [imagenAdjunta, setImagenAdjunta] = useState(null); 
-  const [imagenPrevia, setImagenPrevia] = useState(null); 
-  const [isLoading, setIsLoading] = useState(false);
   
-  // Estado para abrir/cerrar el menú en celulares
+  // Estados para soportar MÚLTIPLES imágenes
+  const [imagenesAdjuntas, setImagenesAdjuntas] = useState([]); // Archivos File
+  const [imagenesPrevias, setImagenesPrevias] = useState([]);   // URLs base64 para vista previa
+  
+  const [isLoading, setIsLoading] = useState(false);
   const [sidebarAbierta, setSidebarAbierta] = useState(false);
 
+  // Auto-scroll hacia abajo
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => { scrollToBottom(); }, [mensajes, isLoading]);
 
+  // Ajuste automático de altura del Textarea (hasta 5 renglones ~ 125px)
+  const handleTextChange = (e) => {
+    setInputTexto(e.target.value);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      const altura = Math.min(textareaRef.current.scrollHeight, 130);
+      textareaRef.current.style.height = `${altura}px`;
+    }
+  };
+
+  // Cargar lista inicial de chats del usuario
   useEffect(() => {
     if (!currentUser?.uid) return;
     const fetchChats = async () => {
@@ -36,21 +51,27 @@ export default function AsistenteIA() {
         .from('chats')
         .select('*')
         .eq('user_id', currentUser.uid)
-        .eq('status', 'active')
         .order('created_at', { ascending: false });
 
       if (data && data.length > 0) {
         setChats(data);
         setChatActivoId(data[0].id);
       } else {
-        crearNuevoChat();
+        setChats([]);
+        setChatActivoId(null);
       }
     };
     fetchChats();
   }, [currentUser]);
 
+  // Cargar mensajes cuando cambia el chat activo + suscripción Realtime
   useEffect(() => {
-    if (!chatActivoId) return;
+    setIsLoading(false); // Resetea cualquier carga fantasma
+
+    if (!chatActivoId) {
+      setMensajes([]);
+      return;
+    }
 
     const fetchMensajes = async () => {
       const { data } = await supabase
@@ -64,7 +85,7 @@ export default function AsistenteIA() {
     fetchMensajes();
 
     const channel = supabase
-      .channel('chat_realtime')
+      .channel(`chat_realtime_${chatActivoId}`)
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatActivoId}` }, 
         (payload) => {
@@ -80,22 +101,21 @@ export default function AsistenteIA() {
     return () => { supabase.removeChannel(channel); };
   }, [chatActivoId]);
 
+  // Crear nuevo chat explícito desde el botón "+"
   const crearNuevoChat = async () => {
     if (chats.length >= MAX_CHATS) {
       if(showAlert) showAlert(`Límite alcanzado: Máximo ${MAX_CHATS} cotizaciones. Eliminá una para continuar.`, 'error');
       return null;
     }
 
+    setIsLoading(false);
     try {
       const { data, error } = await supabase
         .from('chats')
         .insert([{ user_id: currentUser.uid, title: 'Nueva Cotización' }])
         .select();
 
-      if (error) {
-        console.error("Error creando chat:", error);
-        return null;
-      }
+      if (error) throw error;
 
       if (data && data.length > 0) {
         const nuevo = data[0];
@@ -103,93 +123,165 @@ export default function AsistenteIA() {
         setChatActivoId(nuevo.id);
         setMensajes([]);
         setSidebarAbierta(false);
-        return nuevo.id; // 👈 Retorna el ID para usarlo de inmediato
+        return nuevo.id;
       }
     } catch (err) {
-      console.error(err);
+      console.error("Error creando chat:", err);
       return null;
     }
     return null;
   };
 
+  // Eliminar chat (Limpieza total en cascada)
   const archivarChat = async (e, id) => {
     e.stopPropagation();
     if (!confirm('¿Eliminar definitivamente esta cotización?')) return;
+
+    setIsLoading(false);
     
-    // BORRADO REAL: Al borrar el chat, Supabase borra todos sus mensajes automáticamente por el CASCADE
+    // Al borrar el chat, la base de datos borra todos los mensajes por ON DELETE CASCADE
     const { error } = await supabase.from('chats').delete().eq('id', id);
     
     if (!error) {
       const restantes = chats.filter(c => c.id !== id);
       setChats(restantes);
-      if (chatActivoId === id) setChatActivoId(restantes.length > 0 ? restantes[0].id : null);
+
+      // Si borramos el chat que estábamos viendo
+      if (chatActivoId === id) {
+        if (restantes.length > 0) {
+          setChatActivoId(restantes[0].id);
+        } else {
+          // Si no queda ninguno, limpiamos la pantalla a estado cero
+          setChatActivoId(null);
+          setMensajes([]);
+        }
+      }
     }
   };
 
-  const handleImagenUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImagenAdjunta(file);
-      const reader = new FileReader();
-      reader.onload = (upload) => setImagenPrevia(upload.target.result);
-      reader.readAsDataURL(file);
+  // Manejador para SUBIR MÚLTIPLES IMÁGENES
+  const handleImagenesUpload = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    // Máximo 4 imágenes por mensaje
+    const combinadas = [...imagenesAdjuntas, ...files].slice(0, 4);
+    setImagenesAdjuntas(combinadas);
+
+    const promises = combinadas.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (ev) => resolve(ev.target.result);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(promises).then(previews => setImagenesPrevias(previews));
+  };
+
+  // 🔥 Pegar imágenes con Ctrl + V directamente desde el portapapeles
+  const handlePaste = (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imagenesPegadas = [];
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          // Le asignamos un nombre claro a la captura
+          const archivoConNombre = new File([file], `captura_${Date.now()}.png`, { type: file.type });
+          imagenesPegadas.push(archivoConNombre);
+        }
+      }
+    }
+
+    if (imagenesPegadas.length > 0) {
+      const combinadas = [...imagenesAdjuntas, ...imagenesPegadas].slice(0, 4);
+      setImagenesAdjuntas(combinadas);
+
+      const promises = combinadas.map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.readAsDataURL(file);
+        });
+      });
+
+      Promise.all(promises).then(previews => setImagenesPrevias(previews));
     }
   };
 
+  // Eliminar una imagen de la lista previa
+  const eliminarImagen = (index) => {
+    const nuevasAdjuntas = imagenesAdjuntas.filter((_, i) => i !== index);
+    const nuevasPrevias = imagenesPrevias.filter((_, i) => i !== index);
+    setImagenesAdjuntas(nuevasAdjuntas);
+    setImagenesPrevias(nuevasPrevias);
+  };
+
+  // Enviar mensaje con soporte de múltiples imágenes y auto-creación de chat
   const enviarMensaje = async () => {
-    if (!inputTexto.trim() && !imagenAdjunta) return;
+    if (!inputTexto.trim() && imagenesAdjuntas.length === 0) return;
 
-    // 🔥 SI NO HAY CHAT SELECCIONADO, LO CREA AUTOMÁTICAMENTE ACÁ
+    // Si no hay chat seleccionado, lo creamos automáticamente al instante
     let idChat = chatActivoId;
     if (!idChat) {
       idChat = await crearNuevoChat();
-      if (!idChat) return; // Si llegó al límite de 5 chats, frena acá
+      if (!idChat) return; // Frena si llegó al tope de 5 chats
     }
 
     if (mensajes.length >= MAX_TURNOS) {
-      if(showAlert) showAlert('Contexto máximo alcanzado. Iniciá una nueva cotización.', 'error');
+      if(showAlert) showAlert('Límite de turnos alcanzado en esta cotización. Abrí una nueva.', 'error');
       return;
     }
 
     setIsLoading(true);
-    let urlImagenSubida = null;
 
-    if (imagenAdjunta) {
-      const nombreArchivo = `${Date.now()}_${imagenAdjunta.name}`;
-      const { data: uploadData, error } = await supabase.storage
-        .from('cotizaciones_files')
-        .upload(nombreArchivo, imagenAdjunta);
-      
-      if (!error) {
-        urlImagenSubida = supabase.storage.from('cotizaciones_files').getPublicUrl(nombreArchivo).data.publicUrl;
-      }
+    // Subir todas las imágenes adjuntas a Supabase Storage
+    let urlsSubidas = [];
+    if (imagenesAdjuntas.length > 0) {
+      const uploadPromises = imagenesAdjuntas.map(async (file) => {
+        const nombreArchivo = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name}`;
+        const { error } = await supabase.storage.from('cotizaciones_files').upload(nombreArchivo, file);
+        if (!error) {
+          return supabase.storage.from('cotizaciones_files').getPublicUrl(nombreArchivo).data.publicUrl;
+        }
+        return null;
+      });
+      const resultados = await Promise.all(uploadPromises);
+      urlsSubidas = resultados.filter(Boolean);
     }
 
-    const textoAEnviar = inputTexto;
+    const textoGuardar = inputTexto.trim();
+    // Guardamos las imágenes como JSON o texto simple para compatibilidad
+    const stringImagenes = urlsSubidas.length > 0 ? JSON.stringify(urlsSubidas) : null;
+
     const msjUsuario = {
-      chat_id: idChat, // 👈 Usamos el ID nuevo o existente
+      chat_id: idChat,
       role: 'user',
-      content: textoAEnviar,
-      image_url: urlImagenSubida
+      content: textoGuardar,
+      image_url: stringImagenes
     };
 
-    // Limpiamos los inputs de inmediato para una experiencia ágil
+    // Limpiamos los inputs y reseteamos la altura del textarea
     setInputTexto('');
-    setImagenAdjunta(null);
-    setImagenPrevia(null);
+    setImagenesAdjuntas([]);
+    setImagenesPrevias([]);
+    if (textareaRef.current) textareaRef.current.style.height = '45px';
 
-    // Guardamos en Supabase el mensaje del usuario
+    // Insertar mensaje en Supabase
     const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
     if (dbMsgUser) setMensajes(prev => [...prev, dbMsgUser[0]]);
 
-    // Si es el primer mensaje, le ponemos título al chat con las primeras palabras
+    // Poner título inteligente al chat si es el primer mensaje
     if (mensajes.length === 0) {
-      const tituloGenerado = textoAEnviar.slice(0, 28) + (textoAEnviar.length > 28 ? '...' : '');
+      const tituloGenerado = (textoGuardar || 'Cotización con imagen').slice(0, 26) + '...';
       await supabase.from('chats').update({ title: tituloGenerado }).eq('id', idChat);
       setChats(prev => prev.map(c => c.id === idChat ? { ...c, title: tituloGenerado } : c));
     }
 
-    // Disparamos n8n
+    // Llamar a n8n
     try {
       const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia'; 
       fetch(WEBHOOK_N8N_URL, {
@@ -199,7 +291,8 @@ export default function AsistenteIA() {
           chat_id: idChat, 
           text: msjUsuario.content,
           user_id: currentUser.uid,
-          image_url: urlImagenSubida
+          image_url: urlsSubidas[0] || null, // Principal
+          images: urlsSubidas                // Array con todas las fotos
         })
       });
     } catch (error) {
@@ -208,40 +301,74 @@ export default function AsistenteIA() {
     }
   };
 
+  // Helper para dibujar una o múltiples fotos en el historial
+  const renderizarImagenesMensaje = (image_url) => {
+    if (!image_url) return null;
+    let urls = [];
+    try {
+      if (image_url.startsWith('[')) urls = JSON.parse(image_url);
+      else urls = [image_url];
+    } catch {
+      urls = [image_url];
+    }
+
+    return (
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+        {urls.map((url, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img 
+            key={i} 
+            src={url} 
+            alt={`Adjunto ${i + 1}`} 
+            style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '8px', border: '1px solid #d1d5db', objectFit: 'contain' }} 
+          />
+        ))}
+      </div>
+    );
+  };
+
   const esLimiteAlcanzado = mensajes.length >= MAX_TURNOS;
 
   return (
     <div className="chat-ia-wrapper">
       
-      {/* Overlay oscuro para mobile */}
+      {/* Overlay mobile */}
       {sidebarAbierta && (
         <div className="chat-mobile-overlay" onClick={() => setSidebarAbierta(false)}></div>
       )}
 
       {/* ================= SIDEBAR (HISTORIAL) ================= */}
       <div className={`chat-sidebar ${sidebarAbierta ? 'abierta' : ''}`}>
-        <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button 
             onClick={crearNuevoChat}
             disabled={chats.length >= MAX_CHATS}
-            style={{ flex: 1, padding: '12px', background: '#11173d', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: chats.length >= MAX_CHATS ? 'not-allowed' : 'pointer', opacity: chats.length >= MAX_CHATS ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+            style={{ 
+              flex: 1, padding: '12px', background: '#11173d', color: '#fff', border: 'none', 
+              borderRadius: '8px', fontWeight: 'bold', cursor: chats.length >= MAX_CHATS ? 'not-allowed' : 'pointer', 
+              opacity: chats.length >= MAX_CHATS ? 0.6 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' 
+            }}
           >
             ➕ Nueva Cotización
           </button>
           <button className="chat-btn-cerrar-mobile" onClick={() => setSidebarAbierta(false)}>✖</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 20px 10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 10px 15px 10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {chats.map(chat => (
             <div 
               key={chat.id}
               onClick={() => { setChatActivoId(chat.id); setSidebarAbierta(false); }}
-              style={{ padding: '12px 15px', background: chatActivoId === chat.id ? '#e0f2fe' : 'transparent', borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: chatActivoId === chat.id ? '1px solid #bae6fd' : '1px solid transparent', transition: 'all 0.2s' }}
+              style={{ 
+                padding: '12px 14px', background: chatActivoId === chat.id ? '#e0f2fe' : 'transparent', 
+                borderRadius: '8px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', 
+                alignItems: 'center', border: chatActivoId === chat.id ? '1px solid #bae6fd' : '1px solid transparent' 
+              }}
             >
-              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem', color: chatActivoId === chat.id ? '#0369a1' : '#4b5563', fontWeight: chatActivoId === chat.id ? 'bold' : 'normal' }}>
+              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.88rem', color: chatActivoId === chat.id ? '#0369a1' : '#4b5563', fontWeight: chatActivoId === chat.id ? 'bold' : 'normal' }}>
                 💬 {chat.title}
               </div>
-              <button onClick={(e) => archivarChat(e, chat.id)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1.1rem' }} title="Eliminar Chat">
+              <button onClick={(e) => archivarChat(e, chat.id)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1rem', padding: '4px' }} title="Eliminar Chat">
                 🗑️
               </button>
             </div>
@@ -249,27 +376,30 @@ export default function AsistenteIA() {
         </div>
       </div>
 
-      {/* ================= ÁREA PRINCIPAL (CHAT) ================= */}
+      {/* ================= ÁREA PRINCIPAL ================= */}
       <div className="chat-main-area">
         
-        {/* Cabecera del chat */}
-        <div style={{ padding: '15px 20px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Cabecera */}
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid #e5e7eb', background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button className="chat-btn-menu-mobile" onClick={() => setSidebarAbierta(true)}>☰</button>
-            <h2 style={{ margin: 0, fontSize: '1.2rem', color: '#11173d', fontWeight: 900 }}>Asistente de Cotizaciones AI</h2>
+            <h2 style={{ margin: 0, fontSize: '1.15rem', color: '#11173d', fontWeight: 900 }}>Auditor Comercial AI</h2>
           </div>
-          <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'bold', background: '#f3f4f6', padding: '4px 10px', borderRadius: '12px' }}>
+          <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold', background: '#f3f4f6', padding: '4px 10px', borderRadius: '12px' }}>
             Turnos: {mensajes.length} / {MAX_TURNOS}
           </span>
         </div>
 
-        {/* Zona de Mensajes */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', background: '#fcfcfc' }}>
+        {/* Mensajes */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '18px', background: '#fcfcfc' }}>
           
           {mensajes.length === 0 && !isLoading && (
-            <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: '40px' }}>
-              <h3 style={{ fontSize: '1.2rem', color: '#6b7280', marginBottom: '10px' }}>¡Hola! Soy tu asistente.</h3>
-              <p style={{ fontSize: '0.95rem' }}>Mandame la cotización y la analizo con las reglas de nuestros manuales.</p>
+            <div style={{ textAlign: 'center', color: '#9ca3af', marginTop: '60px' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>✈️</div>
+              <h3 style={{ fontSize: '1.2rem', color: '#11173d', marginBottom: '8px', fontWeight: 'bold' }}>Director Comercial Listo</h3>
+              <p style={{ fontSize: '0.9rem', maxWidth: '420px', margin: '0 auto', lineHeight: '1.5' }}>
+                Pegá tu cotización o subí capturas de vuelos/hoteles. Te ayudo a validar precios, temporadas y calidad de servicio.
+              </p>
             </div>
           )}
 
@@ -281,21 +411,18 @@ export default function AsistenteIA() {
                   maxWidth: '85%', 
                   background: isAI ? '#fff' : '#11173d', 
                   color: isAI ? '#11173d' : '#fff', 
-                  padding: '15px 20px', 
+                  padding: '14px 18px', 
                   borderRadius: isAI ? '0px 16px 16px 16px' : '16px 0px 16px 16px',
                   border: isAI ? '1px solid #e5e7eb' : 'none',
-                  boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
-                  fontSize: '0.95rem',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+                  fontSize: '0.92rem',
                   lineHeight: '1.6'
                 }}>
                   <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: isAI ? '#ef5a1a' : '#9ca3af', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    {isAI ? '🤖 Asistente Feliz Viaje' : '👤 Tú'}
+                    {isAI ? '🤖 Director Comercial Feliz Viaje' : '👤 Tú'}
                   </div>
                   
-                  {msg.image_url && (
-                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={msg.image_url} alt="Adjunto" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', marginBottom: '10px', border: '1px solid #374151' }} />
-                  )}
+                  {renderizarImagenesMensaje(msg.image_url)}
 
                   <div className="markdown-body" style={{ color: 'inherit' }}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
@@ -307,8 +434,8 @@ export default function AsistenteIA() {
 
           {isLoading && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
-              <div style={{ background: '#fff', padding: '15px 20px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '10px', color: '#6b7280', fontSize: '0.9rem', fontWeight: 'bold' }}>
-                <span className="spinner-ia">🤖</span> Analizando manuales...
+              <div style={{ background: '#fff', padding: '12px 18px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '10px', color: '#6b7280', fontSize: '0.88rem', fontWeight: 'bold' }}>
+                <span className="spinner-ia">✈️</span> Auditando con Google Flights y manuales...
               </div>
             </div>
           )}
@@ -316,35 +443,55 @@ export default function AsistenteIA() {
           <div ref={messagesEndRef} />
         </div>
 
-       {/* Zona de Input */}
-<div style={{ padding: '10px 15px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+        {/* Zona de Input */}
+        <div style={{ padding: '10px 15px', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
           {esLimiteAlcanzado ? (
-            <div style={{ textAlign: 'center', padding: '12px', background: '#fee2e2', color: '#dc2626', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.9rem' }}>
-              🛑 Contexto máximo alcanzado. Por favor, iniciá una nueva cotización.
+            <div style={{ textAlign: 'center', padding: '12px', background: '#fee2e2', color: '#dc2626', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.88rem' }}>
+              🛑 Límite de turnos alcanzado. Iniciá una nueva cotización para comenzar un nuevo análisis.
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb', padding: '10px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
               
-              {imagenPrevia && (
-                <div style={{ position: 'relative', width: 'max-content' }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imagenPrevia} alt="Previa" style={{ height: '50px', borderRadius: '8px', border: '1px solid #d1d5db' }} />
-                  <button onClick={() => {setImagenAdjunta(null); setImagenPrevia(null)}} style={{ position: 'absolute', top: '-5px', right: '-5px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px', fontWeight: 'bold' }}>✕</button>
+              {/* Previsualización de MÚLTIPLES fotos */}
+              {imagenesPrevias.length > 0 && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingBottom: '4px' }}>
+                  {imagenesPrevias.map((src, index) => (
+                    <div key={index} style={{ position: 'relative', width: 'max-content' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={src} alt="Previa" style={{ height: '55px', borderRadius: '8px', border: '1px solid #d1d5db', objectFit: 'cover' }} />
+                      <button 
+                        onClick={() => eliminarImagen(index)} 
+                        style={{ position: 'absolute', top: '-6px', right: '-6px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '50%', width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '10px', fontWeight: 'bold' }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
-                <label style={{ cursor: isLoading ? 'not-allowed' : 'pointer', background: '#e5e7eb', width: '45px', height: '45px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isLoading ? 0.5 : 1, transition: 'background 0.2s' }}>
+                <label 
+                  title="Adjuntar imágenes (máximo 4)" 
+                  style={{ cursor: isLoading ? 'not-allowed' : 'pointer', background: '#e5e7eb', width: '42px', height: '42px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: isLoading ? 0.5 : 1, transition: 'background 0.2s', flexShrink: 0 }}
+                >
                   📎
-                  <input type="file" accept="image/*" onChange={handleImagenUpload} style={{ display: 'none' }} disabled={isLoading} />
+                  <input type="file" accept="image/*" multiple onChange={handleImagenesUpload} style={{ display: 'none' }} disabled={isLoading} />
                 </label>
 
+                {/* Textarea auto-ajustable de 1 a 5 renglones */}
                 <textarea 
-                  placeholder="Pegá tu cotización acá..."
+                  ref={textareaRef}
+                  placeholder="Pegá la cotización o preguntale al director..."
                   value={inputTexto}
-                  onChange={(e) => setInputTexto(e.target.value)}
+                  onChange={handleTextChange}
+                  onPaste={handlePaste}
                   disabled={isLoading}
-                  style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #d1d5db', fontSize: '0.95rem', resize: 'none', outline: 'none', minHeight: '45px', maxHeight: '100px', fontFamily: 'inherit', background: '#fff' }}
+                  style={{ 
+                    flex: 1, padding: '11px 14px', borderRadius: '12px', border: '1px solid #d1d5db', 
+                    fontSize: '0.92rem', resize: 'none', outline: 'none', minHeight: '42px', maxHeight: '130px', 
+                    fontFamily: 'inherit', background: '#fff', lineHeight: '1.4' 
+                  }}
                   rows="1"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -356,8 +503,13 @@ export default function AsistenteIA() {
 
                 <button 
                   onClick={enviarMensaje}
-                  disabled={isLoading || (!inputTexto.trim() && !imagenAdjunta)}
-                  style={{ background: '#ef5a1a', color: '#fff', border: 'none', height: '45px', padding: '0 20px', borderRadius: '12px', fontWeight: 'bold', cursor: (isLoading || (!inputTexto.trim() && !imagenAdjunta)) ? 'not-allowed' : 'pointer', opacity: (isLoading || (!inputTexto.trim() && !imagenAdjunta)) ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: '8px', transition: 'transform 0.2s' }}
+                  disabled={isLoading || (!inputTexto.trim() && imagenesAdjuntas.length === 0)}
+                  style={{ 
+                    background: '#ef5a1a', color: '#fff', border: 'none', height: '42px', padding: '0 18px', 
+                    borderRadius: '12px', fontWeight: 'bold', cursor: (isLoading || (!inputTexto.trim() && imagenesAdjuntas.length === 0)) ? 'not-allowed' : 'pointer', 
+                    opacity: (isLoading || (!inputTexto.trim() && imagenesAdjuntas.length === 0)) ? 0.5 : 1, 
+                    display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 
+                  }}
                 >
                   <span className="chat-btn-text">Enviar</span> 🚀
                 </button>
@@ -367,28 +519,28 @@ export default function AsistenteIA() {
         </div>
       </div>
       
-      {/* 🔥 MAGIA CSS: Hace que sea responsive sin depender de Tailwind 🔥 */}
+      {/* Estilos CSS Responsive */}
       <style dangerouslySetInnerHTML={{__html: `
-        .chat-ia-wrapper { display: flex; height: calc(100dvh - 75px); background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; font-family: system-ui, -apple-system, sans-serif; }        .chat-sidebar { width: 280px; background: #f9fafb; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 30; }
+        .chat-ia-wrapper { display: flex; height: calc(100dvh - 75px); background: #fff; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.03); position: relative; font-family: system-ui, -apple-system, sans-serif; }
+        .chat-sidebar { width: 280px; background: #f9fafb; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column; transition: transform 0.3s ease; z-index: 30; }
         .chat-main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; z-index: 10; }
-        .chat-btn-cerrar-mobile, .chat-btn-menu-mobile { display: none; background: none; border: none; cursor: pointer; font-size: 1.5rem; color: #11173d; }
+        .chat-btn-cerrar-mobile, .chat-btn-menu-mobile { display: none; background: none; border: none; cursor: pointer; font-size: 1.4rem; color: #11173d; }
         .chat-mobile-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 20; }
         
         .markdown-body table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-        .markdown-body th, .markdown-body td { border: 1px solid #d1d5db; padding: 8px; text-align: left; font-size: 0.9em; }
+        .markdown-body th, .markdown-body td { border: 1px solid #d1d5db; padding: 8px; text-align: left; font-size: 0.88em; }
         .markdown-body th { background: #f3f4f6; color: #11173d; font-weight: bold; }
         .markdown-body ul { padding-left: 20px; list-style-type: disc; margin-bottom: 10px; }
         .markdown-body strong { font-weight: 900; color: inherit; }
         .spinner-ia { display: inline-block; animation: latir 1s infinite alternate; }
         @keyframes latir { 0% { transform: scale(0.9); } 100% { transform: scale(1.2); } }
 
-        /* REGLAS PARA CELULARES */
         @media (max-width: 768px) {
           .chat-sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
           .chat-sidebar.abierta { transform: translateX(0); }
           .chat-btn-menu-mobile, .chat-btn-cerrar-mobile, .chat-mobile-overlay { display: block; }
-          .chat-btn-text { display: none; } /* Oculta la palabra "Enviar" en celu, deja el cohete */
-          .chat-main-area .markdown-body { font-size: 0.9rem; }
+          .chat-btn-text { display: none; }
+          .chat-main-area .markdown-body { font-size: 0.88rem; }
         }
       `}} />
     </div>
