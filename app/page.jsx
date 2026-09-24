@@ -204,70 +204,103 @@ export default function InternalPanel() {
         <FloatingCalculator dbCalculadora={dbCalculadora} />
       </div>
 
-      {/* 🔥 REGLAS CSS PARA ADAPTACIÓN MÓVIL INMEDIATA 🔥 */}
+      {/* 🔥 CSS DE RESCATE RESPONSIVE PARA MÓVILES 🔥 */}
       <style dangerouslySetInnerHTML={{__html: `
-        /* Asegura que nada desborde horizontalmente la pantalla */
+        /* Candado general: Prohíbe terminantemente el desplazamiento horizontal */
         html, body {
-          max-width: 100vw;
-          overflow-x: hidden;
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          position: relative;
+          margin: 0;
+          padding: 0;
         }
 
         .internal-panel-root {
+          width: 100% !important;
+          max-width: 100vw !important;
+          overflow-x: hidden !important;
           min-height: 100dvh;
-          display: flex;
-          flex-direction: column;
-          background-color: #f8fafc;
-          width: 100%;
-          overflow-x: hidden;
         }
 
         .main-content-wrapper {
-          flex: 1;
-          width: 100%;
-          max-width: 1440px;
-          margin: 0 auto;
-          padding: 20px 24px;
-          box-sizing: border-box;
+          width: 100% !important;
+          max-width: 100% !important;
+          padding: 12px 14px !important;
+          box-sizing: border-box !important;
         }
 
-        /* AJUSTES PARA SMARTPHONES Y TABLETS */
+        /* REGLAS ESPECÍFICAS PARA CELULARES */
         @media (max-width: 768px) {
-          .main-content-wrapper {
-            padding: 10px 12px !important;
-          }
-
-          /* Hace que las tablas no rompan el ancho y tengan scroll lateral limpio */
-          table {
-            display: block !important;
-            width: 100% !important;
+          
+          /* 1. Header: Permite que los botones del menú no desborden y scrolleen suave */
+          header nav, header .menu-container, [class*="nav"] {
             overflow-x: auto !important;
+            white-space: nowrap !important;
+            max-width: 100% !important;
             -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
           }
 
-          /* Cuadrículas que pasan a 1 sola columna en el celular */
-          .grid, [class*="grid-cols-"] {
-            grid-template-columns: 1fr !important;
-            gap: 12px !important;
+          /* 2. Carrusel de la Semana (Lunes, Martes...):
+             Le da scroll propio a los días para que NO estiren la pantalla */
+          [class*="semana"], [class*="tareas"], [class*="dias"], .grid-cols-7 {
+            display: flex !important;
+            overflow-x: auto !important;
+            white-space: nowrap !important;
+            gap: 10px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            -webkit-overflow-scrolling: touch;
+            padding: 8px 4px 14px 4px !important;
           }
 
-          /* Formularios y filtros apilados verticalmente */
-          form, .filter-container, .search-bar {
+          /* Cada tarjeta de día mide un tamaño fijo cómodo en el celu */
+          [class*="semana"] > div, [class*="dias"] > div {
+            min-width: 140px !important;
+            flex-shrink: 0 !important;
+          }
+
+          /* 3. Filtros (Destino, Salida, etc.): Se apilan verticalmente */
+          .filter-bar, [class*="filter"], [class*="search-bar"] {
+            display: flex !important;
             flex-direction: column !important;
             width: 100% !important;
+            gap: 8px !important;
           }
 
-          /* Botones con tamaño táctil adecuado para dedos */
-          button, input, select {
-            min-height: 42px;
+          .filter-bar > div, [class*="filter"] > div, select, input {
+            width: 100% !important;
+            min-width: 0 !important;
           }
 
-          /* Reposiciona la calculadora flotante para que no tape botones principales */
+          /* 4. Tarjetas de paquetes (Cartagena, Buzios...): 
+             Ocupan el 100% del ancho del celular, mostrando el precio sin cortes */
+          .package-card, [class*="card"], [class*="paquete"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            box-sizing: border-box !important;
+          }
+
+          /* 5. Acomodar los dos botones flotantes para que no se pisen */
+          /* Calculadora abajo a la derecha */
           .calculator-mobile-safe {
-            position: fixed;
-            bottom: 12px;
-            right: 12px;
-            z-index: 40;
-            transform: scale(0.88);
+            position: fixed !important;
+            bottom: 16px !important;
+            right: 16px !important;
+            z-index: 50 !important;
+            transform: scale(0.9) !important;
+            transform-origin: bottom right;
+          }
+
+          /* Botón del Robot de IA justo arriba de la calculadora */
+          [class*="bot"], [class*="robot"], [class*="floating-ai"] {
+            position: fixed !important;
+            bottom: 76px !important; /* 60px más arriba */
+            right: 16px !important;
+            z-index: 50 !important;
+            transform: scale(0.9) !important;
             transform-origin: bottom right;
           }
         }
