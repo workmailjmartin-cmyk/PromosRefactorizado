@@ -16,7 +16,7 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
 
   const handleItemClick = (key) => {
     onNavigate(key);
-    setDrawerAbierto(false); // Cierra el menú al hacer clic en una sección
+    setDrawerAbierto(false);
   };
 
   return (
@@ -24,7 +24,7 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
       <header className="main-header">
         <div className="header-content">
           
-          {/* Botón Hamburguesa (Solo visible en celular) */}
+          {/* ☰ Botón Hamburguesa a la izquierda en Mobile */}
           <button 
             className="mobile-hamburger-btn" 
             onClick={() => setDrawerAbierto(true)}
@@ -33,14 +33,14 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
             ☰
           </button>
 
-          {/* Logo */}
-          <div className="logo" title="Recargar página">
+          {/* Logo con buen tamaño */}
+          <div className="logo-wrapper" title="Recargar página" onClick={onLogoClick}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Logo Feliz Viaje" id="app-logo" onClick={onLogoClick} style={{ cursor: 'pointer' }} />
+            <img src="/logo.png" alt="Logo Feliz Viaje" className="header-logo-img" />
           </div>
 
-          {/* Navegación Desktop (Oculta en celular) */}
-          <nav className="app-nav desktop-nav">
+          {/* Navegación Desktop */}
+          <nav className="desktop-nav">
             {NAV_ITEMS.filter((item) => !item.soloGestor || esGestor).map((item) => (
               <button
                 key={item.key}
@@ -58,8 +58,8 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
             ))}
           </nav>
 
-          {/* Info Usuario Desktop (Oculta en celular) */}
-          <div className="user-info desktop-user-info">
+          {/* Info Usuario Desktop */}
+          <div className="desktop-user-info">
             <span id="user-email">
               <b>{nombreMostrar}</b>
               <br />
@@ -74,10 +74,13 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
               <div className="text">Salir</div>
             </button>
           </div>
+
+          {/* Espaciador invisible para centrar el logo en celular */}
+          <div className="mobile-header-spacer"></div>
         </div>
       </header>
 
-      {/* ================= MENÚ LATERAL (DRAWER MÓVIL) ================= */}
+      {/* Menú lateral (Drawer) */}
       {drawerAbierto && (
         <div className="mobile-drawer-overlay" onClick={() => setDrawerAbierto(false)}></div>
       )}
@@ -114,13 +117,35 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
         </div>
       </aside>
 
-      {/* ================= ESTILOS RESPONSIVE DEL HEADER ================= */}
       <style dangerouslySetInnerHTML={{__html: `
-        .mobile-hamburger-btn { display: none; background: none; border: none; font-size: 1.8rem; color: #11173d; cursor: pointer; padding: 5px; }
-        .desktop-nav { display: flex; flex: 1; align-items: center; justify-content: center; gap: 15px; }
-        .desktop-user-info { display: flex; align-items: center; }
+        .main-header {
+          width: 100%;
+          background: #ffffff;
+          border-bottom: 1px solid #e2e8f0;
+          position: sticky;
+          top: 0;
+          z-index: 100;
+        }
 
-        /* Estilos del Menú Lateral Mobile */
+        .header-content {
+          max-width: 1280px;
+          margin: 0 auto;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 24px;
+        }
+
+        .logo-wrapper { cursor: pointer; display: flex; align-items: center; }
+        .header-logo-img { height: 48px; width: auto; object-fit: contain; }
+
+        .desktop-nav { display: flex; flex: 1; align-items: center; justify-content: center; gap: 15px; }
+        .desktop-user-info { display: flex; align-items: center; gap: 12px; }
+        
+        .mobile-hamburger-btn { display: none; }
+        .mobile-header-spacer { display: none; }
+
+        /* Drawer Móvil */
         .mobile-drawer-overlay {
           position: fixed; top: 0; left: 0; right: 0; bottom: 0;
           background: rgba(0, 0, 0, 0.55);
@@ -139,29 +164,24 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
           transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .mobile-drawer.abierto {
-          transform: translateX(0);
-        }
+        .mobile-drawer.abierto { transform: translateX(0); }
 
         .drawer-header {
-          padding: 20px 16px;
-          background: #11173d;
-          color: #fff;
+          padding: 20px 16px; background: #11173d; color: #fff;
           display: flex; justify-content: space-between; align-items: center;
         }
 
         .drawer-user-card { display: flex; align-items: center; gap: 12px; }
-        .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-        .user-name { font-weight: bold; font-size: 0.95rem; line-height: 1.2; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .user-avatar { width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; }
+        .user-name { font-weight: bold; font-size: 0.95rem; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .user-role-badge { font-size: 0.65rem; background: #ef5a1a; padding: 2px 7px; border-radius: 8px; font-weight: bold; }
-        .drawer-close-btn { background: none; border: none; color: #fff; font-size: 1.3rem; cursor: pointer; padding: 4px; }
+        .drawer-close-btn { background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; }
 
         .drawer-nav-list { flex: 1; overflow-y: auto; padding: 15px 12px; display: flex; flex-direction: column; gap: 8px; }
         .drawer-nav-item {
           display: flex; flex-direction: column; align-items: flex-start;
           width: 100%; padding: 12px 14px; border-radius: 10px;
-          border: 1px solid transparent; background: #f8fafc;
-          cursor: pointer; text-align: left; transition: all 0.2s;
+          border: 1px solid transparent; background: #f8fafc; cursor: pointer; text-align: left;
         }
         .drawer-nav-item.activo { background: #e0f2fe; border-color: #bae6fd; }
         .drawer-nav-label { font-weight: bold; color: #11173d; font-size: 0.92rem; }
@@ -174,18 +194,22 @@ export default function Header({ userData, esGestor, currentView, onNavigate, on
           border: none; border-radius: 8px; font-weight: bold; font-size: 0.9rem; cursor: pointer;
         }
 
-        /* MEDIA QUERY PARA CELULARES */
+        /* AJUSTES MÓVILES (SOLO CELULARES) */
         @media (max-width: 768px) {
           .desktop-nav, .desktop-user-info { display: none !important; }
-          .mobile-hamburger-btn { display: block !important; }
+          .mobile-hamburger-btn { 
+            display: block !important; 
+            background: none; border: none; font-size: 1.8rem; color: #11173d; cursor: pointer; padding: 4px;
+          }
+          .mobile-header-spacer { display: block !important; width: 32px; } /* Equilibra el logo en el centro */
           .header-content {
             display: flex !important;
+            flex-direction: row !important;
             justify-content: space-between !important;
             align-items: center !important;
-            padding: 8px 12px !important;
-            width: 100% !important;
+            padding: 10px 16px !important;
           }
-          .main-header .logo img { max-height: 42px; }
+          .header-logo-img { height: 42px !important; }
         }
       `}} />
     </>

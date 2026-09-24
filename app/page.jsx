@@ -204,156 +204,100 @@ export default function InternalPanel() {
         <FloatingCalculator dbCalculadora={dbCalculadora} />
       </div>
 
-      {/* 🔥 CSS DE RESCATE RESPONSIVE PARA MÓVILES 🔥 */}
+      {/* 🔥 ESTILOS MAESTROS: PC CENTRADA Y MOBILE ADAPTADO 🔥 */}
       <style dangerouslySetInnerHTML={{__html: `
-        /* Candado general: Prohíbe terminantemente el desplazamiento horizontal */
-        html, body {
-          width: 100% !important;
-          max-width: 100% !important;
-          overflow-x: hidden !important;
-          position: relative;
-          margin: 0;
-          padding: 0;
-        }
-
+        /* ================= ESTILOS COMPUTADORA (DESKTOP) ================= */
         .internal-panel-root {
-          width: 100% !important;
-          max-width: 100vw !important;
-          overflow-x: hidden !important;
           min-height: 100dvh;
+          display: flex;
+          flex-direction: column;
+          background-color: #f8fafc;
+          width: 100%;
         }
 
+        /* 👈 ESTO CENTRA TODO EN COMPUTADORA Y EVITA QUE SE ESTIRE */
         .main-content-wrapper {
-          width: 100% !important;
-          max-width: 100% !important;
-          padding: 12px 14px !important;
-          box-sizing: border-box !important;
+          width: 100%;
+          max-width: 1280px; 
+          margin: 0 auto;
+          padding: 24px 20px;
+          box-sizing: border-box;
         }
 
-        /* REGLAS ESPECÍFICAS PARA CELULARES */
+        /* ================= ESTILOS EXCLUSIVOS PARA CELULAR ================= */
         @media (max-width: 768px) {
-          
-          /* 1. Header: Permite que los botones del menú no desborden y scrolleen suave */
-          header nav, header .menu-container, [class*="nav"] {
-            overflow-x: auto !important;
-            white-space: nowrap !important;
+          html, body {
+            overflow-x: hidden !important;
+            max-width: 100vw !important;
+          }
+
+          .main-content-wrapper {
+            padding: 10px 12px !important;
             max-width: 100% !important;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 4px;
           }
 
-          /* 2. Carrusel de la Semana (Lunes, Martes...):
-             Le da scroll propio a los días para que NO estiren la pantalla */
-          [class*="semana"], [class*="tareas"], [class*="dias"], .grid-cols-7 {
+          /* 1. FILTROS EN CELULAR: Se apilan en 2 columnas o 100% para que NO desborden */
+          .filter-bar, [class*="filter"], [class*="filtros"], [class*="search-bar"] {
             display: flex !important;
-            overflow-x: auto !important;
-            white-space: nowrap !important;
-            gap: 10px !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            -webkit-overflow-scrolling: touch;
-            padding: 8px 4px 14px 4px !important;
-          }
-
-          /* Cada tarjeta de día mide un tamaño fijo cómodo en el celu */
-          [class*="semana"] > div, [class*="dias"] > div {
-            min-width: 140px !important;
-            flex-shrink: 0 !important;
-          }
-
-          /* 3. Filtros (Destino, Salida, etc.): Se apilan verticalmente */
-          .filter-bar, [class*="filter"], [class*="search-bar"] {
-            display: flex !important;
-            flex-direction: column !important;
+            flex-wrap: wrap !important;
             width: 100% !important;
             gap: 8px !important;
           }
 
-          .filter-bar > div, [class*="filter"] > div, select, input {
-            width: 100% !important;
-            min-width: 0 !important;
+          .filter-bar > div, [class*="filter"] > div, [class*="filtros"] > div {
+            flex: 1 1 calc(50% - 6px) !important; /* 2 filtros por fila */
+            min-width: 140px !important;
           }
 
-          /* 4. Tarjetas de paquetes (Cartagena, Buzios...): 
-             Ocupan el 100% del ancho del celular, mostrando el precio sin cortes */
-          .package-card, [class*="card"], [class*="paquete"] {
+          /* 2. TARJETAS DE PAQUETES: Ancho completo sin cortes */
+          .package-card, [class*="package-card"], [class*="card"] {
             width: 100% !important;
             max-width: 100% !important;
-            min-width: 0 !important;
             box-sizing: border-box !important;
           }
 
-          /* 5. Acomodar los dos botones flotantes para que no se pisen */
-          /* Calculadora abajo a la derecha */
+          /* 3. 🔥 MODAL DE PAQUETE (ISLA BARÚ / SANTA MARTA): 
+             OBLIGA A QUE "ITINERARIO" QUEDE ARRIBA Y "RESUMEN" QUEDE ABAJO */
+          [class*="modal"] [class*="content"] > div,
+          [class*="modal"] [class*="grid"],
+          [class*="modal"] [class*="body"] {
+            display: flex !important;
+            flex-direction: column !important; /* Columna vertical */
+            width: 100% !important;
+          }
+
+          /* Itinerario (Lo que incluye) arriba ocupando el 100% */
+          [class*="itinerario"], [class*="left"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            border-right: none !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            padding-bottom: 15px !important;
+          }
+
+          /* Resumen y Costos abajo ocupando el 100% */
+          [class*="resumen"], [class*="costos"], [class*="right"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-top: 15px !important;
+          }
+
+          /* 4. BOTONES FLOTANTES: Separados para que no se pisen */
           .calculator-mobile-safe {
             position: fixed !important;
             bottom: 16px !important;
             right: 16px !important;
-            z-index: 50 !important;
+            z-index: 40 !important;
             transform: scale(0.9) !important;
-            transform-origin: bottom right;
           }
 
-          /* Botón del Robot de IA justo arriba de la calculadora */
-          [class*="bot"], [class*="robot"], [class*="floating-ai"] {
+          [class*="bot"], [class*="floating-ai"] {
             position: fixed !important;
-            bottom: 76px !important; /* 60px más arriba */
+            bottom: 74px !important; /* Arriba de la calculadora */
             right: 16px !important;
-            z-index: 50 !important;
+            z-index: 40 !important;
             transform: scale(0.9) !important;
-            transform-origin: bottom right;
           }
-
-          /* ================= MODAL DEL PAQUETE EN MOBILE ================= */
-          @media (max-width: 768px) {
-            /* Obliga al contenedor interno del modal a apilarse en 1 sola columna */
-            [class*="modal"] [class*="grid"], 
-            [class*="modal"] [class*="flex"]:not([class*="header"]):not([class*="actions"]),
-            .modal-body, 
-            [class*="detail"] > div {
-              display: flex !important;
-              flex-direction: column !important;
-              width: 100% !important;
-              gap: 16px !important;
-            }
-
-            /* La columna de la izquierda (Itinerario / Lo que incluye) ocupa el 100% arriba */
-            [class*="itinerario"], [class*="servicios"], [class*="left-col"] {
-              width: 100% !important;
-              border-right: none !important;
-              border-bottom: 1px solid #e5e7eb !important;
-              padding-bottom: 16px !important;
-            }
-
-            /* La columna de la derecha (Resumen y Costos) ocupa el 100% abajo */
-            [class*="resumen"], [class*="costos"], [class*="right-col"] {
-              width: 100% !important;
-              padding-top: 8px !important;
-            }
-          }
-          
-          /* Carrusel táctil con efecto imán (Snap) */
-          .tareas-semana-scroll {
-            display: flex !important;
-            overflow-x: auto !important;
-            scroll-snap-type: x mandatory !important;
-            -webkit-overflow-scrolling: touch !important;
-            gap: 12px !important;
-            padding: 8px 12px 16px 12px !important;
-            width: 100% !important;
-            box-sizing: border-box !important;
-          }
-
-          .tareas-semana-scroll > div {
-            scroll-snap-align: center !important;
-            flex: 0 0 150px !important; /* Ancho fijo ideal por día en el celu */
-          }
-
-          /* Ocultar barra de scroll antiestética */
-          .tareas-semana-scroll::-webkit-scrollbar {
-            display: none;
-          }
-
         }
       `}} />
     </div>
