@@ -15,6 +15,7 @@ export default function AsistenteIA() {
   
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const timeoutRef = useRef(null);
 
   const [chats, setChats] = useState([]);
   const [chatActivoId, setChatActivoId] = useState(null);
@@ -66,7 +67,6 @@ export default function AsistenteIA() {
 
   // Cargar mensajes cuando cambia el chat activo + suscripción Realtime
   useEffect(() => {
-    setIsLoading(false); // Resetea cualquier carga fantasma
 
     if (!chatActivoId) {
       setMensajes([]);
@@ -91,6 +91,10 @@ export default function AsistenteIA() {
         (payload) => {
           const nuevoMensaje = payload.new;
           if (nuevoMensaje.role === 'assistant') {
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              timeoutRef.current = null;
+            }
             setMensajes(prev => [...prev, nuevoMensaje]);
             setIsLoading(false);
           }
@@ -221,22 +225,26 @@ export default function AsistenteIA() {
   };
 
   const enviarMensaje = async () => {
+    // 1. Verificación básica: que haya texto o fotos
     if (!inputTexto.trim() && imagenesAdjuntas.length === 0) return;
 
+    // 2. Si no hay chat activo, lo crea automáticamente al vuelo
     let idChat = chatActivoId;
     if (!idChat) {
       idChat = await crearNuevoChat();
-      if (!idChat) return;
+      if (!idChat) return; // Si llegó al límite de 5 chats, frena acá
     }
 
+    // 3. Control de turnos
     if (mensajes.length >= MAX_TURNOS) {
-      if(showAlert) showAlert('Límite de turnos alcanzado. Abrí una nueva cotización.', 'error');
+      if (showAlert) showAlert('Límite de turnos alcanzado en esta cotización. Iniciá una nueva.', 'error');
       return;
     }
 
+    // 🔥 Activamos el estado de carga (muestra el cartel de "Pensando...")
     setIsLoading(true);
 
-    // Subida de imágenes a Supabase Storage
+    // 4. Subida de imágenes a Supabase Storage (soporta múltiples fotos)
     let urlsSubidas = [];
     if (imagenesAdjuntas.length > 0) {
       const uploadPromises = imagenesAdjuntas.map(async (file) => {
@@ -261,56 +269,70 @@ export default function AsistenteIA() {
       image_url: stringImagenes
     };
 
-    // Limpieza de inputs
+    // 5. Limpiamos inputs y restablecemos altura del textarea
     setInputTexto('');
     setImagenesAdjuntas([]);
     setImagenesPrevias([]);
     if (textareaRef.current) textareaRef.current.style.height = '42px';
 
-    // Insertar mensaje del usuario en pantalla
+    // 6. Guardamos el mensaje del usuario en Supabase y en la pantalla
     const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
-    if (dbMsgUser) setMensajes(prev => [...prev, dbMsgUser[0]]);
+    if (dbMsgUser) setMensajes((prev) => [...prev, dbMsgUser[0]]);
 
-    // Título inteligente
+    // 7. Si es el primer mensaje, le ponemos título inteligente al chat
     if (mensajes.length === 0) {
-      const tituloGenerado = (textoGuardar || 'Cotización').slice(0, 26) + '...';
+      const tituloGenerado = (textoGuardar || 'Cotización con imagen').slice(0, 26) + '...';
       await supabase.from('chats').update({ title: tituloGenerado }).eq('id', idChat);
-      setChats(prev => prev.map(c => c.id === idChat ? { ...c, title: tituloGenerado } : c));
+      setChats((prev) => prev.map((c) => (c.id === idChat ? { ...c, title: tituloGenerado } : c)));
     }
 
-    // ⏱️ RELOJ DE SEGURIDAD CON AVISO DE ERROR AL VENDEDOR
-    const timeoutError = setTimeout(() => {
-      setIsLoading(false);
-      const msjFallo = {
-        id: Date.now(),
-        role: 'assistant',
-        content: '⚠️ **Demora en el servidor:** La consulta a Google Flights o a los manuales tardó más de lo esperado. Por favor, volvé a enviar el mensaje o adjuntá la captura de pantalla para agilizar.'
-      };
-      setMensajes(prev => [...prev, msjFallo]);
-    }, 75000); // 75 segundos de margen seguro
+    // 8. ⏱️ RELOJ DE SEGURIDAD (Solo se activa si en 80 segundos NO hubo respuesta)
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
+    timeoutRef.current = setTimeout(() => {
+      setIsLoading(false);
+      setMensajes((prev) => {
+        // Si el asistente ya respondió mientras corría el reloj, no mostramos el error
+        const yaRespondio = prev.some((m) => m.role === 'assistant');
+        if (yaRespondio) return prev;
+
+        return [
+          ...prev,
+          {
+            id: Date.now(),
+            role: 'assistant',
+            content: '⚠️ **Demora en el servidor:** La consulta a Google Flights tardó más de lo esperado. Por favor, volvé a enviar el mensaje o adjuntá la captura para agilizar.',
+          },
+        ];
+      });
+    }, 80000); // 80 segundos para darle margen a búsquedas de vuelos complejas
+
+    // 9. Disparamos el webhook de n8n
     try {
-      const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia'; 
+      const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia';
       await fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          chat_id: idChat, 
+        body: JSON.stringify({
+          chat_id: idChat,
           text: msjUsuario.content,
           user_id: currentUser.uid,
-          image_url: urlsSubidas[0] || null,
-          images: urlsSubidas
-        })
+          image_url: urlsSubidas[0] || null, // Foto principal
+          images: urlsSubidas,               // Todas las fotos adjuntas
+        }),
       });
     } catch (error) {
-      clearTimeout(timeoutError);
-      console.error("Error webhook:", error);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      console.error('Error webhook:', error);
       setIsLoading(false);
-      setMensajes(prev => [...prev, {
-        id: Date.now(),
-        role: 'assistant',
-        content: '❌ **Error de conexión:** No pudimos contactar al Director Comercial. Revisá tu conexión a internet.'
-      }]);
+      setMensajes((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: 'assistant',
+          content: '❌ **Error de conexión:** No se pudo contactar al Director Comercial. Revisá tu conexión a internet.',
+        },
+      ]);
     }
   };
 
