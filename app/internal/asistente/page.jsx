@@ -68,48 +68,84 @@ export default function AsistenteIA() {
     fetchChats();
   }, [currentUser]);
 
-  // Cargar mensajes cuando cambia el chat activo + suscripción Realtime
+  // Cargar mensajes cuando cambia el chat activo + suscripción Realtime + Respaldo
   useEffect(() => {
     if (!chatActivoId) {
       setMensajes([]);
       return;
     }
 
+    // 1. Cargar historial existente
     const fetchMensajes = async () => {
       const { data } = await supabase
         .from('messages')
         .select('*')
         .eq('chat_id', chatActivoId)
         .order('created_at', { ascending: true });
-      
+
       setMensajes(data || []);
     };
     fetchMensajes();
 
+    // 2. Escucha en tiempo real (Realtime)
     const channel = supabase
       .channel(`chat_realtime_${chatActivoId}`)
-      .on('postgres_changes', 
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatActivoId}` }, 
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatActivoId}` },
         (payload) => {
           const nuevoMensaje = payload.new;
           if (nuevoMensaje.role === 'assistant') {
-            // 🔥 Apagamos el reloj de timeout inmediatamente para que NO salga error falso
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
               timeoutRef.current = null;
             }
-            setMensajes(prev => [...prev, nuevoMensaje]);
+            setMensajes((prev) => {
+              if (prev.some((m) => m.id === nuevoMensaje.id)) return prev;
+              return [...prev, nuevoMensaje];
+            });
             setIsLoading(false);
           }
         }
       )
       .subscribe();
 
-    return () => { 
+    // 3. 🛡️ CHEQUEO DE RESPALDO CADA 3 SEGUNDOS MIENTRAS PIENSA
+    // Si n8n responde en 5s pero el websocket parpadeó, esto rescata la respuesta de inmediato
+    const intervalRespaldo = setInterval(async () => {
+      if (isLoading) {
+        const { data } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('chat_id', chatActivoId)
+          .eq('role', 'assistant')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (data && data.length > 0) {
+          const ultimoAsistente = data[0];
+          setMensajes((prev) => {
+            const yaExiste = prev.some((m) => m.id === ultimoAsistente.id);
+            if (!yaExiste) {
+              if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                timeoutRef.current = null;
+              }
+              setIsLoading(false);
+              return [...prev, ultimoAsistente];
+            }
+            return prev;
+          });
+        }
+      }
+    }, 3000);
+
+    return () => {
+      clearInterval(intervalRespaldo);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      supabase.removeChannel(channel); 
+      supabase.removeChannel(channel);
     };
-  }, [chatActivoId]);
+  }, [chatActivoId, isLoading]);
 
   // Crear nuevo chat explícito desde el botón "+"
   const crearNuevoChat = async () => {
@@ -224,15 +260,13 @@ export default function AsistenteIA() {
     setImagenesPrevias(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Enviar mensaje a Supabase y activar n8n
   const enviarMensaje = async () => {
     if (!inputTexto.trim() && imagenesAdjuntas.length === 0) return;
 
-    // Si no hay chat activo, se crea automáticamente al instante
     let idChat = chatActivoId;
     if (!idChat) {
       idChat = await crearNuevoChat();
-      if (!idChat) return; // Frena si llegó al límite de 5 cotizaciones
+      if (!idChat) return;
     }
 
     if (mensajes.length >= MAX_TURNOS) {
@@ -240,26 +274,40 @@ export default function AsistenteIA() {
       return;
     }
 
-    // Activamos estado de carga
     setIsLoading(true);
 
-    // Subir imágenes adjuntas a Supabase Storage
+    // Guardamos una copia local de las fotos para mostrarlas de inmediato en tu mensaje
+    const fotosLocalesParaMostrar = [...imagenesPrevias];
+    const archivosASubir = [...imagenesAdjuntas];
+
+    // Limpiamos los inputs y la barra de escritura en el acto
+    setInputTexto('');
+    setImagenesAdjuntas([]);
+    setImagenesPrevias([]);
+    if (textareaRef.current) textareaRef.current.style.height = '42px';
+
+    // Subir imágenes a Supabase Storage
     let urlsSubidas = [];
-    if (imagenesAdjuntas.length > 0) {
-      const uploadPromises = imagenesAdjuntas.map(async (file) => {
+    if (archivosASubir.length > 0) {
+      const uploadPromises = archivosASubir.map(async (file) => {
         const nombreArchivo = `${Date.now()}_${Math.random().toString(36).substring(7)}_${file.name}`;
-        const { error } = await supabase.storage.from('cotizaciones_files').upload(nombreArchivo, file);
+        const { data, error } = await supabase.storage.from('cotizaciones_files').upload(nombreArchivo, file);
         if (!error) {
           return supabase.storage.from('cotizaciones_files').getPublicUrl(nombreArchivo).data.publicUrl;
+        } else {
+          console.error("Error subiendo foto a Supabase:", error);
+          return null;
         }
-        return null;
       });
       const resultados = await Promise.all(uploadPromises);
       urlsSubidas = resultados.filter(Boolean);
     }
 
     const textoGuardar = inputTexto.trim();
-    const stringImagenes = urlsSubidas.length > 0 ? JSON.stringify(urlsSubidas) : null;
+    
+    // Si la subida a Supabase funcionó usamos la URL web, sino usamos la copia local
+    const imagenesParaGuardar = urlsSubidas.length > 0 ? urlsSubidas : fotosLocalesParaMostrar;
+    const stringImagenes = imagenesParaGuardar.length > 0 ? JSON.stringify(imagenesParaGuardar) : null;
 
     const msjUsuario = {
       chat_id: idChat,
@@ -268,44 +316,41 @@ export default function AsistenteIA() {
       image_url: stringImagenes
     };
 
-    // Limpiamos la caja de texto y miniaturas
-    setInputTexto('');
-    setImagenesAdjuntas([]);
-    setImagenesPrevias([]);
-    if (textareaRef.current) textareaRef.current.style.height = '42px';
-
-    // Insertamos mensaje del usuario en Supabase
+    // 👈 ACÁ: Pintamos el mensaje con las fotos inmediatamente en tu pantalla
     const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
-    if (dbMsgUser) setMensajes((prev) => [...prev, dbMsgUser[0]]);
+    if (dbMsgUser) {
+      setMensajes((prev) => [...prev, dbMsgUser[0]]);
+    } else {
+      // Respaldo visual en pantalla si la base tarda
+      setMensajes((prev) => [...prev, { ...msjUsuario, id: Date.now() }]);
+    }
 
     // Título inteligente en el historial
     if (mensajes.length === 0) {
-      const tituloGenerado = (textoGuardar || 'Cotización con imagen').slice(0, 26) + '...';
+      const tituloGenerado = (textoGuardar || 'Cotización con foto').slice(0, 26) + '...';
       await supabase.from('chats').update({ title: tituloGenerado }).eq('id', idChat);
       setChats((prev) => prev.map((c) => (c.id === idChat ? { ...c, title: tituloGenerado } : c)));
     }
 
-    // ⏱️ RELOJ DE SEGURIDAD (Solo se dispara si en 80 segundos NO hubo respuesta)
+    // ⏱️ Reloj de seguridad
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-
     timeoutRef.current = setTimeout(() => {
       setIsLoading(false);
       setMensajes((prev) => {
         const yaRespondio = prev.some((m) => m.role === 'assistant');
         if (yaRespondio) return prev;
-
         return [
           ...prev,
           {
             id: Date.now(),
             role: 'assistant',
-            content: '⚠️ **Demora en el servidor:** La consulta a Google Flights o manuales tardó más de lo esperado. Por favor, volvé a enviar el mensaje o adjuntá la captura para agilizar.',
+            content: '⚠️ **Demora en el servidor:** La consulta a Google Flights tardó más de lo esperado. Por favor, volvé a enviar el mensaje o adjuntá la captura para agilizar.',
           },
         ];
       });
     }, 80000);
 
-    // Disparamos n8n
+    // Disparamos n8n con las URLs de las fotos
     try {
       const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia';
       await fetch(WEBHOOK_N8N_URL, {
@@ -315,8 +360,8 @@ export default function AsistenteIA() {
           chat_id: idChat,
           text: msjUsuario.content,
           user_id: currentUser.uid,
-          image_url: urlsSubidas[0] || null, // Foto principal para n8n
-          images: urlsSubidas,               // Todas las fotos
+          image_url: urlsSubidas[0] || null,
+          images: urlsSubidas,
         }),
       });
     } catch (error) {
@@ -334,7 +379,7 @@ export default function AsistenteIA() {
     }
   };
 
-  // Helper para renderizar fotos en los mensajes
+ // Helper para dibujar una o múltiples fotos con estilo profesional
   const renderizarImagenesMensaje = (image_url) => {
     if (!image_url) return null;
     let urls = [];
@@ -353,7 +398,14 @@ export default function AsistenteIA() {
             key={i} 
             src={url} 
             alt={`Adjunto ${i + 1}`} 
-            style={{ maxHeight: '180px', maxWidth: '100%', borderRadius: '8px', border: '1px solid #d1d5db', objectFit: 'contain' }} 
+            style={{ 
+              maxHeight: '180px', 
+              maxWidth: '100%', 
+              borderRadius: '10px', 
+              border: '2px solid rgba(255, 255, 255, 0.2)', // Borde sutil para que resalte sobre el fondo azul
+              background: '#fff',
+              objectFit: 'contain' 
+            }} 
           />
         ))}
       </div>
