@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import { supabase } from '@/lib/supabase';
 
 const MAX_CHATS = 5;
-const MAX_TURNOS = 8; // Aumentado ligeramente para permitir intercambios fluidos
+const MAX_TURNOS = 8; // Turnos para permitir ida y vuelta fluido
 
 export default function AsistenteIA() {
   const { currentUser } = useStaffAuth();
@@ -20,7 +20,10 @@ export default function AsistenteIA() {
   const [chats, setChats] = useState([]);
   const [chatActivoId, setChatActivoId] = useState(null);
   const [mensajes, setMensajes] = useState([]);
-
+  
+  // Estado para el modal moderno de confirmación de borrado
+  const [chatAEliminar, setChatAEliminar] = useState(null); 
+  
   const [inputTexto, setInputTexto] = useState('');
   
   // Estados para soportar MÚLTIPLES imágenes
@@ -34,7 +37,7 @@ export default function AsistenteIA() {
   const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   useEffect(() => { scrollToBottom(); }, [mensajes, isLoading]);
 
-  // Ajuste automático de altura del Textarea (hasta 5 renglones ~ 125px)
+  // Ajuste automático de altura del Textarea (hasta 5 renglones ~ 130px)
   const handleTextChange = (e) => {
     setInputTexto(e.target.value);
     if (textareaRef.current) {
@@ -67,7 +70,6 @@ export default function AsistenteIA() {
 
   // Cargar mensajes cuando cambia el chat activo + suscripción Realtime
   useEffect(() => {
-
     if (!chatActivoId) {
       setMensajes([]);
       return;
@@ -91,6 +93,7 @@ export default function AsistenteIA() {
         (payload) => {
           const nuevoMensaje = payload.new;
           if (nuevoMensaje.role === 'assistant') {
+            // 🔥 Apagamos el reloj de timeout inmediatamente para que NO salga error falso
             if (timeoutRef.current) {
               clearTimeout(timeoutRef.current);
               timeoutRef.current = null;
@@ -102,7 +105,10 @@ export default function AsistenteIA() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      supabase.removeChannel(channel); 
+    };
   }, [chatActivoId]);
 
   // Crear nuevo chat explícito desde el botón "+"
@@ -112,7 +118,6 @@ export default function AsistenteIA() {
       return null;
     }
 
-    setIsLoading(false);
     try {
       const { data, error } = await supabase
         .from('chats')
@@ -136,26 +141,24 @@ export default function AsistenteIA() {
     return null;
   };
 
-  // Eliminar chat (Limpieza total en cascada)
-  const archivarChat = async (e, id) => {
-    e.stopPropagation();
-    if (!confirm('¿Eliminar definitivamente esta cotización?')) return;
-
+  // Ejecutar borrado definitivo (Llamado desde el modal moderno)
+  const ejecutarBorrado = async () => {
+    if (!chatAEliminar) return;
+    const id = chatAEliminar;
+    setChatAEliminar(null); // Cierra el modal
     setIsLoading(false);
-    
-    // Al borrar el chat, la base de datos borra todos los mensajes por ON DELETE CASCADE
+
+    // Borrado definitivo en cascada de Supabase
     const { error } = await supabase.from('chats').delete().eq('id', id);
-    
+
     if (!error) {
-      const restantes = chats.filter(c => c.id !== id);
+      const restantes = chats.filter((c) => c.id !== id);
       setChats(restantes);
 
-      // Si borramos el chat que estábamos viendo
       if (chatActivoId === id) {
         if (restantes.length > 0) {
           setChatActivoId(restantes[0].id);
         } else {
-          // Si no queda ninguno, limpiamos la pantalla a estado cero
           setChatActivoId(null);
           setMensajes([]);
         }
@@ -163,12 +166,12 @@ export default function AsistenteIA() {
     }
   };
 
-  // Manejador para SUBIR MÚLTIPLES IMÁGENES
+  // Manejador para subir archivos de imagen tradicionales
   const handleImagenesUpload = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
 
-    // Máximo 4 imágenes por mensaje
+    // Máximo 4 imágenes
     const combinadas = [...imagenesAdjuntas, ...files].slice(0, 4);
     setImagenesAdjuntas(combinadas);
 
@@ -183,7 +186,7 @@ export default function AsistenteIA() {
     Promise.all(promises).then(previews => setImagenesPrevias(previews));
   };
 
-  // 🔥 Pegar imágenes con Ctrl + V directamente desde el portapapeles
+  // 🔥 Pegar imágenes directamente con Ctrl + V desde el portapapeles
   const handlePaste = (e) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -193,7 +196,6 @@ export default function AsistenteIA() {
       if (items[i].type.startsWith('image/')) {
         const file = items[i].getAsFile();
         if (file) {
-          // Le asignamos un nombre claro a la captura
           const archivoConNombre = new File([file], `captura_${Date.now()}.png`, { type: file.type });
           imagenesPegadas.push(archivoConNombre);
         }
@@ -216,35 +218,32 @@ export default function AsistenteIA() {
     }
   };
 
-  // Eliminar una imagen de la lista previa
+  // Quitar una imagen de la vista previa
   const eliminarImagen = (index) => {
-    const nuevasAdjuntas = imagenesAdjuntas.filter((_, i) => i !== index);
-    const nuevasPrevias = imagenesPrevias.filter((_, i) => i !== index);
-    setImagenesAdjuntas(nuevasAdjuntas);
-    setImagenesPrevias(nuevasPrevias);
+    setImagenesAdjuntas(prev => prev.filter((_, i) => i !== index));
+    setImagenesPrevias(prev => prev.filter((_, i) => i !== index));
   };
 
+  // Enviar mensaje a Supabase y activar n8n
   const enviarMensaje = async () => {
-    // 1. Verificación básica: que haya texto o fotos
     if (!inputTexto.trim() && imagenesAdjuntas.length === 0) return;
 
-    // 2. Si no hay chat activo, lo crea automáticamente al vuelo
+    // Si no hay chat activo, se crea automáticamente al instante
     let idChat = chatActivoId;
     if (!idChat) {
       idChat = await crearNuevoChat();
-      if (!idChat) return; // Si llegó al límite de 5 chats, frena acá
+      if (!idChat) return; // Frena si llegó al límite de 5 cotizaciones
     }
 
-    // 3. Control de turnos
     if (mensajes.length >= MAX_TURNOS) {
       if (showAlert) showAlert('Límite de turnos alcanzado en esta cotización. Iniciá una nueva.', 'error');
       return;
     }
 
-    // 🔥 Activamos el estado de carga (muestra el cartel de "Pensando...")
+    // Activamos estado de carga
     setIsLoading(true);
 
-    // 4. Subida de imágenes a Supabase Storage (soporta múltiples fotos)
+    // Subir imágenes adjuntas a Supabase Storage
     let urlsSubidas = [];
     if (imagenesAdjuntas.length > 0) {
       const uploadPromises = imagenesAdjuntas.map(async (file) => {
@@ -269,30 +268,29 @@ export default function AsistenteIA() {
       image_url: stringImagenes
     };
 
-    // 5. Limpiamos inputs y restablecemos altura del textarea
+    // Limpiamos la caja de texto y miniaturas
     setInputTexto('');
     setImagenesAdjuntas([]);
     setImagenesPrevias([]);
     if (textareaRef.current) textareaRef.current.style.height = '42px';
 
-    // 6. Guardamos el mensaje del usuario en Supabase y en la pantalla
+    // Insertamos mensaje del usuario en Supabase
     const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
     if (dbMsgUser) setMensajes((prev) => [...prev, dbMsgUser[0]]);
 
-    // 7. Si es el primer mensaje, le ponemos título inteligente al chat
+    // Título inteligente en el historial
     if (mensajes.length === 0) {
       const tituloGenerado = (textoGuardar || 'Cotización con imagen').slice(0, 26) + '...';
       await supabase.from('chats').update({ title: tituloGenerado }).eq('id', idChat);
       setChats((prev) => prev.map((c) => (c.id === idChat ? { ...c, title: tituloGenerado } : c)));
     }
 
-    // 8. ⏱️ RELOJ DE SEGURIDAD (Solo se activa si en 80 segundos NO hubo respuesta)
+    // ⏱️ RELOJ DE SEGURIDAD (Solo se dispara si en 80 segundos NO hubo respuesta)
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
     timeoutRef.current = setTimeout(() => {
       setIsLoading(false);
       setMensajes((prev) => {
-        // Si el asistente ya respondió mientras corría el reloj, no mostramos el error
         const yaRespondio = prev.some((m) => m.role === 'assistant');
         if (yaRespondio) return prev;
 
@@ -301,13 +299,13 @@ export default function AsistenteIA() {
           {
             id: Date.now(),
             role: 'assistant',
-            content: '⚠️ **Demora en el servidor:** La consulta a Google Flights tardó más de lo esperado. Por favor, volvé a enviar el mensaje o adjuntá la captura para agilizar.',
+            content: '⚠️ **Demora en el servidor:** La consulta a Google Flights o manuales tardó más de lo esperado. Por favor, volvé a enviar el mensaje o adjuntá la captura para agilizar.',
           },
         ];
       });
-    }, 80000); // 80 segundos para darle margen a búsquedas de vuelos complejas
+    }, 80000);
 
-    // 9. Disparamos el webhook de n8n
+    // Disparamos n8n
     try {
       const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia';
       await fetch(WEBHOOK_N8N_URL, {
@@ -317,8 +315,8 @@ export default function AsistenteIA() {
           chat_id: idChat,
           text: msjUsuario.content,
           user_id: currentUser.uid,
-          image_url: urlsSubidas[0] || null, // Foto principal
-          images: urlsSubidas,               // Todas las fotos adjuntas
+          image_url: urlsSubidas[0] || null, // Foto principal para n8n
+          images: urlsSubidas,               // Todas las fotos
         }),
       });
     } catch (error) {
@@ -336,7 +334,7 @@ export default function AsistenteIA() {
     }
   };
 
-  // Helper para dibujar una o múltiples fotos en el historial
+  // Helper para renderizar fotos en los mensajes
   const renderizarImagenesMensaje = (image_url) => {
     if (!image_url) return null;
     let urls = [];
@@ -367,7 +365,7 @@ export default function AsistenteIA() {
   return (
     <div className="chat-ia-wrapper">
       
-      {/* Overlay mobile */}
+      {/* Overlay para móviles */}
       {sidebarAbierta && (
         <div className="chat-mobile-overlay" onClick={() => setSidebarAbierta(false)}></div>
       )}
@@ -403,7 +401,14 @@ export default function AsistenteIA() {
               <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.88rem', color: chatActivoId === chat.id ? '#0369a1' : '#4b5563', fontWeight: chatActivoId === chat.id ? 'bold' : 'normal' }}>
                 💬 {chat.title}
               </div>
-              <button onClick={(e) => archivarChat(e, chat.id)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1rem', padding: '4px' }} title="Eliminar Chat">
+              <button 
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  setChatAEliminar(chat.id); // 🔥 Abre modal moderno
+                }} 
+                style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '1rem', padding: '4px' }} 
+                title="Eliminar Chat"
+              >
                 🗑️
               </button>
             </div>
@@ -467,12 +472,13 @@ export default function AsistenteIA() {
             );
           })}
 
+          {/* 🔥 CARTEL ANIMADO VISIBLE MIENTRAS PIENSA LA IA 🔥 */}
           {isLoading && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
-              <div style={{ background: '#fff', padding: '14px 20px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '12px', color: '#11173d', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-                <span className="spinner-ia">✈️</span> 
+              <div style={{ background: '#fff', padding: '14px 20px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '12px', color: '#11173d', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+                <span className="spinner-ia" style={{ fontSize: '1.3rem' }}>✈️</span> 
                 <div>
-                  <span>El Director Comercial está auditando tu paquete...</span>
+                  <div style={{ fontWeight: 'bold' }}>El Director Comercial está auditando tu paquete...</div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal', marginTop: '2px' }}>
                     Verificando tarifas de mercado, hotelería y rentabilidad
                   </div>
@@ -493,7 +499,7 @@ export default function AsistenteIA() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: '#f9fafb', padding: '10px', borderRadius: '16px', border: '1px solid #e5e7eb' }}>
               
-              {/* Previsualización de MÚLTIPLES fotos */}
+              {/* Previsualización de MÚLTIPLES fotos con botón de borrar individual */}
               {imagenesPrevias.length > 0 && (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', paddingBottom: '4px' }}>
                   {imagenesPrevias.map((src, index) => (
@@ -520,7 +526,7 @@ export default function AsistenteIA() {
                   <input type="file" accept="image/*" multiple onChange={handleImagenesUpload} style={{ display: 'none' }} disabled={isLoading} />
                 </label>
 
-                {/* Textarea auto-ajustable de 1 a 5 renglones */}
+                {/* Textarea auto-ajustable con soporte para Ctrl+V */}
                 <textarea 
                   ref={textareaRef}
                   placeholder="Pegá la cotización o preguntale al director..."
@@ -559,6 +565,27 @@ export default function AsistenteIA() {
           )}
         </div>
       </div>
+
+      {/* ================= MODAL MODERNO DE CONFIRMACIÓN ================= */}
+      {chatAEliminar && (
+        <div className="modal-confirm-overlay" onClick={() => setChatAEliminar(null)}>
+          <div className="modal-confirm-card" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-confirm-icon-box">🗑️</div>
+            <h3 className="modal-confirm-title">¿Eliminar cotización?</h3>
+            <p className="modal-confirm-desc">
+              Esta conversación y todos sus análisis se borrarán definitivamente de la base de datos.
+            </p>
+            <div className="modal-confirm-btn-group">
+              <button className="btn-modal-cancel" onClick={() => setChatAEliminar(null)}>
+                Cancelar
+              </button>
+              <button className="btn-modal-delete" onClick={ejecutarBorrado}>
+                Sí, eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Estilos CSS Responsive */}
       <style dangerouslySetInnerHTML={{__html: `
@@ -575,6 +602,96 @@ export default function AsistenteIA() {
         .markdown-body strong { font-weight: 900; color: inherit; }
         .spinner-ia { display: inline-block; animation: latir 1s infinite alternate; }
         @keyframes latir { 0% { transform: scale(0.9); } 100% { transform: scale(1.2); } }
+
+        /* Estilos del Modal de Confirmación Moderno */
+        .modal-confirm-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(17, 23, 61, 0.45);
+          backdrop-filter: blur(4px);
+          z-index: 9999;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 16px;
+        }
+
+        .modal-confirm-card {
+          background: #ffffff;
+          border-radius: 18px;
+          max-width: 360px;
+          width: 100%;
+          padding: 24px 20px;
+          text-align: center;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.18);
+          animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes popIn {
+          0% { transform: scale(0.92); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-confirm-icon-box {
+          width: 52px;
+          height: 52px;
+          background: #fee2e2;
+          color: #dc2626;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.5rem;
+          margin: 0 auto 14px auto;
+        }
+
+        .modal-confirm-title {
+          margin: 0 0 8px 0;
+          font-size: 1.15rem;
+          color: #11173d;
+          font-weight: 800;
+        }
+
+        .modal-confirm-desc {
+          margin: 0 0 20px 0;
+          font-size: 0.88rem;
+          color: #6b7280;
+          line-height: 1.45;
+        }
+
+        .modal-confirm-btn-group {
+          display: flex;
+          gap: 10px;
+          justify-content: center;
+        }
+
+        .btn-modal-cancel {
+          flex: 1;
+          padding: 11px 16px;
+          background: #f3f4f6;
+          color: #4b5563;
+          border: none;
+          border-radius: 10px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-modal-cancel:hover { background: #e5e7eb; }
+
+        .btn-modal-delete {
+          flex: 1;
+          padding: 11px 16px;
+          background: #dc2626;
+          color: #ffffff;
+          border: none;
+          border-radius: 10px;
+          font-weight: 700;
+          font-size: 0.9rem;
+          cursor: pointer;
+          transition: background 0.2s;
+        }
+        .btn-modal-delete:hover { background: #b91c1c; }
 
         @media (max-width: 768px) {
           .chat-sidebar { position: absolute; height: 100%; transform: translateX(-100%); }
