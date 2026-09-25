@@ -220,25 +220,23 @@ export default function AsistenteIA() {
     setImagenesPrevias(nuevasPrevias);
   };
 
-  // Enviar mensaje con soporte de múltiples imágenes y auto-creación de chat
   const enviarMensaje = async () => {
     if (!inputTexto.trim() && imagenesAdjuntas.length === 0) return;
 
-    // Si no hay chat seleccionado, lo creamos automáticamente al instante
     let idChat = chatActivoId;
     if (!idChat) {
       idChat = await crearNuevoChat();
-      if (!idChat) return; // Frena si llegó al tope de 5 chats
+      if (!idChat) return;
     }
 
     if (mensajes.length >= MAX_TURNOS) {
-      if(showAlert) showAlert('Límite de turnos alcanzado en esta cotización. Abrí una nueva.', 'error');
+      if(showAlert) showAlert('Límite de turnos alcanzado. Abrí una nueva cotización.', 'error');
       return;
     }
 
     setIsLoading(true);
 
-    // Subir todas las imágenes adjuntas a Supabase Storage
+    // Subida de imágenes a Supabase Storage
     let urlsSubidas = [];
     if (imagenesAdjuntas.length > 0) {
       const uploadPromises = imagenesAdjuntas.map(async (file) => {
@@ -254,7 +252,6 @@ export default function AsistenteIA() {
     }
 
     const textoGuardar = inputTexto.trim();
-    // Guardamos las imágenes como JSON o texto simple para compatibilidad
     const stringImagenes = urlsSubidas.length > 0 ? JSON.stringify(urlsSubidas) : null;
 
     const msjUsuario = {
@@ -264,40 +261,56 @@ export default function AsistenteIA() {
       image_url: stringImagenes
     };
 
-    // Limpiamos los inputs y reseteamos la altura del textarea
+    // Limpieza de inputs
     setInputTexto('');
     setImagenesAdjuntas([]);
     setImagenesPrevias([]);
-    if (textareaRef.current) textareaRef.current.style.height = '45px';
+    if (textareaRef.current) textareaRef.current.style.height = '42px';
 
-    // Insertar mensaje en Supabase
+    // Insertar mensaje del usuario en pantalla
     const { data: dbMsgUser } = await supabase.from('messages').insert([msjUsuario]).select();
     if (dbMsgUser) setMensajes(prev => [...prev, dbMsgUser[0]]);
 
-    // Poner título inteligente al chat si es el primer mensaje
+    // Título inteligente
     if (mensajes.length === 0) {
-      const tituloGenerado = (textoGuardar || 'Cotización con imagen').slice(0, 26) + '...';
+      const tituloGenerado = (textoGuardar || 'Cotización').slice(0, 26) + '...';
       await supabase.from('chats').update({ title: tituloGenerado }).eq('id', idChat);
       setChats(prev => prev.map(c => c.id === idChat ? { ...c, title: tituloGenerado } : c));
     }
 
-    // Llamar a n8n
+    // ⏱️ RELOJ DE SEGURIDAD CON AVISO DE ERROR AL VENDEDOR
+    const timeoutError = setTimeout(() => {
+      setIsLoading(false);
+      const msjFallo = {
+        id: Date.now(),
+        role: 'assistant',
+        content: '⚠️ **Demora en el servidor:** La consulta a Google Flights o a los manuales tardó más de lo esperado. Por favor, volvé a enviar el mensaje o adjuntá la captura de pantalla para agilizar.'
+      };
+      setMensajes(prev => [...prev, msjFallo]);
+    }, 75000); // 75 segundos de margen seguro
+
     try {
       const WEBHOOK_N8N_URL = 'https://n8n.felizviaje.ar/webhook/cotizador-ia'; 
-      fetch(WEBHOOK_N8N_URL, {
+      await fetch(WEBHOOK_N8N_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           chat_id: idChat, 
           text: msjUsuario.content,
           user_id: currentUser.uid,
-          image_url: urlsSubidas[0] || null, // Principal
-          images: urlsSubidas                // Array con todas las fotos
+          image_url: urlsSubidas[0] || null,
+          images: urlsSubidas
         })
       });
     } catch (error) {
+      clearTimeout(timeoutError);
       console.error("Error webhook:", error);
       setIsLoading(false);
+      setMensajes(prev => [...prev, {
+        id: Date.now(),
+        role: 'assistant',
+        content: '❌ **Error de conexión:** No pudimos contactar al Director Comercial. Revisá tu conexión a internet.'
+      }]);
     }
   };
 
@@ -434,8 +447,14 @@ export default function AsistenteIA() {
 
           {isLoading && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
-              <div style={{ background: '#fff', padding: '12px 18px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '10px', color: '#6b7280', fontSize: '0.88rem', fontWeight: 'bold' }}>
-                <span className="spinner-ia">✈️</span> Auditando con Google Flights y manuales...
+              <div style={{ background: '#fff', padding: '14px 20px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '12px', color: '#11173d', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+                <span className="spinner-ia">✈️</span> 
+                <div>
+                  <span>El Director Comercial está auditando tu paquete...</span>
+                  <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal', marginTop: '2px' }}>
+                    Verificando tarifas de mercado, hotelería y rentabilidad
+                  </div>
+                </div>
               </div>
             </div>
           )}
