@@ -7,6 +7,9 @@ import { useStaffAuth } from '@/hooks/useStaffAuth';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
 import { useAlert } from '@/contexts/AlertContext';
 import { useRouter } from 'next/navigation';
+import { useStaffAuth } from '@/hooks/useStaffAuth';
+import LoginScreen from '@/components/internal/LoginScreen';
+import Loader from '@/components/shared/Loader'
 
 
 const getServicioIcon = (tipo) => {
@@ -23,8 +26,10 @@ const getServicioIcon = (tipo) => {
 };
 
 export default function DetallePaqueteInterno() {
+  const { status, currentUser, userData, login, loading: authLoading } = useStaffAuth();
+  const ready = status === 'logged-in';
+  const rol = userData?.rol;
   const params = useParams();
-  const { currentUser, userData } = useStaffAuth();
   const { showAlert } = useAlert(); 
   
   const [paquete, setPaquete] = useState(null);
@@ -367,6 +372,31 @@ export default function DetallePaqueteInterno() {
   const cerrarLightbox = () => setLightboxAbierto(false);
   const sigImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev + 1) % paquete.imagenes.length); };
   const antImagen = (e) => { e.stopPropagation(); setImagenActivaIndex((prev) => (prev === 0 ? paquete.imagenes.length - 1 : prev - 1)); };
+
+  // 🛡️ 1. Si Firebase está cargando la sesión
+  if (status === 'loading') {
+    return <Loader visible text="Verificando acceso al paquete..." />;
+  }
+
+  // 🛡️ 2. Si no inició sesión con Google, muestra la pantalla de login
+  if (status === 'logged-out') {
+    return (
+      <>
+        <LoginScreen onLogin={login} />
+        <Loader visible={authLoading} text="Iniciando sesión..." />
+      </>
+    );
+  }
+
+  // 🛡️ 3. Filtro de Proveedores: Si un proveedor intenta entrar a ver costos internos, se le bloquea
+  if (ready && rol === 'proveedor') {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center', color: '#11173d' }}>
+        <h2>⛔ Acceso no autorizado</h2>
+        <p>No tienes permisos de vendedor para visualizar este paquete.</p>
+      </div>
+    );
+  }
 
   return (
     <>
