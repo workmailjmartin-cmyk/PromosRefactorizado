@@ -52,12 +52,13 @@ export default function PackageCard({ pkg, onSelect }) {
               {/* Subtítulo: mismo color, tamaño menor, inicial mayúscula */}
               {pkg.subtitulo && (
                 <div style={{ 
-                  marginTop: '3px', 
-                  fontSize: '0.88em', 
-                  color: '#475569', 
-                  fontWeight: 500, 
+                  marginTop: '2px', 
+                  fontSize: '1em', 
+                  color: '#ef5a1a', 
+                  fontWeight: 700, 
                   textTransform: 'capitalize',
-                  lineHeight: 1.2
+                  lineHeight: 1.2,
+                  letterSpacing: '0.2px',
                 }}>
                   {pkg.subtitulo}
                 </div>
