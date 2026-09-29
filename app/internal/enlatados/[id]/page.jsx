@@ -7,9 +7,7 @@ import { useStaffAuth } from '@/hooks/useStaffAuth';
 import FormularioEnlatado from '@/components/proveedores/FormularioEnlatado';
 import { useAlert } from '@/contexts/AlertContext';
 import { useRouter } from 'next/navigation';
-import { useStaffAuth } from '@/hooks/useStaffAuth';
 import LoginScreen from '@/components/internal/LoginScreen';
-import Loader from '@/components/shared/Loader'
 
 
 const getServicioIcon = (tipo) => {
