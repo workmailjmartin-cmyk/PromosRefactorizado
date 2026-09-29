@@ -5,12 +5,14 @@ import { useAlert } from '@/contexts/AlertContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { supabase } from '@/lib/supabase';
+import LoginScreen from '@/components/internal/LoginScreen';
+import Loader from '@/components/shared/Loader';
 
 const MAX_CHATS = 5;
 const MAX_TURNOS = 8; // Turnos para permitir ida y vuelta fluido
 
 export default function AsistenteIA() {
-  const { currentUser } = useStaffAuth();
+  const { status, currentUser, login, loading: authLoading } = useStaffAuth();
   const { showAlert } = useAlert();
   
   const messagesEndRef = useRef(null);
@@ -413,6 +415,19 @@ export default function AsistenteIA() {
   };
 
   const esLimiteAlcanzado = mensajes.length >= MAX_TURNOS;
+
+  if (status === 'loading') {
+  return <Loader visible text="Verificando acceso..." />;
+  }
+
+  if (status === 'logged-out') {
+    return (
+      <>
+        <LoginScreen onLogin={login} />
+        <Loader visible={authLoading} text="Iniciando..." />
+      </>
+    );
+  }
 
   return (
     <div className="chat-ia-wrapper">
