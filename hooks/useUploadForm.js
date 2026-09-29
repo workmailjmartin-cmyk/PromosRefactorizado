@@ -221,26 +221,26 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
           delete payload.creador;
           delete payload.fecha_creacion;
           await updateDoc(doc(db, 'paquetes', isEditingId), payload);
-          await showAlert('Actualizado correctamente.', 'success');
         } else {
           await setDoc(doc(db, 'paquetes', idGenerado), payload);
-          await showAlert('Guardado correctamente.', 'success');
         }
       } catch (err) {
         console.error('Fallo el guardado en Firebase:', err);
-        await showAlert('Falla exacta: ' + err.message, 'error');
         onActionBusy?.(false);
+        showAlert('Falla exacta: ' + err.message, 'error');
         return;
       }
 
+      // 🔥 1. LIBERAMOS LA PANTALLA INMEDIATAMENTE (Evita que se quede cargando)
+      onActionBusy?.(false);
       resetForm();
-      onActionBusy?.('Actualizando grilla...');
-      try {
-        await refetch();
-      } finally {
-        onActionBusy?.(false);
-        onDone?.();
-      }
+
+      // 2. Volvemos a la grilla y refrescamos los viajes
+      if (onDone) onDone();
+      if (refetch) await refetch();
+
+      // 3. Mostramos el aviso de éxito ya en la pantalla principal
+      showAlert(isEditingId ? 'Actualizado correctamente.' : 'Guardado correctamente.', 'success');
     },
     [form, isEditingId, originalCreator, currentUser, userData, showAlert, refetch, onDone, onActionBusy, resetForm]
   );

@@ -108,26 +108,22 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
         </div>
       )}
 
-      {/* Cabecera del Modal con Destino + Subtítulo */}
+      {/* Cabecera del Modal con Destino + Subtítulo sutil */}
       <div className="modal-detalle-header" style={{ paddingBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-          <h2 style={{ margin: 0, fontSize: '2.1em', lineHeight: 1.1, color: '#fff' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '2.2em', lineHeight: 1.1, color: '#fff', textTransform: 'uppercase', fontWeight: 800 }}>
             {pkg.destino}
           </h2>
           {pkg.subtitulo && (
-            <span style={{ 
-              background: '#ef5a1a', 
-              color: '#fff', 
-              padding: '4px 12px', 
-              borderRadius: '8px', 
-              fontSize: '0.85em', 
-              fontWeight: 'bold', 
-              display: 'inline-flex', 
-              alignItems: 'center', 
-              gap: '4px' 
+            <div style={{ 
+              marginTop: '4px', 
+              fontSize: '1em', 
+              color: 'rgba(255, 255, 255, 0.85)', 
+              fontWeight: 500, 
+              textTransform: 'capitalize' 
             }}>
-              ✨ {pkg.subtitulo}
-            </span>
+              {pkg.subtitulo}
+            </div>
           )}
         </div>
         <div>

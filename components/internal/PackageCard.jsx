@@ -36,10 +36,10 @@ export default function PackageCard({ pkg, onSelect }) {
         <div className="card-header">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '8px' }}>
             
-            {/* Título y Subtítulo */}
+            {/* Título y Subtítulo Discreto */}
             <div style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                <h3 style={{ margin: 0, fontSize: '1.4em', lineHeight: 1.2, color: '#11173d', fontWeight: 800 }}>
+                <h3 style={{ margin: 0, fontSize: '1.45em', lineHeight: 1.15, color: '#11173d', fontWeight: 800, textTransform: 'uppercase' }}>
                   {pkg.destino}
                 </h3>
                 {pkg.status === 'pending' && (
@@ -49,21 +49,17 @@ export default function PackageCard({ pkg, onSelect }) {
                 )}
               </div>
 
-              {/* ✨ SUBTÍTULO / GANCHO COMERCIAL */}
+              {/* Subtítulo: mismo color, tamaño menor, inicial mayúscula */}
               {pkg.subtitulo && (
-                <div style={{ marginTop: '4px' }}>
-                  <span style={{ 
-                    display: 'inline-block', 
-                    background: '#fff3ed', 
-                    color: '#ef5a1a', 
-                    border: '1px solid #ffd8c7', 
-                    padding: '2px 8px', 
-                    borderRadius: '6px', 
-                    fontSize: '0.78em', 
-                    fontWeight: 700 
-                  }}>
-                    ✨ {pkg.subtitulo}
-                  </span>
+                <div style={{ 
+                  marginTop: '3px', 
+                  fontSize: '0.88em', 
+                  color: '#475569', 
+                  fontWeight: 500, 
+                  textTransform: 'capitalize',
+                  lineHeight: 1.2
+                }}>
+                  {pkg.subtitulo}
                 </div>
               )}
             </div>
