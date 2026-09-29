@@ -54,7 +54,7 @@ export default function PackageCard({ pkg, onSelect }) {
                 <div style={{ 
                   marginTop: '2px', 
                   fontSize: '1em', 
-                  color: '#ef5a1a', 
+                  color: '#11173d', 
                   fontWeight: 700, 
                   textTransform: 'capitalize',
                   lineHeight: 1.2,
