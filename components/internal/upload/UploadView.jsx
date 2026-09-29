@@ -25,6 +25,7 @@ export default function UploadView({ editingPackage, currentUser, userData, tipo
   const {
     form,
     setDestino,
+    setSubtitulo, // 👈 Nuevo setter del subtítulo
     setSalida,
     setFechaSalida,
     setMoneda,
@@ -43,8 +44,6 @@ export default function UploadView({ editingPackage, currentUser, userData, tipo
 
   const [servicioSeleccionado, setServicioSeleccionado] = useState('');
 
-  // Igual al <select id="upload-promo"> del original: al no tener una opción
-  // "placeholder", el navegador deja seleccionada la primera promo disponible.
   useEffect(() => {
     if (!form.promo && tiposPromocionVisibles.length > 0 && !isEditingId) {
       setPromo(tiposPromocionVisibles[0].nombre);
@@ -83,12 +82,41 @@ export default function UploadView({ editingPackage, currentUser, userData, tipo
           Información del Viaje {isEditingId && <small style={{ color: '#ef5a1a' }}>(Editando)</small>}
         </h2>
         <form id="upload-form" onSubmit={handleSubmit}>
-          <div className="form-group-row">
-            <div className="form-group">
-              <label>Destino</label>
-              <input type="text" required value={form.destino} onChange={(e) => setDestino(e.target.value)} />
+          
+          {/* Fila 1: Destino, Subtítulo y Salida */}
+          <div className="form-group-row" style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            
+            {/* TÍTULO: SOLO EL DESTINO */}
+            <div className="form-group" style={{ flex: '1 1 240px' }}>
+              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Destino (Título)</span>
+                <small style={{ color: '#64748b', fontSize: '0.75rem' }}>Solo el lugar</small>
+              </label>
+              <input 
+                type="text" 
+                required 
+                placeholder="Ej: Punta Cana, Búzios..." 
+                value={form.destino} 
+                onChange={(e) => setDestino(e.target.value)} 
+              />
             </div>
-            <div className="form-group">
+
+            {/* SUBTÍTULO: EL GANCHO COMERCIAL */}
+            <div className="form-group" style={{ flex: '1 1 240px' }}>
+              <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: '#ef5a1a', fontWeight: 'bold' }}>Subtítulo / Aclaración</span>
+                <small style={{ color: '#64748b', fontSize: '0.75rem' }}>Opcional</small>
+              </label>
+              <input 
+                type="text" 
+                placeholder="Ej: Finde Largo, Navidad, Family Plan..." 
+                value={form.subtitulo || ''} 
+                onChange={(e) => setSubtitulo ? setSubtitulo(e.target.value) : null} 
+              />
+            </div>
+
+            {/* SALIDA */}
+            <div className="form-group" style={{ flex: '1 1 200px' }}>
               <label>Provincia de Salida</label>
               <select required style={{ padding: '8px', border: '1px solid #ddd', borderRadius: '4px', width: '100%' }} value={form.salida} onChange={(e) => setSalida(e.target.value)}>
                 <option value="" disabled>

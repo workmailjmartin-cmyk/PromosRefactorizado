@@ -34,28 +34,52 @@ export default function PackageCard({ pkg, onSelect }) {
     <div className="paquete-card">
       <div className="card-clickable" onClick={() => onSelect(pkg)}>
         <div className="card-header">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
-            <div style={{ maxWidth: '75%', paddingRight: '30px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.5em', lineHeight: 1.2, color: '#11173d' }}>
-                {pkg.destino}{' '}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '8px' }}>
+            
+            {/* Título y Subtítulo */}
+            <div style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <h3 style={{ margin: 0, fontSize: '1.4em', lineHeight: 1.2, color: '#11173d', fontWeight: 800 }}>
+                  {pkg.destino}
+                </h3>
                 {pkg.status === 'pending' && (
-                  <span style={{ backgroundColor: '#ffeaa7', color: '#d35400', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7em', marginLeft: '5px' }}>
+                  <span style={{ backgroundColor: '#ffeaa7', color: '#d35400', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7em', fontWeight: 'bold' }}>
                     ⏳ En Revisión
                   </span>
                 )}
-              </h3>
+              </div>
+
+              {/* ✨ SUBTÍTULO / GANCHO COMERCIAL */}
+              {pkg.subtitulo && (
+                <div style={{ marginTop: '4px' }}>
+                  <span style={{ 
+                    display: 'inline-block', 
+                    background: '#fff3ed', 
+                    color: '#ef5a1a', 
+                    border: '1px solid #ffd8c7', 
+                    padding: '2px 8px', 
+                    borderRadius: '6px', 
+                    fontSize: '0.78em', 
+                    fontWeight: 700 
+                  }}>
+                    ✨ {pkg.subtitulo}
+                  </span>
+                </div>
+              )}
             </div>
+
+            {/* Noches */}
             {noches > 0 && (
-              <div style={{ background: '#eef2f5', color: '#11173d', padding: '5px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.8em', whiteSpace: 'nowrap' }}>
+              <div style={{ background: '#eef2f5', color: '#11173d', padding: '5px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.8em', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 🌙 {noches}
               </div>
             )}
           </div>
-          <div className="fecha">📅 Salida: {fechaMostrar}</div>
+
+          <div className="fecha" style={{ marginTop: '8px' }}>📅 Salida: {fechaMostrar}</div>
         </div>
 
         <div className="card-body">
-          {/* --- ACÁ AGREGAMOS EL GAP, ALIGN-ITEMS Y LA ETIQUETA CHARTER --- */}
           <div style={{ fontSize: '0.85em', color: '#555', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px', lineHeight: 1.4 }}>
             <span>{summaryIcons}</span>
             {tieneCharter && (

@@ -48,7 +48,7 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
   const noches = getNoches(pkg);
   const tarifa = parseFloat(pkg.tarifa) || 0;
   const { tarifaPorPersona, textoBase } = getTarifaPorPersona(pkg);
-  const bubbleStyle = { backgroundColor: '#56DDE0', color: '#11173d', padding: '4px 12px', borderRadius: '20px', fontWeight: 600, fontSize: '0.8em', display: 'inline-block', marginTop: '10px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' };
+  const bubbleStyle = { backgroundColor: '#56DDE0', color: '#11173d', padding: '4px 12px', borderRadius: '20px', fontWeight: 600, fontSize: '0.8em', display: 'inline-block', marginTop: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' };
 
   const isOwner = pkg.editor_email === currentUser?.email;
   const rol = userData?.rol;
@@ -72,17 +72,17 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
   return (
     <>
       {canEdit && (
-        <div className="modal-tools" style={{ position: 'absolute', top: '15px', right: '50px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-          <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="modal-tools" style={{ position: 'absolute', top: '15px', right: '50px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', zIndex: 10 }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {esGestor && pkg.status === 'pending' && (
-              <button className="btn btn-primario" onClick={() => actions.approvePackage(pkg)} style={{ padding: '5px 15px', fontSize: '0.8em', background: '#2ecc71' }}>
+              <button className="btn btn-primario" onClick={() => actions.approvePackage(pkg)} style={{ padding: '5px 12px', fontSize: '0.8em', background: '#2ecc71' }}>
                 ✅ Aprobar
               </button>
             )}
-            <button className="btn btn-secundario" onClick={() => actions.startEditing(pkg)} style={{ padding: '5px 15px', fontSize: '0.8em' }}>
+            <button className="btn btn-secundario" onClick={() => actions.startEditing(pkg)} style={{ padding: '5px 12px', fontSize: '0.8em' }}>
               ✏️ Editar
             </button>
-            <button className="btn btn-secundario" onClick={() => actions.deletePackage(pkg)} style={{ padding: '5px 15px', fontSize: '0.8em', background: '#e74c3c', color: 'white' }}>
+            <button className="btn btn-secundario" onClick={() => actions.deletePackage(pkg)} style={{ padding: '5px 12px', fontSize: '0.8em', background: '#e74c3c', color: 'white' }}>
               🗑️ Borrar
             </button>
           </div>
@@ -92,14 +92,14 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
               <button
                 title="Anclar a B2C (Ignora corte 12hs)"
                 onClick={() => actions.toggleVisibilidad(pkgId, 'reflejo_cliente', isAnclado)}
-                style={{ padding: '4px 12px', fontSize: '0.9em', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', border: `1px solid ${isAnclado ? '#1e8e3e' : '#555'}`, background: isAnclado ? '#e6f4ea' : 'transparent', color: isAnclado ? '#1e8e3e' : '#ccc', transition: '0.2s' }}
+                style={{ padding: '4px 10px', fontSize: '0.85em', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', border: `1px solid ${isAnclado ? '#1e8e3e' : '#555'}`, background: isAnclado ? '#e6f4ea' : 'transparent', color: isAnclado ? '#1e8e3e' : '#ccc' }}
               >
                 ✅ Anclar
               </button>
               <button
                 title="Ocultar en B2C"
                 onClick={() => actions.toggleVisibilidad(pkgId, 'ocultar_cliente', isOculto)}
-                style={{ padding: '4px 12px', fontSize: '0.9em', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', border: `1px solid ${isOculto ? '#d93025' : '#555'}`, background: isOculto ? '#fce8e6' : 'transparent', color: isOculto ? '#d93025' : '#ccc', transition: '0.2s' }}
+                style={{ padding: '4px 10px', fontSize: '0.85em', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', border: `1px solid ${isOculto ? '#d93025' : '#555'}`, background: isOculto ? '#fce8e6' : 'transparent', color: isOculto ? '#d93025' : '#ccc' }}
               >
                 ❌ Ocultar
               </button>
@@ -108,24 +108,46 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
         </div>
       )}
 
-      <div className="modal-detalle-header" style={{ display: 'block', paddingBottom: '25px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <h2 style={{ margin: 0, fontSize: '2.2em', lineHeight: 1.1 }}>{pkg.destino}</h2>
+      {/* Cabecera del Modal con Destino + Subtítulo */}
+      <div className="modal-detalle-header" style={{ paddingBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <h2 style={{ margin: 0, fontSize: '2.1em', lineHeight: 1.1, color: '#fff' }}>
+            {pkg.destino}
+          </h2>
+          {pkg.subtitulo && (
+            <span style={{ 
+              background: '#ef5a1a', 
+              color: '#fff', 
+              padding: '4px 12px', 
+              borderRadius: '8px', 
+              fontSize: '0.85em', 
+              fontWeight: 'bold', 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '4px' 
+            }}>
+              ✨ {pkg.subtitulo}
+            </span>
+          )}
         </div>
-        <div style={{ marginTop: '5px' }}>
+        <div>
           <span style={bubbleStyle}>{pkg.tipo_promo}</span>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', padding: '20px' }}>
-        <div>
-          <h3 style={{ borderBottom: '2px solid #eee', paddingBottom: '10px', marginTop: 0, color: '#11173d' }}>Itinerario</h3>
+      {/* Grilla responsiva: en PC 2 columnas, en Celular 1 sola vertical */}
+      <div className="modal-body-layout">
+        <div className="modal-itinerario-col">
+          <h3 style={{ borderBottom: '2px solid #eee', paddingBottom: '10px', marginTop: 0, color: '#11173d' }}>
+            Itinerario
+          </h3>
           <ItinerarioServicios servicios={servicios} mutedText={false} />
         </div>
-        <div style={{ background: '#f9fbfd', padding: '15px', borderRadius: '8px', height: 'fit-content' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+
+        <div className="modal-resumen-col" style={{ background: '#f9fbfd', padding: '15px', borderRadius: '8px', height: 'fit-content' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
             <h4 style={{ margin: 0, color: '#11173d' }}>Resumen</h4>
-            <button className="btn" onClick={copiarPresupuesto} style={{ background: '#34495e', color: 'white', padding: '5px 15px', fontSize: '0.8em', display: 'flex', alignItems: 'center', gap: '5px' }}>
+            <button className="btn" onClick={copiarPresupuesto} style={{ background: '#34495e', color: 'white', padding: '5px 12px', fontSize: '0.8em', display: 'flex', alignItems: 'center', gap: '5px' }}>
               📋 Copiar
             </button>
           </div>
@@ -135,7 +157,7 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
           <p style={{ margin: '5px 0', fontSize: '0.9em' }}><b>📅 Cargado el:</b> {pkg.fecha_creacion || '-'}</p>
 
           <div>
-            <h4 style={{ margin: '20px 0 10px 0', color: '#11173d', borderTop: '1px solid #eee', paddingTop: '15px' }}>Costos (Interno)</h4>
+            <h4 style={{ margin: '18px 0 10px 0', color: '#11173d', borderTop: '1px solid #eee', paddingTop: '15px' }}>Costos (Interno)</h4>
             <CostosProveedores pkg={pkg} />
           </div>
 
@@ -147,8 +169,9 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
         </div>
       </div>
 
+      {/* Footer del Modal */}
       <div style={{ background: '#11173d', color: 'white', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0 0 12px 12px', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', gap: '30px' }}>
+        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
           <div>
             <small style={{ opacity: 0.7 }}>Costo Total</small>
             <div style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{pkg.moneda} ${formatMoney(pkg.costos_proveedor)}</div>
@@ -167,6 +190,29 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
           <div style={{ fontSize: '0.9em' }}>{pkg.creador}</div>
         </div>
       </div>
+
+      {/* Estilos responsivos del modal */}
+      <style jsx>{`
+        .modal-body-layout {
+          display: grid;
+          grid-template-columns: 2fr 1fr;
+          gap: 20px;
+          padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+          .modal-body-layout {
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 12px !important;
+            gap: 16px !important;
+          }
+          .modal-itinerario-col,
+          .modal-resumen-col {
+            width: 100% !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

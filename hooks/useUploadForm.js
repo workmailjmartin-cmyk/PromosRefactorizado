@@ -17,6 +17,7 @@ function hoyISO() {
 
 const estadoInicial = () => ({
   destino: '',
+  subtitulo: '', // 👈 1. Inicializado
   salida: '',
   fechaSalida: '',
   moneda: 'USD',
@@ -28,8 +29,6 @@ const estadoInicial = () => ({
   basePasajeros: 2,
 });
 
-// Recalcula "noches" (o crucero_noches / circuito_noches, según el tipo) igual
-// que window.calcularNoches(): diferencia en días entre checkin y checkout.
 function conNochesRecalculadas(servicio) {
   if (!servicio.checkin || !servicio.checkout) return servicio;
   const d1 = new Date(servicio.checkin);
@@ -46,7 +45,6 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
   const isEditingId = editingPackage ? editingPackage.id_paquete || editingPackage.id || editingPackage['item.id'] : null;
   const originalCreator = editingPackage ? editingPackage.creador || '' : '';
 
-  // Igual a startEditing(): repuebla el formulario con los datos del paquete.
   useEffect(() => {
     if (!editingPackage) {
       setForm(estadoInicial());
@@ -61,13 +59,14 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
 
     setForm({
       destino: editingPackage.destino || '',
+      subtitulo: editingPackage.subtitulo || '', // 👈 2. Precarga al editar
       salida: editingPackage.salida || '',
       fechaSalida: fecha,
       moneda: editingPackage.moneda || 'USD',
       promo: editingPackage.tipo_promo || '',
       financiacion: editingPackage.financiacion || '',
       servicios,
-      costoTotal, // solo para mostrar; NO dispara la sugerencia de tarifa (igual que el original)
+      costoTotal,
       tarifaTotal: editingPackage.tarifa != null ? String(editingPackage.tarifa) : '',
       basePasajeros: editingPackage.base_pasajeros ? parseInt(editingPackage.base_pasajeros) : 2,
     });
@@ -109,9 +108,6 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
         return next;
       });
       if (!tocaCosto) return { ...f, servicios };
-      // Igual a calcularTotal(): al cambiar un costo, se recalcula el total y se
-      // SUGIERE una tarifa (costo * 1.185), pisando lo que hubiera. El usuario
-      // puede después escribir un valor propio en el campo Tarifa libremente.
       const t = servicios.reduce((acc, s) => acc + (parseFloat(s.costo) || 0), 0);
       return { ...f, servicios, costoTotal: t, tarifaTotal: String(Math.round(t * 1.185)) };
     });
@@ -145,7 +141,6 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
         return showAlert('Agrega servicios.', 'error');
       }
 
-      // Quitamos el __id interno de React antes de armar el payload real.
       const serviciosData = form.servicios.map(({ __id, ...resto }) => resto);
 
       const esCircuito = serviciosData.some((s) => s.tipo === 'circuito');
@@ -199,6 +194,7 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
       const payload = {
         id_paquete: idGenerado,
         destino: form.destino,
+        subtitulo: form.subtitulo || '', // 👈 3. Se envía a Firebase Firestore
         salida: form.salida,
         fecha_salida: fechaViajeStr,
         costos_proveedor: costo,
@@ -213,9 +209,6 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
         action_type: isEditingId ? 'edit' : 'create',
         timestamp: Date.now(),
         fecha_creacion: fechaCreacionFormateada,
-        // No existe ninguna casilla en el formulario para setear esto (ver nota
-        // en el resumen de esta fase): igual que hoy, siempre se manda en false.
-        // El anclaje/ocultamiento real se maneja con los botones del modal.
         reflejo_cliente: false,
         ocultar_cliente: false,
         base_pasajeros: parseInt(form.basePasajeros) || 2,
@@ -255,6 +248,7 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
   return {
     form,
     setDestino: setCampo('destino'),
+    setSubtitulo: setCampo('subtitulo'), // 👈 4. Exportado
     setSalida: setCampo('salida'),
     setFechaSalida: setCampo('fechaSalida'),
     setMoneda: setCampo('moneda'),
