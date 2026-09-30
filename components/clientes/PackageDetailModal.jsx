@@ -48,9 +48,25 @@ function ModalBody({ pkg, wppNumber }) {
 
   return (
     <>
-      <div className="modal-detalle-header" style={{ display: 'block', paddingBottom: '25px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <h2 style={{ margin: 0, fontSize: '2.2em', lineHeight: 1.1 }}>{pkg.destino}</h2>
+      {/* Cabecera del Modal con Destino en Blanco + Subtítulo en Naranja */}
+      <div className="modal-detalle-header" style={{ display: 'block', paddingBottom: '20px' }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: '2.2em', lineHeight: 1.1, textTransform: 'uppercase', fontWeight: 800 }}>
+            {pkg.destino}
+          </h2>
+          {/* SUBTÍTULO: Mismo blanco que el título */}
+          {pkg.subtitulo && (
+            <div style={{ 
+              marginTop: '4px', 
+              fontSize: '1.05em', 
+              color: '#ffffff', 
+              fontWeight: 600, 
+              opacity: 0.9,
+              textTransform: 'capitalize'
+            }}>
+              {pkg.subtitulo}
+            </div>
+          )}
         </div>
       </div>
 
@@ -125,6 +141,17 @@ function ModalBody({ pkg, wppNumber }) {
           </small>
         </div>
       </div>
+
+      <style jsx>{`
+        @media (max-width: 768px) {
+          .modal-layout-grid {
+            display: flex !important;
+            flex-direction: column !important;
+            padding: 14px !important;
+            gap: 16px !important;
+          }
+        }
+      `}</style>
     </>
   );
 }

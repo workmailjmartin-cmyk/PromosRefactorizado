@@ -51,10 +51,28 @@ export default function PackageCard({ pkg, onSelect, textoListon }) {
         <div className="card-header">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' }}>
             <div style={{ maxWidth: esSoloXHoy ? '72%' : '100%', paddingRight: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '1.4em', lineHeight: 1.2, color: '#11173d' }}>{pkg.destino}</h3>
+              
+              {/* TÍTULO: Solo Destino en Mayúsculas */}
+              <h3 style={{ margin: 0, fontSize: '1.4em', lineHeight: 1.15, color: '#11173d', fontWeight: 800, textTransform: 'uppercase' }}>
+                {pkg.destino}
+              </h3>
+
+              {/* SUBTÍTULO: Mismo azul oscuro que el título, más chico */}
+              {pkg.subtitulo && (
+                <div style={{ 
+                  marginTop: '2px', 
+                  fontSize: '0.92em', 
+                  color: '#11173d', 
+                  fontWeight: 600, 
+                  textTransform: 'capitalize',
+                  lineHeight: 1.25
+                }}>
+                  {pkg.subtitulo}
+                </div>
+              )}
             </div>
           </div>
-          <div className="fecha">📅 Salida: {fechaMostrar}</div>
+          <div className="fecha" style={{ marginTop: '6px' }}>📅 Salida: {fechaMostrar}</div>
         </div>
 
         <div className="card-body">
@@ -67,13 +85,11 @@ export default function PackageCard({ pkg, onSelect, textoListon }) {
               </span>
             )}
 
-            {/* --- NUEVA ETIQUETA CHARTER AL LADO DE LAS NOCHES --- */}
             {tieneCharter && (
               <span style={{ background: '#ef5a1a', color: '#fff', padding: '4px 8px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.85em', display: 'inline-flex', alignItems: 'center', gap: '4px', boxShadow: '0 2px 4px rgba(239, 90, 26, 0.3)' }}>
                 ✈️ Charter
               </span>
             )}
-            
           </div>
         </div>
 

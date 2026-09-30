@@ -35,7 +35,6 @@ function OfertaCard({ pkg, imagenIdFondo, bancoImagenes, onSelect }) {
   const { tarifaPorPersona } = getTarifaPorPersona(pkg);
   const servicios = parseServicios(pkg);
   const imgFondo = bancoImagenes.find((img) => img.id === imagenIdFondo)?.url || IMAGEN_PLACEHOLDER;
-  const lugarSalida = pkg.salida ? `saliendo desde ${pkg.salida}` : '';
 
   return (
     <div
@@ -61,13 +60,33 @@ function OfertaCard({ pkg, imagenIdFondo, bancoImagenes, onSelect }) {
         />
       </div>
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-        <div style={{ fontSize: '0.65em', color: '#6b7280', fontWeight: 800, letterSpacing: '0.5px', marginBottom: '8px' }}>
+        <div style={{ fontSize: '0.68em', color: '#6b7280', fontWeight: 800, letterSpacing: '0.5px', marginBottom: '8px' }}>
           {noches > 0 ? `${noches} NOCHES` : 'PAQUETE'} - {mesDeSalida(pkg)}
         </div>
-        <h3 style={{ fontSize: '1.1em', fontWeight: 800, color: '#11173d', margin: '0 0 12px 0', lineHeight: 1.3, textTransform: 'uppercase' }}>
-          {pkg.destino} {noches > 0 ? `${noches} NOCHES` : ''} {lugarSalida}
+
+        {/* TÍTULO LIMPIO: SOLO EL DESTINO */}
+        <h3 style={{ fontSize: '1.25em', fontWeight: 900, color: '#11173d', margin: '0', lineHeight: 1.2, textTransform: 'uppercase' }}>
+          {pkg.destino}
         </h3>
-        <p style={{ fontSize: '0.8em', color: '#4b5563', margin: '0 0 20px 0', fontWeight: 500 }}>{inclusionesTexto(servicios)}</p>
+
+        {/* SUBTÍTULO: Mismo azul oscuro que el título */}
+        {pkg.subtitulo && (
+          <div style={{ 
+            fontSize: '0.92em', 
+            fontWeight: 600, 
+            color: '#11173d', 
+            textTransform: 'capitalize', 
+            marginTop: '2px',
+            marginBottom: '10px',
+            lineHeight: 1.25
+          }}>
+            {pkg.subtitulo}
+          </div>
+        )}
+
+        <p style={{ fontSize: '0.8em', color: '#4b5563', margin: pkg.subtitulo ? '0 0 16px 0' : '8px 0 16px 0', fontWeight: 500 }}>
+          {inclusionesTexto(servicios)}
+        </p>
 
         <div style={{ marginTop: 'auto', paddingTop: '15px', borderTop: '1px solid #f3f4f6' }}>
           <div style={{ fontSize: '0.75em', color: '#6b7280', fontWeight: 500, marginBottom: '2px' }}>Precio por persona</div>
@@ -116,21 +135,19 @@ export default function FeaturedOffers({ vidriera, allPackages, bancoImagenes, o
             overflow-x: auto;
             scroll-snap-type: x mandatory;
             padding-bottom: 20px; 
-            margin: 0 -20px 30px -20px; /* Expande al borde del celular */
+            margin: 0 -20px 30px -20px;
             padding-left: 20px;
             padding-right: 20px;
-            
-            scrollbar-width: none; /* Oculta scrollbar en Firefox */
-            -ms-overflow-style: none;  /* Oculta scrollbar en IE/Edge */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
           }
           
-          /* Oculta scrollbar en Chrome/Safari */
           .carrusel-destacadas::-webkit-scrollbar {
             display: none;
           }
           
           .carrusel-destacadas > div {
-            flex: 0 0 85%; /* Muestra el 85% de la tarjeta para indicar que hay más al costado */
+            flex: 0 0 85%;
             scroll-snap-align: center;
           }
         }
@@ -142,7 +159,6 @@ export default function FeaturedOffers({ vidriera, allPackages, bancoImagenes, o
           <p style={{ color: '#6b7280', margin: 0, fontSize: '1.1em' }}>Nuestras recomendaciones para vos</p>
         </div>
         
-        {/* APLICAMOS LA NUEVA CLASE AL CONTENEDOR */}
         <div id="grid-ofertas" className="carrusel-destacadas">
           {paquetesVidriera.map(({ pkg, imagenIdFondo }) => (
             <OfertaCard
@@ -154,7 +170,6 @@ export default function FeaturedOffers({ vidriera, allPackages, bancoImagenes, o
             />
           ))}
         </div>
-        
       </div>
     </>
   );
