@@ -4,23 +4,85 @@ import HeaderB2C from '@/components/clientes/HeaderB2C';
 import FooterB2C from '@/components/clientes/FooterB2C';
 import WhatsAppFloatButton from '@/components/shared/WhatsAppFloatButton';
 import Loader from '@/components/shared/Loader';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore'; // Aseguramos importar doc y getDoc
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { WPP_NUMBER } from '@/lib/constants';
-
-// ELIMINADO: const MARKUP_AGENCIA = 1.20;
 
 const normalizarTexto = (texto) => {
   if (!texto) return '';
   return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 };
 
+// 🔥 FUNCIÓN DE MESES: Extrae, ordena cronológicamente y agrupa los meses de salida
+function obtenerTextoSalidas(pkg) {
+  if (!pkg) return null;
+
+  const fechasRaw = [];
+
+  if (Array.isArray(pkg.salidas)) fechasRaw.push(...pkg.salidas);
+  if (Array.isArray(pkg.fechas)) fechasRaw.push(...pkg.fechas);
+  if (pkg.fecha_salida) fechasRaw.push(pkg.fecha_salida);
+  
+  if (Array.isArray(pkg.tarifario)) {
+    pkg.tarifario.forEach((t) => {
+      if (t.fecha) fechasRaw.push(t.fecha);
+      if (t.fecha_salida) fechasRaw.push(t.fecha_salida);
+      if (t.salida) fechasRaw.push(t.salida);
+      if (t.mes) fechasRaw.push(t.mes);
+    });
+  }
+
+  if (fechasRaw.length === 0) return null;
+
+  const MESES_MAP = {
+    0: 'Enero', 1: 'Febrero', 2: 'Marzo', 3: 'Abril',
+    4: 'Mayo', 5: 'Junio', 6: 'Julio', 7: 'Agosto',
+    8: 'Septiembre', 9: 'Octubre', 10: 'Noviembre', 11: 'Diciembre'
+  };
+
+  const mesesIndices = new Set();
+  const mesesTexto = new Set();
+
+  fechasRaw.forEach((item) => {
+    if (!item) return;
+    const str = String(item).trim();
+
+    if (str.includes('-')) {
+      const parts = str.split('-');
+      if (parts.length >= 2) {
+        const mesIdx = parseInt(parts[1], 10) - 1;
+        if (mesIdx >= 0 && mesIdx <= 11) mesesIndices.add(mesIdx);
+      }
+    } 
+    else if (str.includes('/')) {
+      const parts = str.split('/');
+      if (parts.length >= 2) {
+        const mesIdx = parseInt(parts[1], 10) - 1;
+        if (mesIdx >= 0 && mesIdx <= 11) mesesIndices.add(mesIdx);
+      }
+    } 
+    else {
+      const nombreLimpio = str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      mesesTexto.add(nombreLimpio);
+    }
+  });
+
+  const mesesOrdenados = Array.from(mesesIndices)
+    .sort((a, b) => a - b)
+    .map((idx) => MESES_MAP[idx]);
+
+  const todosLosMeses = [...new Set([...mesesOrdenados, ...Array.from(mesesTexto)])];
+
+  if (todosLosMeses.length === 0) return null;
+  if (todosLosMeses.length === 1) return `Salida: ${todosLosMeses[0]}`;
+  return `Salidas: ${todosLosMeses.join(', ')}`;
+}
+
 export default function ListadoEnlatadosCliente() {
   const [paquetesOriginales, setPaquetesOriginales] = useState([]);
   const [paquetesFiltrados, setPaquetesFiltrados] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // NUEVO: Estado para guardar la configuración de precios
   const [configPrecios, setConfigPrecios] = useState({ marca: 0, comision: 15 });
 
   // Filtros
@@ -30,7 +92,6 @@ export default function ListadoEnlatadosCliente() {
   const [filtroOrden, setFiltroOrden] = useState('recientes');
   const [opcionesSalidas, setOpcionesSalidas] = useState([]);
   
-  // NUEVO: Funciones de cálculo dinámico
   const calcularNetoInterno = (costoRaw, config) => {
     const costo = parseFloat(costoRaw) || 0;
     return Math.round(costo * (1 + (config.marca / 100)));
@@ -49,7 +110,6 @@ export default function ListadoEnlatadosCliente() {
     }).filter(p => p > 0);
     if (precios.length === 0) return 0;
     
-    // Usamos el cálculo con la configuración de Firebase
     const costoBase = Math.min(...precios);
     return calcularPrecioVenta(costoBase, configActual);
   };
@@ -57,7 +117,6 @@ export default function ListadoEnlatadosCliente() {
   const cargarPaquetes = async () => {
     setLoading(true);
     try {
-      // 1. CARGAMOS LA CONFIGURACIÓN DE MÁRGENES
       let configActual = { marca: 0, comision: 15 };
       try {
         const configDoc = await getDoc(doc(db, 'configuracion', 'grupales')); 
@@ -71,7 +130,6 @@ export default function ListadoEnlatadosCliente() {
         }
       } catch(e) { console.error("Error cargando config de precios:", e); }
 
-      // 2. CARGAMOS LOS PAQUETES Y APLICAMOS EL CÁLCULO
       const querySnapshot = await getDocs(collection(db, 'enlatados'));
       const data = querySnapshot.docs.map(docSnap => {
         const pkgData = docSnap.data();
@@ -191,27 +249,62 @@ export default function ListadoEnlatadosCliente() {
             ) : (
               paquetesFiltrados.map((pkg) => {
                 const imagenPortada = pkg.imagenes && pkg.imagenes.length > 0 ? pkg.imagenes[0] : '/placeholder.jpg'; 
+                const tieneCharter = (Array.isArray(pkg.vuelos) && pkg.vuelos.some(v => v.esCharter)) || (pkg.transporte && pkg.transporte.includes('charter'));
+                
+                // 👈 1. CALCULAMOS LOS MESES DE SALIDA
+                const textoSalidas = obtenerTextoSalidas(pkg);
+
                 return (
                   <div key={pkg.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', transition: 'transform 0.2s', cursor: 'pointer' }} onMouseOver={e=>e.currentTarget.style.transform='translateY(-5px)'} onMouseOut={e=>e.currentTarget.style.transform='translateY(0)'}>
+                    
                     <div style={{ height: '200px', position: 'relative', background: '#f3f4f6' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={imagenPortada} alt={pkg.destino} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       <div style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(255,255,255,0.9)', padding: '6px 12px', borderRadius: '20px', fontSize: '0.85em', fontWeight: 'bold', color: '#11173d' }}>
                         🌙 {pkg.noches} Noches
                       </div>
+
+                      {tieneCharter && (
+                        <div style={{ position: 'absolute', bottom: '10px', left: '10px', background: '#ef5a1a', padding: '4px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: '900', color: '#fff', display: 'flex', alignItems: 'center', gap: '5px', boxShadow: '0 4px 6px rgba(0,0,0,0.2)', textTransform: 'uppercase' }}>
+                          ✈️ Vuelo Charter
+                        </div>
+                      )}
                     </div>
+
                     <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                       <div style={{ fontSize: '0.8em', color: '#6b7280', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '8px' }}>
                         {pkg.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Desde {pkg.transporte.includes('aereo') ? pkg.origenProvincia || pkg.origenPrincipal : pkg.origenPrincipal}
                       </div>
-                      <h3 style={{ margin: '0 0 15px 0', fontSize: '1.4rem', color: '#11173d', lineHeight: '1.2' }}>{pkg.destino}</h3>
-                      <div style={{ marginTop: 'auto', textAlign: 'left', borderTop: '1px solid #f3f4f6', paddingTop: '15px' }}>
-                        <div style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 'bold', marginBottom: '2px' }}>Precio por persona</div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', gap: '5px' }}>
-                          <span style={{ fontSize: '0.9rem', color: '#11173d' }}>{pkg.moneda || 'USD'}</span> ${formatearPrecio(pkg.precioFinalCalculado)}
+
+                      <h3 style={{ margin: '0 0 4px 0', fontSize: '1.4rem', color: '#11173d', lineHeight: '1.2', fontWeight: 800 }}>
+                        {pkg.destino}
+                      </h3>
+
+                      {/* 📅 NUEVO: SALIDAS POR MES (Justo debajo del título) */}
+                      {textoSalidas && (
+                        <div style={{ 
+                          fontSize: '0.88rem', 
+                          color: '#475569', 
+                          fontWeight: 600, 
+                          marginBottom: '10px', 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '5px' 
+                        }}>
+                          <span>📅</span>
+                          <span>{textoSalidas}</span>
+                        </div>
+                      )}
+
+                      {/* 💰 PRECIO ALINEADO A LA DERECHA (IGUAL AL INTERNO) */}
+                      <div style={{ marginTop: 'auto', textAlign: 'right', paddingTop: '10px' }}>
+                        <div style={{ fontSize: '1.65rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '5px' }}>
+                          <span style={{ fontSize: '0.85rem', color: '#6b7280', fontWeight: 'normal' }}>desde</span>
+                          {pkg.moneda || 'USD'} ${formatearPrecio(pkg.precioFinalCalculado)}
                         </div>
                       </div>
                     </div>
+
                     <div style={{ background: '#f9fafb', padding: '15px 20px', borderTop: '1px solid #eee', display: 'flex' }}>
                       <a href={`/clientes/paquete/${pkg.id}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, textAlign: 'center', background: '#11173d', color: '#fff', textDecoration: 'none', padding: '14px', borderRadius: '10px', fontSize: '1rem', fontWeight: 'bold', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', transition: 'background 0.2s' }} onMouseOver={e=>e.currentTarget.style.background='#ef5a1a'} onMouseOut={e=>e.currentTarget.style.background='#11173d'}>
                         Ver Fechas y Tarifas
