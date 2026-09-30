@@ -12,6 +12,75 @@ const normalizarTexto = (texto) => {
   return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 };
 
+// 🔥 FUNCIÓN INTELIGENTE: Extrae, ordena cronológicamente y agrupa los meses de salida
+function obtenerTextoSalidas(pkg) {
+  if (!pkg) return null;
+
+  const fechasRaw = [];
+
+  if (Array.isArray(pkg.salidas)) fechasRaw.push(...pkg.salidas);
+  if (Array.isArray(pkg.fechas)) fechasRaw.push(...pkg.fechas);
+  if (pkg.fecha_salida) fechasRaw.push(pkg.fecha_salida);
+  
+  // Si las fechas están dentro de cada fila del tarifario
+  if (Array.isArray(pkg.tarifario)) {
+    pkg.tarifario.forEach((t) => {
+      if (t.fecha) fechasRaw.push(t.fecha);
+      if (t.fecha_salida) fechasRaw.push(t.fecha_salida);
+      if (t.salida) fechasRaw.push(t.salida);
+      if (t.mes) fechasRaw.push(t.mes);
+    });
+  }
+
+  if (fechasRaw.length === 0) return null;
+
+  const MESES_MAP = {
+    0: 'Enero', 1: 'Febrero', 2: 'Marzo', 3: 'Abril',
+    4: 'Mayo', 5: 'Junio', 6: 'Julio', 7: 'Agosto',
+    8: 'Septiembre', 9: 'Octubre', 10: 'Noviembre', 11: 'Diciembre'
+  };
+
+  const mesesIndices = new Set();
+  const mesesTexto = new Set();
+
+  fechasRaw.forEach((item) => {
+    if (!item) return;
+    const str = String(item).trim();
+
+    // Formato YYYY-MM-DD
+    if (str.includes('-')) {
+      const parts = str.split('-');
+      if (parts.length >= 2) {
+        const mesIdx = parseInt(parts[1], 10) - 1;
+        if (mesIdx >= 0 && mesIdx <= 11) mesesIndices.add(mesIdx);
+      }
+    } 
+    // Formato DD/MM/YYYY
+    else if (str.includes('/')) {
+      const parts = str.split('/');
+      if (parts.length >= 2) {
+        const mesIdx = parseInt(parts[1], 10) - 1;
+        if (mesIdx >= 0 && mesIdx <= 11) mesesIndices.add(mesIdx);
+      }
+    } 
+    // Si viene directamente el nombre del mes (ej: "Marzo")
+    else {
+      const nombreLimpio = str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      mesesTexto.add(nombreLimpio);
+    }
+  });
+
+  const mesesOrdenados = Array.from(mesesIndices)
+    .sort((a, b) => a - b)
+    .map((idx) => MESES_MAP[idx]);
+
+  const todosLosMeses = [...new Set([...mesesOrdenados, ...Array.from(mesesTexto)])];
+
+  if (todosLosMeses.length === 0) return null;
+  if (todosLosMeses.length === 1) return `Salida: ${todosLosMeses[0]}`;
+  return `Salidas: ${todosLosMeses.join(', ')}`;
+}
+
 export default function InternalEnlatadosDashboard() {
   const [mostrandoFormulario, setMostrandoFormulario] = useState(false);
   const [paqueteAEditar, setPaqueteAEditar] = useState(null); 
@@ -294,9 +363,10 @@ export default function InternalEnlatadosDashboard() {
             paquetesFiltrados.map((pkg) => {
               const imagenPortada = pkg.imagenes && pkg.imagenes.length > 0 ? pkg.imagenes[0] : '/placeholder.jpg'; 
               const puedeEditar = esGestor || currentUser?.email === pkg.proveedor_email;
-              
-              // Verificación segura para evitar crashes con paquetes viejos
               const tieneCharter = Array.isArray(pkg.vuelos) && pkg.vuelos.some(v => v.esCharter);
+              
+              // 👈 EXTRAEMOS LOS MESES DE SALIDA
+              const textoSalidas = obtenerTextoSalidas(pkg);
 
               return (
                 <div key={pkg.id} style={{ background: '#fff', borderRadius: '12px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column' }}>
@@ -320,8 +390,30 @@ export default function InternalEnlatadosDashboard() {
                       {pkg.transporte.includes('aereo') ? '✈️ Aéreo' : '🚌 Bus'} • Desde {pkg.transporte.includes('aereo') ? pkg.origenProvincia || pkg.origenPrincipal : pkg.origenPrincipal}
                     </div>
                     
-                    <h3 style={{ margin: '0 0 5px 0', fontSize: '1.3rem', color: '#11173d', lineHeight: '1.2' }}>{pkg.destino}</h3>
-                    <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginBottom: '10px' }}>Por: {pkg.proveedor_nombre}</div>
+                    {/* TÍTULO: DESTINO */}
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '1.3rem', color: '#11173d', lineHeight: '1.2', fontWeight: 800 }}>
+                      {pkg.destino}
+                    </h3>
+
+                    {/* 📅 NUEVO: SALIDAS POR MES (Justo debajo del título) */}
+                    {textoSalidas && (
+                      <div style={{ 
+                        fontSize: '0.86rem', 
+                        color: '#475569', 
+                        fontWeight: 600, 
+                        marginBottom: '6px', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '5px' 
+                      }}>
+                        <span>📅</span>
+                        <span>{textoSalidas}</span>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '0.8rem', color: '#9ca3af', marginBottom: '10px' }}>
+                      Por: {pkg.proveedor_nombre}
+                    </div>
 
                     <div style={{ marginTop: 'auto', textAlign: 'right' }}>
                       <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ef5a1a', display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '5px' }}>
