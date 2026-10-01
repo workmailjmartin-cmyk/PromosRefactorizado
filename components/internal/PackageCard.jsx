@@ -1,8 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { formatDateAR, formatMoney, getNoches, parseServicios } from '@/lib/packageUtils';
 import { ICONOS_SERVICIO } from '@/lib/constants';
 
@@ -11,35 +8,8 @@ function getSummaryIcons(servicios) {
   return [...new Set(servicios.map((x) => ICONOS_SERVICIO[x.tipo] || '🔹'))].join(' ');
 }
 
-export default function PackageCard({ pkg, onSelect, userData }) {
-  // 👈 1. Los hooks SIEMPRE van primero que todo
-  const [isValidado, setIsValidado] = useState(Boolean(pkg?.validado_ia));
-
-  // 👈 2. El if para salir va DESPUÉS de los hooks
+export default function PackageCard({ pkg, onSelect }) {
   if (!pkg || !pkg.destino) return null;
-
-  const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
-
-  const handleToggleValidado = async (e) => {
-    e.stopPropagation();
-
-    if (isValidado && !esGestor) {
-      alert('⛔ Solo los editores o administradores pueden desmarcar la validación de IA.');
-      return;
-    }
-
-    const nuevoEstado = !isValidado;
-    setIsValidado(nuevoEstado);
-
-    try {
-      const id = pkg.id_paquete || pkg.id || pkg['item.id'];
-      await updateDoc(doc(db, 'paquetes', id), { validado_ia: nuevoEstado });
-      pkg.validado_ia = nuevoEstado;
-    } catch (error) {
-      console.error('Error al actualizar validado por IA:', error);
-      setIsValidado(!nuevoEstado);
-    }
-  };
 
   const noches = getNoches(pkg);
   const servicios = parseServicios(pkg);
@@ -67,7 +37,7 @@ export default function PackageCard({ pkg, onSelect, userData }) {
         <div className="card-header">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', gap: '8px' }}>
             
-            {/* Título y Subtítulo Discreto */}
+            {/* Título y Subtítulo */}
             <div style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>
               <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                 <h3 style={{ margin: 0, fontSize: '1.45em', lineHeight: 1.15, color: '#11173d', fontWeight: 800, textTransform: 'uppercase' }}>
@@ -78,9 +48,14 @@ export default function PackageCard({ pkg, onSelect, userData }) {
                     ⏳ En Revisión
                   </span>
                 )}
+                {/* Indicador sutil si fue validado */}
+                {pkg.validado_ia && (
+                  <span title="Validado por IA" style={{ fontSize: '0.85em', cursor: 'default' }}>
+                    ✅
+                  </span>
+                )}
               </div>
 
-              {/* Subtítulo: mismo color, tamaño menor, inicial mayúscula */}
               {pkg.subtitulo && (
                 <div style={{ 
                   marginTop: '2px', 
@@ -89,14 +64,13 @@ export default function PackageCard({ pkg, onSelect, userData }) {
                   fontWeight: 700, 
                   textTransform: 'capitalize',
                   lineHeight: 1.2,
-                  letterSpacing: '0.2px',
+                  letterSpacing: '0.2px'
                 }}>
                   {pkg.subtitulo}
                 </div>
               )}
             </div>
 
-            {/* Noches */}
             {noches > 0 && (
               <div style={{ background: '#eef2f5', color: '#11173d', padding: '5px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.8em', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 🌙 {noches}
@@ -119,42 +93,8 @@ export default function PackageCard({ pkg, onSelect, userData }) {
         </div>
 
         <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <div>
             <span style={bubbleStyle}>{pkg.tipo_promo}</span>
-            
-            {/* 👈 CHECKBOX EXCLUSIVO INTERNO: VALIDADO POR IA */}
-            <div
-              onClick={handleToggleValidado}
-              title={isValidado ? (esGestor ? 'Hacé clic para desmarcar' : 'Validado por IA (solo editores pueden desmarcar)') : 'Marcar como validado por IA'}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px',
-                cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed',
-                background: isValidado ? '#ecfdf5' : '#f8fafc',
-                border: `1px solid ${isValidado ? '#10b981' : '#cbd5e1'}`,
-                padding: '3px 8px',
-                borderRadius: '16px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: isValidado ? '#047857' : '#64748b',
-                userSelect: 'none',
-                transition: 'all 0.2s',
-                boxShadow: isValidado ? '0 1px 3px rgba(16, 185, 129, 0.2)' : 'none'
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={isValidado}
-                onChange={() => {}}
-                style={{ 
-                  cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed', 
-                  accentColor: '#10b981',
-                  margin: 0
-                }}
-              />
-              <span>Validado por IA</span>
-            </div>
           </div>
 
           <div style={{ textAlign: 'right' }}>

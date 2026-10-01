@@ -1,5 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { formatDateAR, formatMoney, getNoches, getTarifaPorPersona, parseServicios } from '@/lib/packageUtils';
 import { generarTextoPresupuestoInterno } from '@/lib/internal/textoPresupuesto';
 import ItinerarioServicios from '@/components/shared/ItinerarioServicios';
@@ -34,6 +37,35 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
   const { showAlert } = useAlert();
   const servicios = parseServicios(pkg);
 
+  // Control de estado de Validación por IA
+  const [isValidado, setIsValidado] = useState(Boolean(pkg?.validado_ia));
+  useEffect(() => {
+    setIsValidado(Boolean(pkg?.validado_ia));
+  }, [pkg]);
+
+  const rol = userData?.rol;
+  const esGestor = rol === 'admin' || rol === 'editor';
+
+  const handleToggleValidado = async () => {
+    // Si ya está validado y NO es administrador/editor, se le prohíbe desmarcar
+    if (isValidado && !esGestor) {
+      if (showAlert) showAlert('⛔ Solo los editores o administradores pueden desmarcar la validación de IA.', 'error');
+      return;
+    }
+
+    const nuevoEstado = !isValidado;
+    setIsValidado(nuevoEstado);
+
+    try {
+      const id = pkg.id_paquete || pkg.id || pkg['item.id'];
+      await updateDoc(doc(db, 'paquetes', id), { validado_ia: nuevoEstado });
+      pkg.validado_ia = nuevoEstado;
+    } catch (error) {
+      console.error('Error al actualizar validado por IA:', error);
+      setIsValidado(!nuevoEstado);
+    }
+  };
+
   let lugarSalida = pkg.salida;
   const esCircuito = Array.isArray(servicios) && servicios.some((s) => s.tipo === 'circuito');
   const fecha = !pkg.fecha_salida && esCircuito ? 'Múltiples Salidas' : formatDateAR(pkg.fecha_salida);
@@ -51,8 +83,6 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
   const bubbleStyle = { backgroundColor: '#56DDE0', color: '#11173d', padding: '4px 12px', borderRadius: '20px', fontWeight: 600, fontSize: '0.8em', display: 'inline-block', marginTop: '6px', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' };
 
   const isOwner = pkg.editor_email === currentUser?.email;
-  const rol = userData?.rol;
-  const esGestor = rol === 'admin' || rol === 'editor';
   const canEdit = esGestor || (rol === 'usuario' && pkg.status === 'pending' && isOwner);
   const isAnclado = pkg.reflejo_cliente === true;
   const isOculto = pkg.ocultar_cliente === true;
@@ -108,7 +138,7 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
         </div>
       )}
 
-      {/* Cabecera del Modal con Destino + Subtítulo sutil */}
+      {/* Cabecera del Modal */}
       <div className="modal-detalle-header" style={{ paddingBottom: '20px' }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '2.2em', lineHeight: 1.1, color: '#fff', textTransform: 'uppercase', fontWeight: 800 }}>
@@ -131,12 +161,50 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
         </div>
       </div>
 
-      {/* Grilla responsiva: en PC 2 columnas, en Celular 1 sola vertical */}
+      {/* Cuerpo del Modal */}
       <div className="modal-body-layout">
         <div className="modal-itinerario-col">
-          <h3 style={{ borderBottom: '2px solid #eee', paddingBottom: '10px', marginTop: 0, color: '#11173d' }}>
-            Itinerario
-          </h3>
+          
+          {/* 👈 TÍTULO ITINERARIO + CHECKBOX VALIDADO POR IA */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px' }}>
+            <h3 style={{ margin: 0, color: '#11173d', fontSize: '1.25em' }}>
+              Itinerario
+            </h3>
+
+            <div
+              onClick={handleToggleValidado}
+              title={isValidado ? (esGestor ? 'Hacé clic para desmarcar' : 'Validado por IA (solo administradores pueden desmarcar)') : 'Marcar como validado por IA'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed',
+                background: isValidado ? '#ecfdf5' : '#f8fafc',
+                border: `1px solid ${isValidado ? '#10b981' : '#cbd5e1'}`,
+                padding: '4px 10px',
+                borderRadius: '8px',
+                fontSize: '0.8rem',
+                fontWeight: 600,
+                color: isValidado ? '#047857' : '#64748b',
+                userSelect: 'none',
+                transition: 'all 0.2s',
+                boxShadow: isValidado ? '0 1px 3px rgba(16, 185, 129, 0.15)' : 'none'
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isValidado}
+                onChange={() => {}}
+                style={{ 
+                  cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed', 
+                  accentColor: '#10b981',
+                  margin: 0
+                }}
+              />
+              <span>Validado por IA</span>
+            </div>
+          </div>
+
           <ItinerarioServicios servicios={servicios} mutedText={false} />
         </div>
 
@@ -187,7 +255,6 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
         </div>
       </div>
 
-      {/* Estilos responsivos del modal */}
       <style jsx>{`
         .modal-body-layout {
           display: grid;
