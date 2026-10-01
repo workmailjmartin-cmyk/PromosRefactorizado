@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginScreen from '@/components/internal/LoginScreen';
 import Header from '@/components/internal/Header';
