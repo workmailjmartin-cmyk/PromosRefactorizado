@@ -9,6 +9,7 @@ const NOMBRE_INCLUSION = {
   traslado: 'Traslados',
   bus: 'Bus',
   crucero: 'Crucero',
+  circuito: 'Circuito',
 };
 
 function inclusionesTexto(servicios) {

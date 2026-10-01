@@ -33,6 +33,7 @@ export default function InternalPanel() {
   const ready = status === 'logged-in';
   const rol = userData?.rol;
   const esGestor = esRolGestor(rol);
+  const actionTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (ready && rol === 'proveedor') {
@@ -62,7 +63,21 @@ export default function InternalPanel() {
   const [marketingScrollDay, setMarketingScrollDay] = useState(null);
   const [actionLoader, setActionLoader] = useState(null);
 
-  const handleActionBusy = (textOrFalse) => setActionLoader(textOrFalse || null);
+ // 🔥 AUTO-LIBERADOR DE PANTALLA: Jamás permite que se quede cargando más de 4 segundos
+  const handleActionBusy = (textOrFalse) => {
+    if (actionTimeoutRef.current) clearTimeout(actionTimeoutRef.current);
+
+    if (textOrFalse) {
+      setActionLoader(textOrFalse);
+      
+      // Si por alguna razón una acción queda trabada, a los 4 segundos libera la pantalla sí o sí
+      actionTimeoutRef.current = setTimeout(() => {
+        setActionLoader(null);
+      }, 4000);
+    } else {
+      setActionLoader(null);
+    }
+  };
 
   const handleLogoClick = async () => {
     setCurrentView('search');

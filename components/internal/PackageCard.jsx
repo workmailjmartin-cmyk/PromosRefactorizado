@@ -1,5 +1,8 @@
 'use client';
 
+import { useState } from 'react';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { formatDateAR, formatMoney, getNoches, parseServicios } from '@/lib/packageUtils';
 import { ICONOS_SERVICIO } from '@/lib/constants';
 
@@ -8,15 +11,42 @@ function getSummaryIcons(servicios) {
   return [...new Set(servicios.map((x) => ICONOS_SERVICIO[x.tipo] || '🔹'))].join(' ');
 }
 
-export default function PackageCard({ pkg, onSelect }) {
+export default function PackageCard({ pkg, onSelect, userData }) {
   if (!pkg.destino) return null;
+
+  // Estado para el checkbox de validación por IA
+  const [isValidado, setIsValidado] = useState(Boolean(pkg.validado_ia));
+  const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
+
+  const handleToggleValidado = async (e) => {
+    e.stopPropagation(); // Evita abrir el modal del paquete al hacer clic en el cuadrito
+
+    // Si ya está validado y NO es editor/administrador, le impide desmarcarlo
+    if (isValidado && !esGestor) {
+      alert('⛔ Solo los editores o administradores pueden desmarcar la validación de IA.');
+      return;
+    }
+
+    const nuevoEstado = !isValidado;
+    setIsValidado(nuevoEstado);
+
+    try {
+      const id = pkg.id_paquete || pkg.id || pkg['item.id'];
+      await updateDoc(doc(db, 'paquetes', id), { validado_ia: nuevoEstado });
+      pkg.validado_ia = nuevoEstado;
+    } catch (error) {
+      console.error('Error al actualizar validado por IA:', error);
+      setIsValidado(!nuevoEstado); // Revierte si hubo error de red
+    }
+  };
 
   const noches = getNoches(pkg);
   const servicios = parseServicios(pkg);
   const tieneAereo = Array.isArray(servicios) && servicios.some((s) => s.tipo === 'aereo');
   const esCircuito = Array.isArray(servicios) && servicios.some((s) => s.tipo === 'circuito');
   const fechaMostrar = !pkg.fecha_salida && esCircuito && !tieneAereo ? 'Múltiples Salidas' : formatDateAR(pkg.fecha_salida);
-  const tieneCharter = pkg.vuelos && pkg.vuelos.some(v => v.esCharter);
+  const tieneCharter = pkg.vuelos && pkg.vuelos.some((v) => v.esCharter);
+  
   let lugarSalida = pkg.salida;
   if (!tieneAereo) {
     const crucero = Array.isArray(servicios) && servicios.find((s) => s.tipo === 'crucero');
@@ -87,10 +117,45 @@ export default function PackageCard({ pkg, onSelect }) {
           </div>
         </div>
 
-        <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
+        <div className="card-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={bubbleStyle}>{pkg.tipo_promo}</span>
+            
+            {/* 👈 CHECKBOX EXCLUSIVO INTERNO: VALIDADO POR IA */}
+            <div
+              onClick={handleToggleValidado}
+              title={isValidado ? (esGestor ? 'Hacé clic para desmarcar' : 'Validado por IA (solo editores pueden desmarcar)') : 'Marcar como validado por IA'}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed',
+                background: isValidado ? '#ecfdf5' : '#f8fafc',
+                border: `1px solid ${isValidado ? '#10b981' : '#cbd5e1'}`,
+                padding: '3px 8px',
+                borderRadius: '16px',
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                color: isValidado ? '#047857' : '#64748b',
+                userSelect: 'none',
+                transition: 'all 0.2s',
+                boxShadow: isValidado ? '0 1px 3px rgba(16, 185, 129, 0.2)' : 'none'
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isValidado}
+                onChange={() => {}}
+                style={{ 
+                  cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed', 
+                  accentColor: '#10b981',
+                  margin: 0
+                }}
+              />
+              <span>Validado por IA</span>
+            </div>
           </div>
+
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '0.85em', color: '#666', fontWeight: 500, marginBottom: '-5px' }}>Desde {lugarSalida}</div>
             <p className="precio-valor" style={{ margin: '5px 0 0 0' }}>

@@ -539,15 +539,15 @@ export default function AsistenteIA() {
             );
           })}
 
-          {/* 🔥 CARTEL ANIMADO VISIBLE MIENTRAS PIENSA LA IA 🔥 */}
+          {/* Cartel genérico mientras piensa */}
           {isLoading && (
             <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
               <div style={{ background: '#fff', padding: '14px 20px', borderRadius: '0px 16px 16px 16px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: '12px', color: '#11173d', fontSize: '0.9rem', fontWeight: 600, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 <span className="spinner-ia" style={{ fontSize: '1.3rem' }}>✈️</span> 
                 <div>
-                  <div style={{ fontWeight: 'bold' }}>El Director Comercial está auditando tu paquete...</div>
+                  <div style={{ fontWeight: 'bold' }}>El Director Comercial está pensando...</div>
                   <div style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'normal', marginTop: '2px' }}>
-                    Verificando tarifas de mercado, hotelería y rentabilidad
+                    Analizando destinos, manuales y recomendaciones comerciales
                   </div>
                 </div>
               </div>
@@ -627,6 +627,9 @@ export default function AsistenteIA() {
                 >
                   <span className="chat-btn-text">Enviar</span> 🚀
                 </button>
+              </div>
+              <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#9ca3af', marginTop: '4px' }}>
+                🤖 Asistente impulsado por IA. Verificá tarifas finales, cupos y condiciones antes de emitir con el cliente.
               </div>
             </div>
           )}
