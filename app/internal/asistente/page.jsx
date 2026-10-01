@@ -629,7 +629,7 @@ export default function AsistenteIA() {
                 </button>
               </div>
               <div style={{ textAlign: 'center', fontSize: '0.72rem', color: '#9ca3af', marginTop: '4px' }}>
-                🤖 Asistente impulsado por IA. Verificá tarifas finales, cupos y condiciones antes de emitir con el cliente.
+                🤖 Asistente impulsado por IA. Verificar que la informacion se correcta.
               </div>
             </div>
           )}
