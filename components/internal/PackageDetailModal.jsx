@@ -165,30 +165,35 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
       <div className="modal-body-layout">
         <div className="modal-itinerario-col">
           
-          {/* 👈 TÍTULO ITINERARIO + CHECKBOX VALIDADO POR IA */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '10px', marginBottom: '15px' }}>
-            <h3 style={{ margin: 0, color: '#11173d', fontSize: '1.25em' }}>
+          {/* Barra de Itinerario más grande + Botón alargado en una sola línea */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #eee', paddingBottom: '12px', marginBottom: '16px', gap: '15px' }}>
+            
+            {/* Título Itinerario más grande */}
+            <h3 style={{ margin: 0, color: '#11173d', fontSize: '1.5em', fontWeight: 800 }}>
               Itinerario
             </h3>
 
+            {/* Distintivo alargado horizontal (sin partir el texto) */}
             <div
               onClick={handleToggleValidado}
               title={isValidado ? (esGestor ? 'Hacé clic para desmarcar' : 'Validado por IA (solo administradores pueden desmarcar)') : 'Marcar como validado por IA'}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '6px',
+                gap: '8px',
+                whiteSpace: 'nowrap',       
+                flexShrink: 0,             
                 cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed',
                 background: isValidado ? '#ecfdf5' : '#f8fafc',
-                border: `1px solid ${isValidado ? '#10b981' : '#cbd5e1'}`,
-                padding: '4px 10px',
-                borderRadius: '8px',
-                fontSize: '0.8rem',
-                fontWeight: 600,
-                color: isValidado ? '#047857' : '#64748b',
+                border: `1.5px solid ${isValidado ? '#10b981' : '#cbd5e1'}`,
+                padding: '6px 14px',
+                borderRadius: '20px',       
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                color: isValidado ? '#047857' : '#475569',
                 userSelect: 'none',
                 transition: 'all 0.2s',
-                boxShadow: isValidado ? '0 1px 3px rgba(16, 185, 129, 0.15)' : 'none'
+                boxShadow: isValidado ? '0 2px 4px rgba(16, 185, 129, 0.18)' : '0 1px 2px rgba(0,0,0,0.03)'
               }}
             >
               <input
@@ -198,10 +203,12 @@ function ModalBody({ pkg, currentUser, userData, actions, onClose }) {
                 style={{ 
                   cursor: (!isValidado || esGestor) ? 'pointer' : 'not-allowed', 
                   accentColor: '#10b981',
+                  width: '15px',
+                  height: '15px',
                   margin: 0
                 }}
               />
-              <span>Validado por IA</span>
+              <span style={{ whiteSpace: 'nowrap' }}>Validado por IA</span>
             </div>
           </div>
 
