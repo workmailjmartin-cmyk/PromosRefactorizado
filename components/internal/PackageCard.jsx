@@ -12,16 +12,17 @@ function getSummaryIcons(servicios) {
 }
 
 export default function PackageCard({ pkg, onSelect, userData }) {
-  if (!pkg.destino) return null;
+  // 👈 1. Los hooks SIEMPRE van primero que todo
+  const [isValidado, setIsValidado] = useState(Boolean(pkg?.validado_ia));
 
-  // Estado para el checkbox de validación por IA
-  const [isValidado, setIsValidado] = useState(Boolean(pkg.validado_ia));
+  // 👈 2. El if para salir va DESPUÉS de los hooks
+  if (!pkg || !pkg.destino) return null;
+
   const esGestor = userData?.rol === 'admin' || userData?.rol === 'editor';
 
   const handleToggleValidado = async (e) => {
-    e.stopPropagation(); // Evita abrir el modal del paquete al hacer clic en el cuadrito
+    e.stopPropagation();
 
-    // Si ya está validado y NO es editor/administrador, le impide desmarcarlo
     if (isValidado && !esGestor) {
       alert('⛔ Solo los editores o administradores pueden desmarcar la validación de IA.');
       return;
@@ -36,7 +37,7 @@ export default function PackageCard({ pkg, onSelect, userData }) {
       pkg.validado_ia = nuevoEstado;
     } catch (error) {
       console.error('Error al actualizar validado por IA:', error);
-      setIsValidado(!nuevoEstado); // Revierte si hubo error de red
+      setIsValidado(!nuevoEstado);
     }
   };
 
