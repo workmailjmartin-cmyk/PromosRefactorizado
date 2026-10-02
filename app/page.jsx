@@ -17,7 +17,7 @@ import { useAppConfig } from '@/hooks/useAppConfig';
 import { useInternalPackages } from '@/hooks/useInternalPackages';
 import { useCalculadoraData } from '@/hooks/useCalculadoraData';
 import { esRolGestor } from '@/lib/internal/constants';
-
+import { ejecutarLimpiezaAutomatica } from '@/lib/internal/limpiezaAutomatica';
 import EnlatadosInternalPage from '@/app/internal/enlatados/page'; 
 
 const TITULOS_VISTA = {
@@ -30,10 +30,18 @@ const TITULOS_VISTA = {
 export default function InternalPanel() {
   const router = useRouter();
   const { status, currentUser, userData, login, logout, loading: authLoading } = useStaffAuth();
+  
   const ready = status === 'logged-in';
   const rol = userData?.rol;
   const esGestor = esRolGestor(rol);
+  const esAdmin = rol === 'admin';
   const actionTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (ready && esAdmin) {
+      ejecutarLimpiezaAutomatica();
+    }
+  }, [ready, esAdmin]);
 
   useEffect(() => {
     if (ready && rol === 'proveedor') {

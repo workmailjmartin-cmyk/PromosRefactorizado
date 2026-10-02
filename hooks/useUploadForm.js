@@ -92,7 +92,15 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
         showAlert('⛔ El Paquete Bus debe ser único y no se puede mezclar con otros servicios base.', 'error');
         return;
       }
-      setForm((f) => ({ ...f, servicios: [...f.servicios, { __id: genId(), tipo }] }));
+
+      const nuevoServicio = { __id: genId(), tipo };
+      if (tipo === 'aereo') {
+        nuevoServicio.tipo_equipaje = '';
+        nuevoServicio.equipaje = '';
+        nuevoServicio.escalas = 'Directo';
+      }
+
+      setForm((f) => ({ ...f, servicios: [...f.servicios, nuevoServicio] }));
     },
     [form.servicios, showAlert]
   );
@@ -142,6 +150,17 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
       }
 
       const serviciosData = form.servicios.map(({ __id, ...resto }) => resto);
+
+      // 🛡️ VALIDACIÓN ESTRICTA: El equipaje es 100% obligatorio si hay aéreo
+      for (const serv of serviciosData) {
+        if (serv.tipo === 'aereo') {
+          const eq = serv.tipo_equipaje || serv.equipaje;
+          if (!eq || eq.trim() === '' || eq === '-') {
+            onActionBusy?.(false);
+            return showAlert('⛔ El equipaje del vuelo es obligatorio. Seleccioná una opción en el aéreo.', 'error');
+          }
+        }
+      }
 
       const esCircuito = serviciosData.some((s) => s.tipo === 'circuito');
       const tieneAereo = serviciosData.some((s) => s.tipo === 'aereo');
@@ -194,7 +213,7 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
       const payload = {
         id_paquete: idGenerado,
         destino: form.destino,
-        subtitulo: form.subtitulo || '', // 👈 3. Se envía a Firebase Firestore
+        subtitulo: form.subtitulo || '',
         salida: form.salida,
         fecha_salida: fechaViajeStr,
         costos_proveedor: costo,
@@ -231,15 +250,13 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
         return;
       }
 
-      // 🔥 1. LIBERAMOS LA PANTALLA INMEDIATAMENTE (Evita que se quede cargando)
+      // Liberar pantalla inmediatamente
       onActionBusy?.(false);
       resetForm();
 
-      // 2. Volvemos a la grilla y refrescamos los viajes
       if (onDone) onDone();
       if (refetch) await refetch();
 
-      // 3. Mostramos el aviso de éxito ya en la pantalla principal
       showAlert(isEditingId ? 'Actualizado correctamente.' : 'Guardado correctamente.', 'success');
     },
     [form, isEditingId, originalCreator, currentUser, userData, showAlert, refetch, onDone, onActionBusy, resetForm]

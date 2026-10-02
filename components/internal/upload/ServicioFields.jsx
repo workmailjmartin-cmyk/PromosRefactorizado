@@ -36,12 +36,19 @@ export function CamposAereo({ data, onChange, provincia, minDate }) {
           <Counter value={data.escalas_vuelta ?? 0} onChange={(v) => onChange({ escalas_vuelta: v })} />
         </div>
         <div className="form-group">
-          <label>Equipaje</label>
-          <select value={data.tipo_equipaje || 'Mochila'} onChange={(e) => onChange({ tipo_equipaje: e.target.value })}>
-            <option>Mochila</option>
-            <option>Mochila + Carry On</option>
-            <option>Mochila + Bodega</option>
-            <option>Mochila + Carry On + Bodega</option>
+          <label>
+            Equipaje <span style={{ color: '#ef5a1a' }}>*</span>
+          </label>
+          <select 
+            required
+            value={data.tipo_equipaje || data.equipaje || ''} 
+            onChange={(e) => onChange({ tipo_equipaje: e.target.value, equipaje: e.target.value })}
+          >
+            <option value="" disabled>-- Seleccionar Equipaje --</option>
+            <option value="Mochila">Mochila</option>
+            <option value="Mochila + Carry On">Mochila + Carry On</option>
+            <option value="Mochila + Bodega">Mochila + Bodega</option>
+            <option value="Mochila + Carry On + Bodega">Mochila + Carry On + Bodega</option>
           </select>
         </div>
         <div className="form-group" style={{ flex: 1.5 }}>
