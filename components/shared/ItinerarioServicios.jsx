@@ -51,7 +51,7 @@ function ServicioItem({ x, idx, mutedText }) {
               {x.fecha_regreso ? ` - ${formatDateAR(x.fecha_regreso)}` : ''}
             </Fragment>,
             <Fragment key="escalas">
-              🔄 {escalasTxt} | 🧳 {x.tipo_equipaje || '-'}
+              🔄 {escalasTxt} | 🧳 {x.tipo_equipaje || x.equipaje || '-'}
             </Fragment>,
           ]}
         </ServicioWrapper>
@@ -70,7 +70,7 @@ function ServicioItem({ x, idx, mutedText }) {
             <Fragment key="nombre">
               <b>{x.hotel_nombre}</b> <span style={{ color: '#ef5a1a' }}>{stars}</span>
             </Fragment>,
-            `(${x.regimen})`,
+            x.regimen && x.regimen !== 'undefined' ? `(${x.regimen})` : null,
             det.length > 0 && <small>{det.join(' | ')}</small>,
             x.hotel_link && (
               <a

@@ -94,10 +94,15 @@ export function useUploadForm({ editingPackage, currentUser, userData, refetch, 
       }
 
       const nuevoServicio = { __id: genId(), tipo };
+      
       if (tipo === 'aereo') {
         nuevoServicio.tipo_equipaje = '';
         nuevoServicio.equipaje = '';
         nuevoServicio.escalas = 'Directo';
+      } else if (tipo === 'hotel') {
+        // 👈 ESTO ES LO QUE SUMAMOS:
+        nuevoServicio.regimen = 'Solo Habitación';
+        nuevoServicio.hotel_regimen = 'Solo Habitación';
       }
 
       setForm((f) => ({ ...f, servicios: [...f.servicios, nuevoServicio] }));
