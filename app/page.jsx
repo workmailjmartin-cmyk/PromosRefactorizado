@@ -18,7 +18,7 @@ import { useInternalPackages } from '@/hooks/useInternalPackages';
 import { useCalculadoraData } from '@/hooks/useCalculadoraData';
 import { esRolGestor } from '@/lib/internal/constants';
 import { ejecutarLimpiezaAutomatica } from '@/lib/internal/limpiezaAutomatica';
-import EnlatadosInternalPage from '@/app/internal/enlatados/page'; 
+import EnlatadosInternalPage from '@/app/internal/encuotas/page'; 
 
 const TITULOS_VISTA = {
   users: '⚙️ Configuración',
