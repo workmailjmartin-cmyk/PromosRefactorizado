@@ -19,7 +19,7 @@ const EQUIPOS_CHATWOOT = [
 ];
 
 const ETIQUETAS_PRECARGADAS = [
-  "publicidad", // Ajusta a las etiquetas reales que uses
+  "publicidad_dirigida", // Ajusta a las etiquetas reales que uses
 ];
 
 export default function MetaChatwootAutomation() {
