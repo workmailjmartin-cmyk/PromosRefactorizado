@@ -42,6 +42,25 @@ export default function MetaChatwootAutomation() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
+  // --- BURBUJA DE CHATWOOT PARA QA ---
+  useEffect(() => {
+    (function(d,t) {
+      var BASE_URL="https://chat.felizviaje.ar";
+      var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
+      g.src=BASE_URL+"/packs/js/sdk.js";
+      g.defer = true;
+      g.async = true;
+      s.parentNode.insertBefore(g,s);
+      g.onload=function(){
+        window.chatwootSDK.run({
+          websiteToken: '6smY8dUYYzBpaH4ze3hVQRQo',
+          baseUrl: BASE_URL
+        })
+      }
+    })(document,"script");
+  }, []);
+
+
   // --- DERIVADOS Y VALIDACIONES ---
   const mensajeFinal = `${fraseLiberadora} ${textoLibre}`.trim();
   const charCount = mensajeFinal.length;
@@ -118,11 +137,18 @@ export default function MetaChatwootAutomation() {
         body: JSON.stringify(payload)
       });
 
+      // Leemos la respuesta de n8n
+      const responseData = await response.json(); 
+
       if (response.ok) {
+        // Camino de éxito (200)
         if (showAlert) showAlert('¡Automatización enviada con éxito!', 'success');
         setTextoLibre(''); setDestino(''); setSalida(''); setMes(''); setFechaVencimiento(''); setRespuestaAutomatica(''); setEquipo(''); setEtiqueta('');
       } else {
-        throw new Error('Error en el servidor');
+        // Camino de error (400 - Duplicado o falta Mes)
+        // Mostramos el mensaje exacto que n8n nos mandó
+        if (showAlert) showAlert(responseData.error || 'Error de validación', 'error');
+        else alert(responseData.error || 'Error de validación');
       }
     } catch (error) {
       if (showAlert) showAlert('Hubo un error al conectar con el Webhook.', 'error');
