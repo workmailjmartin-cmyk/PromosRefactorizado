@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAlert } from '@/contexts/AlertContext'; // Asumo que usas tu contexto de alertas
 
 // --- CONSTANTES PRECARGADAS ---
-const WEBHOOK_URL = 'https://n8n.felizviaje.ar/webhook-test/crear-regla-chatwoot'; // <-- PEGA AQUÍ LA URL DE TU WEBHOOK DE n8n
+const WEBHOOK_URL = 'https://n8n.felizviaje.ar/webhook/crear-regla-chatwoot'; // <-- PEGA AQUÍ LA URL DE TU WEBHOOK DE n8n
 
 const FRASES_LIBERADORAS = [
   "Hola Feliz Viaje 😊 quiero información de su promo a",
@@ -64,7 +64,7 @@ export default function MetaChatwootAutomation() {
   // --- DERIVADOS Y VALIDACIONES ---
   const mensajeFinal = `${fraseLiberadora} ${textoLibre}`.trim();
   const charCount = mensajeFinal.length;
-  const isLengthValid = charCount <= 1024;
+  const isLengthValid = charCount <= 80;
 
   const textoNormalizado = textoLibre.toLowerCase();
   
@@ -197,7 +197,7 @@ export default function MetaChatwootAutomation() {
               />
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '5px' }}>
                 <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: isLengthValid ? '#6b7280' : '#ef4444' }}>
-                  {charCount} / 1024 caracteres
+                  {charCount} / 80 caracteres
                 </span>
               </div>
             </div>
