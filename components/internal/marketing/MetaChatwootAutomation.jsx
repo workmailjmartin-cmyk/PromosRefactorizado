@@ -112,7 +112,7 @@ export default function MetaChatwootAutomation() {
 
     // Buscamos el nombre del equipo seleccionado para armar el Nombre de la regla
     // Esto lo hace dinámico basado en lo que el usuario eligió
-    const equipoSeleccionado = EQUIPOS_CHATWOOT.find(eq => eq.value === equipo);
+    const equipoSeleccionado = equiposChatwoot.find(eq => eq.value === equipo);
     const nombreEquipoStr = equipoSeleccionado ? equipoSeleccionado.label.toUpperCase() : 'NUEVA FRANQUICIA';
 
     // Formateamos la fecha de vencimiento para la descripción [DD/MM]
@@ -192,7 +192,7 @@ export default function MetaChatwootAutomation() {
             <div>
               <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#374151' }}>Frase Liberadora (Inicio) *</label>
               <select value={fraseLiberadora} onChange={(e) => setFraseLiberadora(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}>
-                {FRASES_LIBERADORAS.map((frase, idx) => (
+                {frasesLiberadoras.map((frase, idx) => (
                   <option key={idx} value={frase}>{frase}</option>
                 ))}
               </select>
@@ -288,7 +288,7 @@ export default function MetaChatwootAutomation() {
                 <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#374151' }}>Equipo a derivar *</label>
                 <select value={equipo} onChange={(e) => setEquipo(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}>
                   <option value="" disabled>Seleccionar equipo...</option>
-                  {EQUIPOS_CHATWOOT.map((eq, idx) => (
+                  {equiposChatwoot.map((eq, idx) => (
                     <option key={idx} value={eq.value}>{eq.label}</option>
                   ))}
                 </select>
@@ -298,7 +298,7 @@ export default function MetaChatwootAutomation() {
                 <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#374151' }}>Etiqueta *</label>
                 <select value={etiqueta} onChange={(e) => setEtiqueta(e.target.value)} style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.95rem' }}>
                   <option value="" disabled>Seleccionar etiqueta...</option>
-                  {ETIQUETAS_PRECARGADAS.map((et, idx) => (
+                  {etiquetasPrecargadas.map((et, idx) => (
                     <option key={idx} value={et}>{et}</option>
                   ))}
                 </select>
