@@ -1,46 +1,58 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useAlert } from '@/contexts/AlertContext'; // Asumo que usas tu contexto de alertas
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAlert } from '@/contexts/AlertContext';
 
-// --- CONSTANTES PRECARGADAS ---
-const WEBHOOK_URL = 'https://n8n.felizviaje.ar/webhook/crear-regla-chatwoot'; // <-- PEGA AQUÍ LA URL DE TU WEBHOOK DE n8n
-
-const FRASES_LIBERADORAS = [
-  "Hola Feliz Viaje 😊 quiero información de su promo a",
-  "Hola Feliz Viaje 😊 quiero conocer las promos en",
-  "Hola Feliz Viaje 🛩️☺️ quiero info de su promo a",
-  "Hola Feliz Viaje 🛩️☺️ Quisiera hablar con un agente",
-  "Que tal Feliz Viaje 🤗🧡 Quisiera hablar con un agente",
-  "Hola Feliz Viaje Córdoba 😊 quiero info de su promo a",
-];
-
-const EQUIPOS_CHATWOOT = [
-  { value: "29", label: "publicidad_sucursales_propias" },
-];
-
-const ETIQUETAS_PRECARGADAS = [
-  "publicidad_dirigida", // Ajusta a las etiquetas reales que uses
-];
+const WEBHOOK_URL = 'https://n8n.felizviaje.ar/webhook/crear-regla-chatwoot'; 
 
 export default function MetaChatwootAutomation() {
   const { showAlert } = useAlert();
   
+  // --- ESTADOS DE CONFIGURACIÓN DINÁMICA (Traídos de Firebase) ---
+  const [loadingConfig, setLoadingConfig] = useState(true);
+  const [frasesLiberadoras, setFrasesLiberadoras] = useState([]);
+  const [equiposChatwoot, setEquiposChatwoot] = useState([]);
+  const [etiquetasPrecargadas, setEtiquetasPrecargadas] = useState([]);
+
   // --- ESTADOS: SECCIÓN 1 ---
-  const [fraseLiberadora, setFraseLiberadora] = useState(FRASES_LIBERADORAS[0]);
+  const [fraseLiberadora, setFraseLiberadora] = useState('');
+  // ... (tus otros estados se mantienen igual)
   const [textoLibre, setTextoLibre] = useState('');
   const [destino, setDestino] = useState('');
   const [salida, setSalida] = useState('');
   const [mes, setMes] = useState('');
   const [fechaVencimiento, setFechaVencimiento] = useState('');
-
-  // --- ESTADOS: SECCIÓN 2 ---
   const [respuestaAutomatica, setRespuestaAutomatica] = useState('');
   const [equipo, setEquipo] = useState('');
   const [etiqueta, setEtiqueta] = useState('');
-
-  // --- ESTADOS: SECCIÓN 3 (UI) ---
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiado, setCopiado] = useState(false);
+
+  // --- Cargar Configuración desde Firebase ---
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const docRef = doc(db, 'configuracion', 'chatwoot');
+        const docSnap = await getDoc(docRef);
+        
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setFrasesLiberadoras(data.frases || []);
+          setEquiposChatwoot(data.equipos || []);
+          setEtiquetasPrecargadas(data.etiquetas || []);
+          
+          // Setear valores por defecto si hay datos
+          if (data.frases && data.frases.length > 0) setFraseLiberadora(data.frases[0]);
+        }
+      } catch (error) {
+        console.error("Error cargando config chatwoot:", error);
+      } finally {
+        setLoadingConfig(false);
+      }
+    };
+    fetchConfig();
+  }, []);
 
   // --- BURBUJA DE CHATWOOT PARA QA ---
   useEffect(() => {
