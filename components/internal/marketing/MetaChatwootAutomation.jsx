@@ -3,28 +3,23 @@ import { useState, useEffect } from 'react';
 import { useAlert } from '@/contexts/AlertContext'; // Asumo que usas tu contexto de alertas
 
 // --- CONSTANTES PRECARGADAS ---
-const WEBHOOK_URL = ''; // <-- PEGA AQUÍ LA URL DE TU WEBHOOK DE n8n
+const WEBHOOK_URL = 'https://n8n.felizviaje.ar/webhook-test/crear-regla-chatwoot'; // <-- PEGA AQUÍ LA URL DE TU WEBHOOK DE n8n
 
 const FRASES_LIBERADORAS = [
-  "Hola, vengo de Facebook.",
-  "Hola, vi el anuncio.",
-  "Quiero más info de la promo.",
-  "Me interesa la publicación.",
-  "Hola equipo."
+  "Hola Feliz Viaje 😊 quiero información de su promo a",
+  "Hola Feliz Viaje 😊 quiero conocer las promos en",
+  "Hola Feliz Viaje 🛩️☺️ quiero info de su promo a",
+  "Hola Feliz Viaje 🛩️☺️ Quisiera hablar con un agente",
+  "Que tal Feliz Viaje 🤗🧡 Quisiera hablar con un agente",
+  "Hola Feliz Viaje Córdoba 😊 quiero info de su promo a",
 ];
 
 const EQUIPOS_CHATWOOT = [
-  { value: "franquicia - manantiales", label: "Franquicia Manantiales" },
-  { value: "franquicia - centro", label: "Franquicia Centro" },
-  { value: "ventas online", label: "Ventas Online" }
+  { value: "29", label: "publicidad_sucursales_propias" },
 ];
 
 const ETIQUETAS_PRECARGADAS = [
-  "publicidad",
-  "promo-activa",
-  "meta-ads",
-  "hot-sale",
-  "black-friday"
+  "publicidad", // Ajusta a las etiquetas reales que uses
 ];
 
 export default function MetaChatwootAutomation() {
@@ -48,19 +43,16 @@ export default function MetaChatwootAutomation() {
   const [copiado, setCopiado] = useState(false);
 
   // --- DERIVADOS Y VALIDACIONES ---
-  // Mensaje final concatenado
   const mensajeFinal = `${fraseLiberadora} ${textoLibre}`.trim();
   const charCount = mensajeFinal.length;
   const isLengthValid = charCount <= 1024;
 
-  // Lógica para ignorar mayúsculas pero respetar acentos (toLowerCase mantiene los acentos intactos)
   const textoNormalizado = textoLibre.toLowerCase();
   
   const isDestinoValid = destino.trim() !== '' && textoNormalizado.includes(destino.toLowerCase().trim());
   const isSalidaValid = salida.trim() !== '' && textoNormalizado.includes(salida.toLowerCase().trim());
-  const isMesValid = mes.trim() === '' || textoNormalizado.includes(mes.toLowerCase().trim()); // Mes es opcional
+  const isMesValid = mes.trim() === '' || textoNormalizado.includes(mes.toLowerCase().trim());
 
-  // Validar si el formulario está listo para enviarse
   const isFormValid = 
     isLengthValid &&
     destino.trim() !== '' && isDestinoValid &&
@@ -80,18 +72,31 @@ export default function MetaChatwootAutomation() {
 
   const handleConfirmar = async () => {
     if (!WEBHOOK_URL) {
-      if (showAlert) showAlert('Atención: La URL del webhook no está configurada en el código.', 'error');
+      if (showAlert) showAlert('Atención: La URL del webhook no está configurada.', 'error');
       else alert('Atención: La URL del webhook no está configurada.');
       return;
     }
 
     setIsSubmitting(true);
 
+    // Buscamos el nombre del equipo seleccionado para armar el Nombre de la regla
+    // Esto lo hace dinámico basado en lo que el usuario eligió
+    const equipoSeleccionado = EQUIPOS_CHATWOOT.find(eq => eq.value === equipo);
+    const nombreEquipoStr = equipoSeleccionado ? equipoSeleccionado.label.toUpperCase() : 'NUEVA FRANQUICIA';
+
+    // Formateamos la fecha de vencimiento para la descripción [DD/MM]
+    const fechaObj = new Date(fechaVencimiento);
+    const dia = String(fechaObj.getUTCDate()).padStart(2, '0');
+    const mesNum = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+    const fechaFormateada = `${dia}/${mesNum}`;
+
     const payload = {
       meta_message: mensajeFinal,
       vencimiento: fechaVencimiento,
       chatwoot_automation: {
-        name: `Promo: ${destino.trim()} - ${salida.trim()}${mes ? ` - ${mes.trim()}` : ''}`,
+        // Ajustado para coincidir con tu formato de la imagen
+        name: nombreEquipoStr, 
+        description: `[${fechaFormateada}] ${destino.trim()}`,
         event_name: "message_created",
         conditions: {
           destino: destino.trim(),
@@ -99,7 +104,7 @@ export default function MetaChatwootAutomation() {
           mes: mes.trim() !== '' ? mes.trim() : null
         },
         actions: {
-          team: equipo,
+          team: equipo, // Aquí estamos enviando el ID numérico (ej. "15")
           label: etiqueta,
           response_message: respuestaAutomatica.trim()
         }
@@ -114,9 +119,7 @@ export default function MetaChatwootAutomation() {
       });
 
       if (response.ok) {
-        if (showAlert) showAlert('¡Automatización enviada con éxito a n8n!', 'success');
-        
-        // Opcional: Limpiar formulario tras éxito
+        if (showAlert) showAlert('¡Automatización enviada con éxito!', 'success');
         setTextoLibre(''); setDestino(''); setSalida(''); setMes(''); setFechaVencimiento(''); setRespuestaAutomatica(''); setEquipo(''); setEtiqueta('');
       } else {
         throw new Error('Error en el servidor');
