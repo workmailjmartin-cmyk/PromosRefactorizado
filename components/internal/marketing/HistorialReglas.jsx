@@ -1,4 +1,8 @@
+'use client';
+import { useState, useEffect } from 'react';
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { useAlert } from '@/contexts/AlertContext'; // <--- ESTA ES LA QUE FALTABA
 
 export default function HistorialReglas({ equiposChatwoot }) {
   const { showAlert } = useAlert();
