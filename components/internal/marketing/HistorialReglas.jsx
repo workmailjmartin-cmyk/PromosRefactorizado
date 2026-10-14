@@ -1,6 +1,6 @@
 import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
 
-export function HistorialReglas({ equiposChatwoot }) {
+export default function HistorialReglas({ equiposChatwoot }) {
   const { showAlert } = useAlert();
   const [reglas, setReglas] = useState([]);
   const [filtroEquipo, setFiltroEquipo] = useState('');
