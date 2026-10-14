@@ -92,7 +92,6 @@ export default function MetaChatwootAutomation() {
     destino.trim() !== '' && isDestinoValid &&
     salida.trim() !== '' && isSalidaValid &&
     isMesValid &&
-    fechaVencimiento !== '' &&
     respuestaAutomatica.trim() !== '' &&
     equipo !== '' &&
     etiqueta !== '';
@@ -118,11 +117,14 @@ export default function MetaChatwootAutomation() {
     const equipoSeleccionado = equiposChatwoot.find(eq => eq.value === equipo);
     const nombreEquipoStr = equipoSeleccionado ? equipoSeleccionado.label.toUpperCase() : 'NUEVA FRANQUICIA';
 
-    // Formateamos la fecha de vencimiento para la descripción [DD/MM]
-    const fechaObj = new Date(fechaVencimiento);
-    const dia = String(fechaObj.getUTCDate()).padStart(2, '0');
-    const mesNum = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
-    const fechaFormateada = `${dia}/${mesNum}`;
+    // Formateamos la fecha si existe, sino lo dejamos vacío
+    let prefijoFecha = '';
+    if (fechaVencimiento) {
+      const fechaObj = new Date(fechaVencimiento);
+      const dia = String(fechaObj.getUTCDate()).padStart(2, '0');
+      const mesNum = String(fechaObj.getUTCMonth() + 1).padStart(2, '0');
+      prefijoFecha = `[${dia}/${mesNum}] `;
+    }
 
     const payload = {
       meta_message: mensajeFinal,
@@ -130,7 +132,7 @@ export default function MetaChatwootAutomation() {
       chatwoot_automation: {
         // Ajustado para coincidir con tu formato de la imagen
         name: nombreEquipoStr, 
-        description: `[${fechaFormateada}] ${destino.trim()}`,
+        description: `${prefijoFecha}${destino.trim()}`,
         event_name: "message_created",
         conditions: {
           destino: destino.trim(),
@@ -288,7 +290,7 @@ export default function MetaChatwootAutomation() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#374151' }}>Fecha Vencimiento Pauta *</label>
+              <label style={{ display: 'block', fontWeight: 'bold', fontSize: '0.9rem', marginBottom: '8px', color: '#374151' }}>Fecha Vencimiento Pauta (Opcional)</label>
               <input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} style={{ padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '0.95rem' }} />
             </div>
 
