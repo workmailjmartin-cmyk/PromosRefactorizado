@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection} from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAlert } from '@/contexts/AlertContext';
 import HistorialReglas from './HistorialReglas';
