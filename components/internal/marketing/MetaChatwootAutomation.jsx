@@ -157,13 +157,7 @@ export default function MetaChatwootAutomation() {
       const responseData = await response.json(); 
 
       if (response.ok) {
-        // Guardamos también en Firebase para alimentar el Historial
-        await addDoc(collection(db, 'reglas_chatwoot'), {
-          ...payload,
-          timestamp: Date.now()
-        });
-
-        if (showAlert) showAlert('¡Automatización creada y guardada con éxito!', 'success');
+        if (showAlert) showAlert('¡Automatización creada con éxito en Chatwoot y Excel!', 'success');
         setTextoLibre(''); setDestino(''); setSalida(''); setMes(''); setFechaVencimiento(''); setRespuestaAutomatica('');
       } else {
         // TRADUCTOR DE ERRORES AMIGABLE
