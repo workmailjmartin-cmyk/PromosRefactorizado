@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAlert } from '@/contexts/AlertContext';
 
-export function HistorialReglas({ equiposChatwoot }) {
+export default function HistorialReglas({ equiposChatwoot }) {
   const { showAlert } = useAlert();
   const [reglas, setReglas] = useState([]);
   const [filtroEquipo, setFiltroEquipo] = useState('');

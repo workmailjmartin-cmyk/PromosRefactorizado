@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAlert } from '@/contexts/AlertContext';
-import { HistorialReglas } from './HistorialReglas';
+import HistorialReglas from './HistorialReglas';
 
 const WEBHOOK_URL = 'https://n8n.felizviaje.ar/webhook/crear-regla-chatwoot'; 
 
