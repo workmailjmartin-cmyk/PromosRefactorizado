@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAlert } from '@/contexts/AlertContext';
+import { HistorialReglas } from './HistorialReglas';
 
 const WEBHOOK_URL = 'https://n8n.felizviaje.ar/webhook/crear-regla-chatwoot'; 
 
@@ -28,6 +29,8 @@ export default function MetaChatwootAutomation() {
   const [etiqueta, setEtiqueta] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiado, setCopiado] = useState(false);
+
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
 
   // --- Cargar Configuración desde Firebase ---
   useEffect(() => {
@@ -149,21 +152,36 @@ export default function MetaChatwootAutomation() {
         body: JSON.stringify(payload)
       });
 
-      // Leemos la respuesta de n8n
       const responseData = await response.json(); 
 
       if (response.ok) {
-        // Camino de éxito (200)
-        if (showAlert) showAlert('¡Automatización enviada con éxito!', 'success');
-        setTextoLibre(''); setDestino(''); setSalida(''); setMes(''); setFechaVencimiento(''); setRespuestaAutomatica(''); setEquipo(''); setEtiqueta('');
+        // Guardamos también en Firebase para alimentar el Historial
+        await addDoc(collection(db, 'reglas_chatwoot'), {
+          ...payload,
+          timestamp: Date.now()
+        });
+
+        if (showAlert) showAlert('¡Automatización creada y guardada con éxito!', 'success');
+        setTextoLibre(''); setDestino(''); setSalida(''); setMes(''); setFechaVencimiento(''); setRespuestaAutomatica('');
       } else {
-        // Camino de error (400 - Duplicado o falta Mes)
-        // Mostramos el mensaje exacto que n8n nos mandó
-        if (showAlert) showAlert(responseData.error || 'Error de validación', 'error');
-        else alert(responseData.error || 'Error de validación');
+        // TRADUCTOR DE ERRORES AMIGABLE
+        const errStr = (responseData.error || '').toLowerCase();
+        let mensajeAmigable = 'Error desconocido al intentar crear la regla.';
+        
+        if (errStr.includes('duplicate') || errStr.includes('unique')) {
+          mensajeAmigable = 'Ya existe una automatización activa para este Destino y Salida.';
+        } else if (errStr.includes('json') || errStr.includes('parse')) {
+          mensajeAmigable = 'Error de conexión con el servidor. Revisá los datos ingresados.';
+        } else if (errStr.includes('chatwoot')) {
+          mensajeAmigable = 'Hubo un problema al intentar comunicarse con Chatwoot.';
+        } else {
+          mensajeAmigable = responseData.error || 'No se pudo crear la regla. Intentá nuevamente.';
+        }
+
+        if (showAlert) showAlert(mensajeAmigable, 'error');
       }
     } catch (error) {
-      if (showAlert) showAlert('Hubo un error al conectar con el Webhook.', 'error');
+      if (showAlert) showAlert('Hubo un error de conexión con n8n.', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -171,12 +189,26 @@ export default function MetaChatwootAutomation() {
 
   return (
     <div style={{ padding: '20px', maxWidth: '1000px', margin: '0 auto' }}>
-      <div style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #e5e7eb' }}>
-        <h1 style={{ color: '#11173d', margin: 0, fontSize: '2rem', fontWeight: 800 }}>
-          Generador de Campañas (Meta ➔ Chatwoot)
-        </h1>
-        <p style={{ color: '#6b7280', marginTop: '5px' }}>Estandariza los mensajes de tus pautas y automatiza su distribución en Chatwoot.</p>
+      {/* Reemplazá el div del encabezado (línea 107 aprox) por esto: */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', paddingBottom: '20px', borderBottom: '2px solid #e5e7eb', flexWrap: 'wrap', gap: '15px' }}>
+        <div>
+          <h1 style={{ color: '#11173d', margin: 0, fontSize: '2rem', fontWeight: 800 }}>
+            Generador de Campañas (Meta ➔ Chatwoot)
+          </h1>
+          <p style={{ color: '#6b7280', marginTop: '5px', margin: 0 }}>Estandariza los mensajes de tus pautas y automatiza su distribución en Chatwoot.</p>
+        </div>
+        <button 
+          onClick={() => setMostrarHistorial(!mostrarHistorial)}
+          style={{ background: mostrarHistorial ? '#f1f5f9' : '#11173d', color: mostrarHistorial ? '#334155' : '#fff', border: '1px solid #cbd5e1', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+        >
+          {mostrarHistorial ? '⬅️ Volver al Creador' : '📋 Ver Historial'}
+        </button>
       </div>
+
+      {mostrarHistorial ? (
+        /* SI MOSTRAR HISTORIAL ES TRUE, RENDERIZAMOS EL COMPONENTE NUEVO */
+        <HistorialReglas equiposChatwoot={equiposChatwoot} />
+      ) : (
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
         
@@ -366,6 +398,7 @@ export default function MetaChatwootAutomation() {
 
         </div>
       </div>
-    </div>
-  );
+    )}
+   </div>
+ );
 }
