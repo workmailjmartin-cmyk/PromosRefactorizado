@@ -157,7 +157,7 @@ export default function MetaChatwootAutomation() {
       const responseData = await response.json(); 
 
       if (response.ok) {
-        if (showAlert) showAlert('¡Automatización creada con éxito en Chatwoot y Excel!', 'success');
+        if (showAlert) showAlert('¡Automatización creada con éxito en Chatwoot y Base de Datos!', 'success');
         setTextoLibre(''); setDestino(''); setSalida(''); setMes(''); setFechaVencimiento(''); setRespuestaAutomatica('');
       } else {
         // TRADUCTOR DE ERRORES AMIGABLE
