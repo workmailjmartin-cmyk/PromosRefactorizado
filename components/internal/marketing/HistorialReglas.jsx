@@ -3,9 +3,9 @@ import { useState, useEffect } from 'react';
 import { useAlert } from '@/contexts/AlertContext';
 
 // 🔴 URLs DE TUS WEBHOOKS DE N8N
-const WEBHOOK_URL_LEER = 'https://n8n.felizviaje.ar/webhook/TU-RUTA-DE-LECTURA';
-const WEBHOOK_URL_ACTUALIZAR = 'https://n8n.felizviaje.ar/webhook/TU-RUTA-DE-ACTUALIZAR';
-const WEBHOOK_URL_ELIMINAR = 'https://n8n.felizviaje.ar/webhook/TU-RUTA-DE-ELIMINAR';
+const WEBHOOK_URL_LEER = 'https://n8n.felizviaje.ar/webhook/leer-reglas';
+const WEBHOOK_URL_ACTUALIZAR = 'https://n8n.felizviaje.ar/webhook/actualizar-regla';
+const WEBHOOK_URL_ELIMINAR = 'https://n8n.felizviaje.ar/webhook/eliminar-regla';
 
 export default function HistorialReglas({ equiposChatwoot }) {
   const { showAlert } = useAlert();
