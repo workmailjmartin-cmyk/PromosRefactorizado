@@ -77,7 +77,7 @@ export default function ClientesPage() {
             <h3 style={{ margin: '0 0 5px 0', color: '#fff', fontSize: '1.3rem', fontWeight: '900' }}>¿Buscás facilidades de pago?</h3>
             <p style={{ margin: 0, color: '#bae6fd', fontSize: '0.95rem' }}>Conocé nuestros paquetes de cupo limitado con financiación exclusiva al 100%.</p>
           </div>
-          <Link href="/clientes/enlatados" style={{ background: '#ef5a1a', color: '#fff', padding: '12px 25px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block', transition: 'background 0.3s' }}>
+          <Link href="/clientes/encuotas" style={{ background: '#ef5a1a', color: '#fff', padding: '12px 25px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block', transition: 'background 0.3s' }}>
             Ver Paquetes Financiados ✈️
           </Link>
         </div>
