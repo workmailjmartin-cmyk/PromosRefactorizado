@@ -173,12 +173,11 @@ export default function HistorialReglas({ equiposChatwoot }) {
                   </div>
                 </div>
 
-                {/* FILA INFERIOR: TEXTO DEL MENSAJE Y BOTÓN COPIAR (NUEVO) */}
-                {/* Asegurate de que n8n esté mandando la variable 'mensaje' o 'meta_message' */}
+                {/* FILA INFERIOR: TEXTO DEL MENSAJE Y BOTÓN COPIAR */}
                 {(regla.mensaje || regla.meta_message) && (
                   <div style={{ marginTop: '15px', padding: '12px 15px', background: '#e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
                     <div style={{ fontSize: '0.85rem', color: '#475569', fontStyle: 'italic', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
-                      "{regla.mensaje || regla.meta_message}"
+                      &quot;{regla.mensaje || regla.meta_message}&quot;
                     </div>
                     <button 
                       onClick={() => handleCopiarMensaje(regla.mensaje || regla.meta_message)}
