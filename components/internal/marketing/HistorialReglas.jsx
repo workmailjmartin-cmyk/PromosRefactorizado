@@ -94,14 +94,19 @@ export default function HistorialReglas({ equiposChatwoot }) {
     if (showAlert) showAlert('¡Mensaje copiado al portapapeles!', 'success');
   };
 
+  // --- FUNCIÓN AUXILIAR PARA LIMPIAR TEXTOS (Saca tildes y pasa a minúsculas) ---
+  const normalizarTexto = (texto) => {
+    return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  };
+
   // --- LÓGICA DE FILTRADO COMBINADO ---
   const reglasFiltradas = reglas.filter(r => {
     // 1. Filtro por equipo
     const coincideEquipo = filtroEquipo ? String(r.equipo_id) === String(filtroEquipo) : true;
     
     // 2. Filtro por palabras clave (destino, salida, mes)
-    const stringBusqueda = `${r.destino || ''} ${r.salida || ''} ${r.mes || ''}`.toLowerCase();
-    const coincidePalabras = filtroPalabras ? stringBusqueda.includes(filtroPalabras.toLowerCase()) : true;
+    const stringBusqueda = normalizarTexto(`${r.destino || ''} ${r.salida || ''} ${r.mes || ''}`);
+    const coincidePalabras = filtroPalabras ? stringBusqueda.includes(normalizarTexto(filtroPalabras)) : true;
     
     return coincideEquipo && coincidePalabras;
   });
