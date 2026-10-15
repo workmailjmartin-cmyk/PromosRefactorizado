@@ -14,7 +14,7 @@ export default function HistorialReglas({ equiposChatwoot }) {
   // ESTADOS PARA LOS FILTROS
   const [filtroEquipo, setFiltroEquipo] = useState('');
   const [filtroPalabras, setFiltroPalabras] = useState(''); // <-- NUEVO FILTRO DE BÚSQUEDA
-  
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, id_regla: null });
   const [loading, setLoading] = useState(true);
 
   const cargarReglas = async () => {
@@ -56,9 +56,22 @@ export default function HistorialReglas({ equiposChatwoot }) {
     }
   };
 
-  const eliminarRegla = async (id_regla) => {
+  // 1. Abre el modal
+  const confirmarEliminar = (id_regla) => {
     if (!id_regla) return;
-    if (!window.confirm('¿Seguro que querés eliminar esta automatización en Chatwoot y Base de datos?')) return;
+    setConfirmDialog({ isOpen: true, id_regla });
+  };
+
+  // 2. Cierra el modal
+  const closeConfirm = () => {
+    setConfirmDialog({ isOpen: false, id_regla: null });
+  };
+
+  // 3. Ejecuta la eliminación real cuando el usuario toca "Aceptar" en el modal
+  const ejecutarEliminacion = async () => {
+    const id_regla = confirmDialog.id_regla;
+    closeConfirm(); // Cerramos el modal inmediatamente
+    
     try {
       const response = await fetch(WEBHOOK_URL_ELIMINAR, {
         method: 'POST',
@@ -164,7 +177,7 @@ export default function HistorialReglas({ equiposChatwoot }) {
                     </div>
                     
                     <button 
-                      onClick={() => eliminarRegla(regla.id_regla)} 
+                      onClick={() => confirmarEliminar(regla.id_regla)} 
                       title="Eliminar de Chatwoot y Base de Datos"
                       style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
@@ -193,6 +206,38 @@ export default function HistorialReglas({ equiposChatwoot }) {
           })
         )}
       </div>
+      {/* MODAL DE CONFIRMACIÓN ESTILIZADO */}
+        {confirmDialog.isOpen && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(17, 23, 61, 0.5)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+            <div style={{ background: '#fff', padding: '30px', borderRadius: '16px', maxWidth: '400px', width: '90%', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)', textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🤔</div>
+              <h3 style={{ margin: '0 0 10px 0', color: '#11173d', fontSize: '1.2rem', fontWeight: 900 }}>¿Estás seguro?</h3>
+              <p style={{ color: '#4b5563', fontSize: '0.95rem', marginBottom: '25px', lineHeight: '1.5' }}>
+                ¿Querés eliminar definitivamente esta automatización de Chatwoot y la Base de Datos?
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                <button 
+                  type="button" 
+                  onClick={closeConfirm} 
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff', color: '#374151', fontWeight: 'bold', cursor: 'pointer', flex: 1, transition: 'background 0.2s' }} 
+                  onMouseOver={e=>e.currentTarget.style.background='#f3f4f6'} 
+                  onMouseOut={e=>e.currentTarget.style.background='#fff'}
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="button" 
+                  onClick={ejecutarEliminacion} 
+                  style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#ef5a1a', color: '#fff', fontWeight: 'bold', cursor: 'pointer', flex: 1, transition: 'background 0.2s' }} 
+                  onMouseOver={e=>e.currentTarget.style.background='#ea580c'} 
+                  onMouseOut={e=>e.currentTarget.style.background='#ef5a1a'}
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }
