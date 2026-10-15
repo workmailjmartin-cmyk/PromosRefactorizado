@@ -58,7 +58,7 @@ export default function HistorialReglas({ equiposChatwoot }) {
 
   const eliminarRegla = async (id_regla) => {
     if (!id_regla) return;
-    if (!window.confirm('¿Seguro que querés eliminar esta automatización en Chatwoot y Excel?')) return;
+    if (!window.confirm('¿Seguro que querés eliminar esta automatización en Chatwoot y Base de datos?')) return;
     try {
       const response = await fetch(WEBHOOK_URL_ELIMINAR, {
         method: 'POST',
@@ -96,7 +96,7 @@ export default function HistorialReglas({ equiposChatwoot }) {
   if (loading) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', marginTop: '10px' }}>
-        <h3 style={{ color: '#0369a1', margin: '0 0 10px 0' }}>⏳ Sincronizando con Excel...</h3>
+        <h3 style={{ color: '#0369a1', margin: '0 0 10px 0' }}>⏳ Sincronizando con Base de Datos...</h3>
       </div>
     );
   }
@@ -107,7 +107,7 @@ export default function HistorialReglas({ equiposChatwoot }) {
       {/* CABECERA Y FILTROS */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
         <h2 style={{ margin: 0, color: '#11173d', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          📋 Historial (En vivo desde Excel)
+          📋 Historial de Automatizaciones
         </h2>
         
         {/* BARRA DE BÚSQUEDA Y SELECTOR DE EQUIPO */}
@@ -165,7 +165,7 @@ export default function HistorialReglas({ equiposChatwoot }) {
                     
                     <button 
                       onClick={() => eliminarRegla(regla.id_regla)} 
-                      title="Eliminar de Chatwoot y Excel"
+                      title="Eliminar de Chatwoot y Base de Datos"
                       style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     >
                       🗑️
